@@ -11,7 +11,6 @@ import { TurtleGallery } from '@/components/turtle/TurtleGallery';
 import { MemoriesTimeline } from '@/components/timeline/MemoriesTimeline';
 import { LoveNotesVault } from '@/components/love-notes/LoveNotesVault';
 import { SpecialSurpriseModal } from '@/components/surprise/SpecialSurpriseModal';
-import { ContactSection } from '@/components/contact/ContactSection';
 import { Footer } from '@/components/footer/Footer';
 import { AmbientAudioPlayer } from '@/components/audio/AmbientAudioPlayer';
 import { EasterEggListener } from '@/components/easter-eggs/EasterEggListener';
@@ -56,9 +55,6 @@ export default function HomePage() {
 
         {/* 4. Love Notes Vault */}
         <LoveNotesVault />
-
-        {/* 5. Contact & Direct Messaging */}
-        <ContactSection />
       </main>
 
       {/* Footer */}

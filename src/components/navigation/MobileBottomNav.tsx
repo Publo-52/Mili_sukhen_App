@@ -10,7 +10,6 @@ export const MobileBottomNav: React.FC = () => {
     { label: 'Python Art', href: '/#python-art', icon: Sparkles },
     { label: 'Memories', href: '/#memories', icon: History },
     { label: 'Love Notes', href: '/#love-notes', icon: HeartHandshake },
-    { label: 'Message', href: '/#contact', icon: MessageSquareHeart },
   ];
 
   return (

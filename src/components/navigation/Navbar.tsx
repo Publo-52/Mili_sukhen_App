@@ -42,7 +42,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
     { name: 'Python Art', href: '/#python-art' },
     { name: 'Memories', href: '/#memories' },
     { name: 'Love Notes', href: '/#love-notes' },
-    { name: 'Contact', href: '/#contact' },
   ];
 
   return (

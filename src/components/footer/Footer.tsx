@@ -69,9 +69,6 @@ export const Footer: React.FC<FooterProps> = ({ onReplayIntro, onOpenSurprise })
           <a href="#love-notes" className="hover:text-roseGlow-400 transition-colors">
             Love Notes
           </a>
-          <a href="#contact" className="hover:text-roseGlow-400 transition-colors">
-            Contact
-          </a>
         </div>
 
         {/* Interactive Controls */}
