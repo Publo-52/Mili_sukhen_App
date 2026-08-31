@@ -1,25 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import { Navbar } from '@/components/navigation/Navbar';
 import { MobileBottomNav } from '@/components/navigation/MobileBottomNav';
 import { SectionType } from '@/types';
-import { ParticleCanvas } from '@/components/hero/ParticleCanvas';
-import { CinematicIntro } from '@/components/hero/CinematicIntro';
 import { Hero } from '@/components/hero/Hero';
+import { UniversePortalHub } from '@/components/hero/UniversePortalHub';
 import { ProjectShowcase } from '@/components/projects/ProjectShowcase';
 import { TurtleGallery } from '@/components/turtle/TurtleGallery';
 import { MemoriesTimeline } from '@/components/timeline/MemoriesTimeline';
 import { LoveNotesVault } from '@/components/love-notes/LoveNotesVault';
-import { SpecialSurpriseModal } from '@/components/surprise/SpecialSurpriseModal';
 import { Footer } from '@/components/footer/Footer';
-import { AmbientAudioPlayer } from '@/components/audio/AmbientAudioPlayer';
-import { EasterEggListener } from '@/components/easter-eggs/EasterEggListener';
 import { getProjects, getTurtleCreations, getLoveNotes } from '@/lib/storage';
 import { INITIAL_MEMORIES } from '@/data/memories';
 
-import { UniversePortalHub } from '@/components/hero/UniversePortalHub';
+// Lazy load non-critical client modules for instant First Contentful Paint
+const ParticleCanvas = dynamic(() => import('@/components/hero/ParticleCanvas').then((m) => m.ParticleCanvas), { ssr: false });
+const CinematicIntro = dynamic(() => import('@/components/hero/CinematicIntro').then((m) => m.CinematicIntro), { ssr: false });
+const SpecialSurpriseModal = dynamic(() => import('@/components/surprise/SpecialSurpriseModal').then((m) => m.SpecialSurpriseModal), { ssr: false });
+const AmbientAudioPlayer = dynamic(() => import('@/components/audio/AmbientAudioPlayer').then((m) => m.AmbientAudioPlayer), { ssr: false });
+const EasterEggListener = dynamic(() => import('@/components/easter-eggs/EasterEggListener').then((m) => m.EasterEggListener), { ssr: false });
 
 export default function HomePage() {
   const [showIntro, setShowIntro] = useState(false);

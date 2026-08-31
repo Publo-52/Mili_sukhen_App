@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Search, Sparkles, Heart, Filter, Layers, ArrowUpRight, Plus, Wand2 } from 'lucide-react';
 import { Project, ProjectCategory } from '@/types';
 import { getProjects, saveProject, deleteProject, getFavoriteProjectIds, toggleFavoriteProject } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { ProjectCard } from './ProjectCard';
-import { ProjectPreviewModal } from './ProjectPreviewModal';
-import { ProjectEditorModal } from './ProjectEditorModal';
+
+const ProjectPreviewModal = dynamic(() => import('./ProjectPreviewModal').then((m) => m.ProjectPreviewModal), { ssr: false });
+const ProjectEditorModal = dynamic(() => import('./ProjectEditorModal').then((m) => m.ProjectEditorModal), { ssr: false });
 
 const CATEGORIES: (ProjectCategory | 'All' | 'Favorites')[] = [
   'All',

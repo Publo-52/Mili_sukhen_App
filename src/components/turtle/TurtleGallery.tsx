@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Sparkles, Code2, Maximize2, Terminal, Play, Heart, Plus, Wand2, Edit3, Trash2 } from 'lucide-react';
@@ -8,8 +9,9 @@ import { TurtleCreation } from '@/types';
 import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { formatDate } from '@/lib/utils';
-import { FullscreenLightbox } from './FullscreenLightbox';
-import { TurtleEditorModal } from './TurtleEditorModal';
+
+const FullscreenLightbox = dynamic(() => import('./FullscreenLightbox').then((m) => m.FullscreenLightbox), { ssr: false });
+const TurtleEditorModal = dynamic(() => import('./TurtleEditorModal').then((m) => m.TurtleEditorModal), { ssr: false });
 
 export const TurtleGallery: React.FC = () => {
   const { user, isAdmin } = useAuth();

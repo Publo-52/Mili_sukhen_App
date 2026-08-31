@@ -104,10 +104,20 @@ export const ParticleCanvas: React.FC = () => {
       animationFrameId = requestAnimationFrame(render);
     };
 
+    const handleVisibility = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animationFrameId);
+      } else {
+        animationFrameId = requestAnimationFrame(render);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
     render();
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibility);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);

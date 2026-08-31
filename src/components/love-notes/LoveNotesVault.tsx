@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Sparkles, Shuffle, ArrowLeft, ArrowRight, Maximize2, BookOpen, Play, Pause, Plus, Edit3, Trash2, Feather } from 'lucide-react';
 import { LoveNote } from '@/types';
 import { getLoveNotes, saveLoveNote, deleteLoveNote, getFavoriteNoteIds, toggleFavoriteNote } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
-import { NoteReaderModal } from './NoteReaderModal';
-import { LoveNoteEditorModal } from './LoveNoteEditorModal';
+
+const NoteReaderModal = dynamic(() => import('./NoteReaderModal').then((m) => m.NoteReaderModal), { ssr: false });
+const LoveNoteEditorModal = dynamic(() => import('./LoveNoteEditorModal').then((m) => m.LoveNoteEditorModal), { ssr: false });
 
 const MOOD_FILTERS = [
   { id: 'all', label: 'All Letters' },
