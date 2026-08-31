@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, Cormorant_Garamond, Playfair_Display, Great_Vibes, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
-import { WhatsAppMessenger } from "@/components/chat/WhatsAppMessenger";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -69,8 +68,7 @@ export const viewport: Viewport = {
   themeColor: "#06040a",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
@@ -83,7 +81,6 @@ export default function RootLayout({
       <body className="antialiased min-h-screen bg-[#06040a] text-slate-100 selection:bg-roseGlow-600 selection:text-white">
         <AuthProvider>
           {children}
-          <WhatsAppMessenger />
         </AuthProvider>
       </body>
     </html>
