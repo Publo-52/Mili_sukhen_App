@@ -329,7 +329,7 @@ function LoginContent() {
                   <button
                     type="submit"
                     disabled={isLoading || !email.trim() || !password.trim()}
-                    className="w-full py-3.5 rounded-2xl text-white font-semibold text-sm shadow-glow hover:shadow-glow-lg transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500"
+                    className="w-full py-3.5 rounded-2xl text-white font-semibold text-sm shadow-glow hover:shadow-glow-lg transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 cursor-pointer"
                   >
                     {isLoading ? (
                       <>
@@ -345,11 +345,51 @@ function LoginContent() {
                   </button>
                 </form>
 
+                {/* Quick 1-Tap Fill Buttons */}
+                <div className="pt-3 border-t border-white/5 space-y-2">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400 text-center">
+                    Quick One-Tap Sign In
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmail('mandalsharmili06@gmail.com');
+                        setPassword('mili@123');
+                        setError('');
+                      }}
+                      className="p-2.5 rounded-xl glass-card border border-roseGlow-500/30 hover:border-roseGlow-500/60 bg-roseGlow-500/10 text-left transition-all active:scale-95 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-roseGlow-300">
+                        <span>❤️</span>
+                        <span>Mili</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-mono">Fill Mili login</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmail('dassukhen@gmail.com');
+                        setPassword('das@123');
+                        setError('');
+                      }}
+                      className="p-2.5 rounded-xl glass-card border border-purple-500/30 hover:border-purple-500/60 bg-purple-500/10 text-left transition-all active:scale-95 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300">
+                        <span>✨</span>
+                        <span>Sukhen</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-mono">Fill Admin login</p>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Footer status */}
-                <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                <div className="pt-1 flex items-center justify-between text-[11px] text-slate-400 font-mono">
                   <span className="flex items-center gap-1">
                     <Smartphone className="w-3 h-3 text-roseGlow-400" />
-                    <span>Max {AUTH_CONFIG.maxDevices} active devices</span>
+                    <span>Max {AUTH_CONFIG.maxDevices} devices</span>
                   </span>
                   <span className="text-slate-500">Secure Session</span>
                 </div>
