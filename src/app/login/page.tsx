@@ -225,7 +225,7 @@ function LoginContent() {
                           Mili
                         </p>
                         <p className="text-[10px] text-slate-400 font-mono truncate">
-                          mili@lovemili.space
+                          mandalsharmili@06gmail.com
                         </p>
                       </div>
                     </button>
@@ -243,7 +243,7 @@ function LoginContent() {
                           Sukhen (Admin)
                         </p>
                         <p className="text-[10px] text-slate-400 font-mono truncate">
-                          sukhen@lovemili.space
+                          dassukhen@gmail.com
                         </p>
                       </div>
                     </button>
@@ -265,13 +265,13 @@ function LoginContent() {
                       <div className="space-y-1.5 font-mono text-[11px] text-slate-400">
                         <div className="p-2 rounded-xl bg-white/5 border border-white/5">
                           <span className="text-roseGlow-300 font-bold block">Mili</span>
-                          <span>Email: <code>mili@lovemili.space</code> (or <code>mili@gmail.com</code>)</span>
-                          <span className="block">Password: <code>mili143</code></span>
+                          <span>Email: <code>mandalsharmili@06gmail.com</code> (or <code>mandalsharmili06@gmail.com</code>)</span>
+                          <span className="block">Password: <code>mili@123</code></span>
                         </div>
                         <div className="p-2 rounded-xl bg-white/5 border border-white/5">
                           <span className="text-purple-300 font-bold block">Sukhen (Creator & Admin)</span>
-                          <span>Email: <code>sukhen@lovemili.space</code> (or <code>sukhen@gmail.com</code>)</span>
-                          <span className="block">Password: <code>sukhen</code> (or <code>mili143</code>)</span>
+                          <span>Email: <code>dassukhen@gmail.com</code></span>
+                          <span className="block">Password: <code>das@123</code></span>
                         </div>
                       </div>
                     </motion.div>
@@ -294,7 +294,7 @@ function LoginContent() {
                         setEmail(e.target.value);
                         setError('');
                       }}
-                      placeholder="mili@lovemili.space or sukhen@lovemili.space"
+                      placeholder="dassukhen@gmail.com or mandalsharmili@06gmail.com"
                       required
                       autoFocus
                       className="w-full px-4 py-3.5 rounded-2xl bg-black/40 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 focus:ring-2 focus:ring-roseGlow-500/20 transition-all"

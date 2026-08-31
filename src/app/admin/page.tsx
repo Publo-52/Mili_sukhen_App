@@ -159,8 +159,8 @@ export default function AdminPage() {
     e.preventDefault();
     if (
       passcode.trim() === APP_CONFIG.adminPasscode ||
-      passcode.trim().toLowerCase() === 'sukhen' ||
-      passcode.trim().toLowerCase() === 'mili143'
+      passcode.trim() === 'das@123' ||
+      passcode.trim().toLowerCase() === 'sukhen'
     ) {
       setIsAuthenticated(true);
       setAdminLoggedIn(true);
@@ -343,7 +343,7 @@ export default function AdminPage() {
 
             {loginError && (
               <p className="text-xs text-rose-400 font-mono">
-                Incorrect passcode. (Default: mili143)
+                Incorrect passcode. (Passcode: das@123)
               </p>
             )}
 

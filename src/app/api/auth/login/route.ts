@@ -26,16 +26,19 @@ export async function POST(request: NextRequest) {
 
     let candidateUser: typeof AUTH_USERS['mili'] | typeof AUTH_USERS['sukhen'] | null = null;
 
-    // Check Mili
-    const isMiliEmail =
-      AUTH_USERS.mili.emails.some((e) => cleanEmail === e.toLowerCase()) ||
-      cleanEmail.includes('mili');
-
     // Check Sukhen
     const isSukhenEmail =
       AUTH_USERS.sukhen.emails.some((e) => cleanEmail === e.toLowerCase()) ||
       cleanEmail.includes('sukhen') ||
+      cleanEmail.includes('dassukhen') ||
       cleanEmail.includes('admin');
+
+    // Check Mili
+    const isMiliEmail =
+      AUTH_USERS.mili.emails.some((e) => cleanEmail === e.toLowerCase()) ||
+      cleanEmail.includes('mili') ||
+      cleanEmail.includes('mandal') ||
+      cleanEmail.includes('sharmili');
 
     if (isSukhenEmail) {
       candidateUser = AUTH_USERS.sukhen;
