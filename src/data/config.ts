@@ -4,7 +4,7 @@ export const APP_CONFIG: AppConfig = {
   appName: "Suksharmi ❤️",
   recipientName: "Mili",
   creatorName: "Sukhen",
-  anniversaryDate: "2023-11-18",
+  anniversaryDate: "2025-09-15T00:00:00",
   contactVisibility: 'PRIVATE',
   adminPasscode: "das@123",
   surprisePasscode: "forever",

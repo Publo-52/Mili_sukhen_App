@@ -2,37 +2,45 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Code2, Sparkles, BookOpen, Clock } from 'lucide-react';
+import { Code2, Sparkles, BookOpen, Clock } from 'lucide-react';
 import { calculateDaysTogether } from '@/lib/utils';
 import { APP_CONFIG } from '@/data/config';
-import { INITIAL_PROJECTS } from '@/data/projects';
-import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
-import { INITIAL_LOVE_NOTES } from '@/data/loveNotes';
+import { getProjects, getTurtleCreations, getLoveNotes } from '@/lib/storage';
 
 export const MemoryCounter: React.FC = () => {
   const [time, setTime] = useState(calculateDaysTogether(APP_CONFIG.anniversaryDate));
   const [mounted, setMounted] = useState(false);
+  const [projectCount, setProjectCount] = useState(0);
+  const [turtleCount, setTurtleCount] = useState(0);
+  const [noteCount, setNoteCount] = useState(0);
 
   useEffect(() => {
     setMounted(true);
-    const interval = setInterval(() => {
+    setProjectCount(getProjects().length);
+    setTurtleCount(getTurtleCreations().length);
+    setNoteCount(getLoveNotes().length);
+
+    const updateTimer = () => {
       setTime(calculateDaysTogether(APP_CONFIG.anniversaryDate));
-    }, 1000);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, []);
 
   const stats = [
     {
       label: "Days of Memories",
-      value: mounted ? `${time.days}d ${time.hours}h ${time.minutes}m` : "...",
-      subtext: "Since our journey started",
+      value: mounted ? `${time.days}d ${time.hours}h ${time.minutes}m ${time.seconds}s` : "...",
+      subtext: "Since Sept 15, 2025",
       icon: Clock,
       color: "text-roseGlow-400",
       bgGlow: "group-hover:border-roseGlow-500/40",
     },
     {
       label: "Digital Creations",
-      value: `${INITIAL_PROJECTS.length} Projects`,
+      value: mounted ? `${projectCount} Projects` : "...",
       subtext: "Websites & interactive apps",
       icon: Code2,
       color: "text-purple-400",
@@ -40,7 +48,7 @@ export const MemoryCounter: React.FC = () => {
     },
     {
       label: "Python Artworks",
-      value: `${INITIAL_TURTLE_CREATIONS.length} Designs`,
+      value: mounted ? `${turtleCount} Designs` : "...",
       subtext: "Drawn with code for you",
       icon: Sparkles,
       color: "text-amber-400",
@@ -48,7 +56,7 @@ export const MemoryCounter: React.FC = () => {
     },
     {
       label: "Love Notes & Letters",
-      value: `${INITIAL_LOVE_NOTES.length} Letters`,
+      value: mounted ? `${noteCount} Letters` : "...",
       subtext: "Written straight from heart",
       icon: BookOpen,
       color: "text-pink-400",
