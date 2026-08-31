@@ -56,15 +56,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
           <div className="flex items-center gap-3">
             <button
               onClick={handleLogoClick}
-              className="group flex items-center gap-2 text-left focus:outline-none"
-              title="Mili Universe"
+              className="group flex items-center gap-2.5 text-left focus:outline-none"
+              title="Sukhen & Mili Universe"
             >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-roseGlow-600 to-purple-600 flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform">
-                <Heart className="w-4 h-4 fill-white animate-pulse" />
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform border border-white/20">
+                <span className="text-xs font-black tracking-tighter">S<span className="text-[10px] text-rose-200">❤</span>M</span>
               </div>
               <div>
                 <span className="text-lg font-bold font-sans tracking-tight text-white flex items-center gap-1">
-                  Mili <span className="text-roseGlow-500">❤️</span>
+                  Sukhen <span className="text-roseGlow-500 text-xs">❤</span> Mili
                 </span>
                 <span className="block text-[10px] font-mono tracking-widest text-slate-400 -mt-1">
                   A DIGITAL UNIVERSE

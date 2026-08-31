@@ -12,21 +12,43 @@ export default function AppleIcon() {
     (
       <div
         style={{
-          fontSize: 90,
-          background: 'linear-gradient(135deg, #0f0a17 0%, #2a1226 50%, #f43f5e 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'white',
-          borderRadius: 36,
-          fontWeight: 800,
+          background: 'radial-gradient(circle at center, #260d28 0%, #0c0615 70%, #06040a 100%)',
+          borderRadius: 40,
+          border: '4px solid rgba(244, 63, 94, 0.5)',
           fontFamily: 'sans-serif',
-          border: '4px solid rgba(244, 63, 94, 0.4)',
+          position: 'relative',
         }}
       >
-        M
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+          }}
+        >
+          <span style={{ color: '#c084fc', fontSize: 68, fontWeight: 900, letterSpacing: '-0.02em' }}>S</span>
+          <span style={{ color: '#f43f5e', fontSize: 44, margin: '0 4px', filter: 'drop-shadow(0 0 10px rgba(244,63,94,0.8))' }}>❤</span>
+          <span style={{ color: '#fb7185', fontSize: 68, fontWeight: 900, letterSpacing: '-0.02em' }}>M</span>
+        </div>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            letterSpacing: '0.25em',
+            textTransform: 'uppercase',
+            color: 'rgba(255, 255, 255, 0.8)',
+            marginTop: 4,
+          }}
+        >
+          Sukhen & Mili
+        </div>
       </div>
     ),
     {
