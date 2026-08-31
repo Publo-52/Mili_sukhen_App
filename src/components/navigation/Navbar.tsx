@@ -56,17 +56,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
           <div className="flex items-center gap-3">
             <button
               onClick={handleLogoClick}
-              className="group flex items-center gap-2.5 text-left focus:outline-none"
-              title="Sukhen & Mili Universe"
+              className="group flex items-center gap-3 text-left focus:outline-none"
+              title="Suksharmi — Digital Universe"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform border border-white/20">
-                <span className="text-xs font-black tracking-tighter">S<span className="text-[10px] text-rose-200">❤</span>M</span>
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform border border-white/20 p-0.5">
+                <div className="w-full h-full rounded-[14px] bg-[#0c0817] flex items-center justify-center">
+                  <span className="text-xs font-black tracking-tighter bg-gradient-to-r from-purple-300 via-rose-300 to-pink-300 bg-clip-text text-transparent">
+                    S<span className="text-[10px] text-rose-400">❤</span>M
+                  </span>
+                </div>
               </div>
               <div>
-                <span className="text-lg font-bold font-sans tracking-tight text-white flex items-center gap-1">
-                  Sukhen <span className="text-roseGlow-500 text-xs">❤</span> Mili
+                <span className="text-2xl sm:text-3xl font-stylish tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-rose-100 via-pink-200 to-rose-300 flex items-center gap-1 leading-none drop-shadow-[0_0_12px_rgba(244,63,94,0.4)] group-hover:drop-shadow-[0_0_20px_rgba(244,63,94,0.7)] transition-all">
+                  Suksharmi
                 </span>
-                <span className="block text-[10px] font-mono tracking-widest text-slate-400 -mt-1">
+                <span className="block text-[9px] font-mono tracking-[0.22em] text-slate-400 group-hover:text-roseGlow-300 transition-colors uppercase">
                   A DIGITAL UNIVERSE
                 </span>
               </div>

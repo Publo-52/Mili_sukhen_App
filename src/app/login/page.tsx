@@ -190,11 +190,14 @@ function LoginContent() {
                 </motion.div>
 
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                    Sign in to <span className="text-roseGlow-400">Mili&apos;s Universe</span>
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center justify-center gap-2 flex-wrap">
+                    <span>Sign in to</span>
+                    <span className="font-stylish text-3xl sm:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-rose-200 via-pink-300 to-rose-400 drop-shadow-[0_0_12px_rgba(244,63,94,0.4)]">
+                      Suksharmi
+                    </span>
                   </h1>
                   <p className="text-xs sm:text-sm text-slate-400 mt-1 font-light">
-                    Enter your email address and password to continue
+                    Enter your email address and password to enter the universe
                   </p>
                 </div>
               </div>

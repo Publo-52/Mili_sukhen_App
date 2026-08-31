@@ -132,7 +132,7 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
 
         {/* Ambient bottom indicator */}
         <div className="absolute bottom-8 text-[11px] text-slate-400 font-mono tracking-wider">
-          Crafted with love by Sukhen
+          Suksharmi Universe • Crafted with love by Sukhen
         </div>
       </motion.div>
     </AnimatePresence>

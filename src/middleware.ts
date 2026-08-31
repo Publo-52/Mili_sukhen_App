@@ -8,6 +8,7 @@ const PUBLIC_PATHS = [
   '/images',
   '/favicon',
   '/icon',
+  '/apple-icon',
   '/manifest',
   '/robots.txt',
   '/mili.jpg',

@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-export const alt = 'Mili — A Digital Universe Made For You';
+export const alt = 'Suksharmi — A Digital Universe Made For You';
 export const size = {
   width: 1200,
   height: 630,
@@ -47,11 +47,11 @@ export default function Image() {
             marginBottom: 24,
           }}
         >
-          Dedicated to Mili
+          Dedicated to Mili & Sukhen
         </div>
         <div
           style={{
-            fontSize: 64,
+            fontSize: 68,
             fontWeight: 800,
             color: 'white',
             textAlign: 'center',
@@ -59,7 +59,7 @@ export default function Image() {
             marginBottom: 16,
           }}
         >
-          The Mili Digital Universe
+          Suksharmi
         </div>
         <div
           style={{

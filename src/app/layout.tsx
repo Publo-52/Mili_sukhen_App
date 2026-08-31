@@ -8,18 +8,25 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://mili-universe.vercel.app')
   ),
-  title: "Mili ❤️ — A Digital Universe Made For You",
-  description: "A cinematic personal digital world dedicated to Mili. A collection of every website, Python turtle artwork, memory, and love note created by Sukhen.",
+  title: "Suksharmi ❤️ — A Digital Universe Made For You",
+  description: "Suksharmi — A cinematic personal digital universe dedicated to Mili & Sukhen. A collection of every website, Python turtle artwork, memory, and love note.",
   authors: [{ name: "Sukhen" }],
-  keywords: ["Mili", "Love App", "Portfolio", "Python Turtle", "Memories", "Vercel Projects", "Romantic Web App"],
+  keywords: ["Suksharmi", "Sukhen", "Mili", "Love App", "Portfolio", "Python Turtle", "Memories", "Romantic Web App"],
   openGraph: {
-    title: "Mili ❤️ — A Digital Universe Made For You",
+    title: "Suksharmi ❤️ — A Digital Universe Made For You",
     description: "Everything I created, I created with you in mind.",
     type: "website",
   },
   icons: {
-    icon: "/icon",
-    apple: "/apple-icon",
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icon.png', sizes: '192x192', type: 'image/png' },
+      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
   },
 };
 

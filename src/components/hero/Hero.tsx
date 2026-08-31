@@ -66,7 +66,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-roseGlow-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-roseGlow-500"></span>
           </span>
-          <span>A Private Digital Universe • Crafted for Mili</span>
+          <span>Suksharmi • A Private Digital Universe Crafted for Mili</span>
         </motion.div>
 
         {/* Hero Title */}

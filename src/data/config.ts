@@ -1,7 +1,7 @@
 import { AppConfig } from '@/types';
 
 export const APP_CONFIG: AppConfig = {
-  appName: "Mili ❤️",
+  appName: "Suksharmi ❤️",
   recipientName: "Mili",
   creatorName: "Sukhen",
   anniversaryDate: "2023-11-18",
