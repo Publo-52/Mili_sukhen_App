@@ -57,8 +57,8 @@ export const MemoryCounter: React.FC = () => {
   ];
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+    <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 py-6 sm:py-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
@@ -68,20 +68,20 @@ export const MemoryCounter: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: idx * 0.1 }}
-              className={`group glass-card glass-card-hover p-4 md:p-6 rounded-2xl relative overflow-hidden transition-all duration-300 ${stat.bgGlow}`}
+              className={`group glass-card glass-card-hover p-3.5 sm:p-5 md:p-6 rounded-2xl relative overflow-hidden transition-all duration-300 ${stat.bgGlow}`}
             >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs uppercase tracking-wider font-mono text-slate-400">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <span className="text-[10px] sm:text-xs uppercase tracking-wider font-mono text-slate-400 truncate max-w-[80%]">
                   {stat.label}
                 </span>
-                <div className={`p-2 rounded-xl bg-white/5 ${stat.color}`}>
-                  <Icon className="w-4 h-4" />
+                <div className={`p-1.5 sm:p-2 rounded-xl bg-white/5 ${stat.color}`}>
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
               </div>
-              <div className="text-xl md:text-2xl font-bold font-sans text-slate-100 mb-1 tracking-tight">
+              <div className="text-base sm:text-xl md:text-2xl font-bold font-sans text-slate-100 mb-1 tracking-tight">
                 {stat.value}
               </div>
-              <p className="text-[12px] text-slate-400 font-sans">
+              <p className="text-[10px] sm:text-[12px] text-slate-400 font-sans line-clamp-1">
                 {stat.subtext}
               </p>
             </motion.div>

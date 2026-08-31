@@ -445,10 +445,10 @@ export default function AdminPage() {
       {/* Main Admin Dashboard */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-8 space-y-8">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-white/10 pb-4 overflow-x-auto">
+        <div className="flex items-center gap-2 border-b border-white/10 pb-4 overflow-x-auto no-scrollbar whitespace-nowrap">
           <button
             onClick={() => setActiveTab('messages')}
-            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
               activeTab === 'messages'
                 ? 'bg-roseGlow-600 text-white shadow-glow'
                 : 'glass-card text-slate-400 hover:text-white'

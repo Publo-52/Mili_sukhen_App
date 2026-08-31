@@ -68,6 +68,15 @@ body {
   padding-top: max(0.5rem, env(safe-area-inset-top));
 }
 
+/* Hide scrollbar for clean mobile horizontal swipe gestures */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Luxury Glassmorphic Design System */
 .glass-card {
   background: rgba(14, 10, 24, 0.65);

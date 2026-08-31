@@ -60,13 +60,13 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
           initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full glass-card border border-roseGlow-500/30 text-roseGlow-300 text-xs font-mono tracking-widest uppercase shadow-glow hover:border-roseGlow-500/60 transition-all cursor-default"
+          className="inline-flex items-center gap-2 px-3.5 sm:px-5 py-2 rounded-full glass-card border border-roseGlow-500/30 text-roseGlow-300 text-[11px] sm:text-xs font-mono tracking-wider sm:tracking-widest uppercase shadow-glow hover:border-roseGlow-500/60 transition-all cursor-default max-w-full text-center"
         >
-          <span className="relative flex h-2 w-2">
+          <span className="relative flex h-2 w-2 flex-shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-roseGlow-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-roseGlow-500"></span>
           </span>
-          <span>Suksharmi • A Private Digital Universe Crafted for Mili</span>
+          <span className="truncate">Suksharmi • A Private Digital Universe Crafted for Mili</span>
         </motion.div>
 
         {/* Hero Title */}
@@ -76,7 +76,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
           transition={{ duration: 0.9, delay: 0.1 }}
           className="space-y-3"
         >
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-sans font-extrabold text-white tracking-tight leading-[1.1]">
+          <h1 className="text-3xl sm:text-6xl md:text-7xl font-sans font-extrabold text-white tracking-tight leading-[1.15] break-words">
             Everything I Created,
             <span className="block mt-2 bg-gradient-to-r from-roseGlow-400 via-pink-200 to-purple-400 bg-clip-text text-transparent drop-shadow-sm">
               I Created With You In Mind <span className="inline-block text-roseGlow-500 animate-pulse">❤️</span>
@@ -89,13 +89,13 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-base sm:text-xl text-slate-300 font-light max-w-2xl mx-auto leading-relaxed"
+          className="text-sm sm:text-lg md:text-xl text-slate-300 font-light max-w-2xl mx-auto leading-relaxed px-2 sm:px-0"
         >
           Welcome to your personal sanctuary — every website, Python turtle artwork, memory, and love letter I have coded for you across our story together.
         </motion.p>
 
         {/* Dynamic Rotating Quotes Card */}
-        <div className="h-16 flex items-center justify-center my-2">
+        <div className="h-16 flex items-center justify-center my-2 px-2">
           <AnimatePresence mode="wait">
             <motion.div
               key={quoteIndex}
@@ -103,9 +103,9 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.6 }}
-              className="px-6 py-2.5 rounded-2xl glass-card border border-white/5 inline-block"
+              className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-2xl glass-card border border-white/5 inline-block max-w-full"
             >
-              <p className="text-sm sm:text-base font-serif italic text-roseGlow-200">
+              <p className="text-xs sm:text-base font-serif italic text-roseGlow-200 truncate sm:whitespace-normal">
                 {ROMANTIC_QUOTES[quoteIndex]}
               </p>
             </motion.div>
@@ -117,11 +117,11 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="flex flex-wrap items-center justify-center gap-4 pt-2"
+          className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-2 w-full max-w-md sm:max-w-none mx-auto"
         >
           <a
             href="#projects"
-            className="inline-flex items-center gap-2.5 px-8 py-4 rounded-full bg-gradient-to-r from-roseGlow-600 via-pink-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white font-semibold text-sm shadow-glow hover:shadow-glow-lg transition-all duration-300 hover:scale-105 active:scale-95"
+            className="w-full sm:w-auto inline-flex justify-center items-center gap-2.5 px-7 py-3.5 sm:px-8 sm:py-4 rounded-full bg-gradient-to-r from-roseGlow-600 via-pink-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white font-semibold text-sm shadow-glow hover:shadow-glow-lg transition-all duration-300 hover:scale-105 active:scale-95"
           >
             <Layers className="w-4 h-4" />
             <span>Explore Creations</span>
@@ -130,7 +130,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
 
           <a
             href="#love-notes"
-            className="inline-flex items-center gap-2 px-7 py-4 rounded-full glass-card hover:border-roseGlow-500/40 text-slate-200 hover:text-white font-medium text-sm transition-all duration-300 hover:scale-105 shadow-sm"
+            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-6 py-3.5 sm:px-7 sm:py-4 rounded-full glass-card hover:border-roseGlow-500/40 text-slate-200 hover:text-white font-medium text-sm transition-all duration-300 hover:scale-105 shadow-sm"
           >
             <BookOpen className="w-4 h-4 text-roseGlow-400" />
             <span>Read Love Notes</span>
@@ -139,7 +139,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
           {onOpenSurprise && (
             <button
               onClick={onOpenSurprise}
-              className="inline-flex items-center gap-2 px-6 py-4 rounded-full bg-purple-500/10 border border-purple-500/30 hover:border-purple-500/60 text-purple-300 hover:text-white font-medium text-sm transition-all duration-300 hover:scale-105 shadow-glow-violet"
+              className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-6 py-3.5 sm:px-6 sm:py-4 rounded-full bg-purple-500/10 border border-purple-500/30 hover:border-purple-500/60 text-purple-300 hover:text-white font-medium text-sm transition-all duration-300 hover:scale-105 shadow-glow-violet"
             >
               <Sparkles className="w-4 h-4 text-purple-400" />
               <span>Special Surprise</span>

@@ -349,10 +349,10 @@ export const WhatsAppMessenger: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`fixed z-50 bottom-20 right-4 sm:right-6 bg-[#111b21] rounded-3xl overflow-hidden shadow-2xl border border-white/15 flex flex-col transition-all duration-300 ${
+            className={`fixed z-50 bottom-20 right-3 left-3 sm:left-auto sm:right-6 bg-[#111b21] rounded-3xl overflow-hidden shadow-2xl border border-white/15 flex flex-col transition-all duration-300 ${
               isExpanded
-                ? 'w-[94vw] sm:w-[620px] h-[85vh] max-h-[800px]'
-                : 'w-[92vw] sm:w-[420px] h-[580px] max-h-[82vh]'
+                ? 'w-auto sm:w-[620px] h-[85dvh] max-h-[800px]'
+                : 'w-auto sm:w-[420px] h-[560px] max-h-[82dvh]'
             }`}
           >
             {/* ─── Header Bar (WhatsApp Emerald / Dark Theme) ────────────────────────── */}
@@ -637,7 +637,7 @@ export const WhatsAppMessenger: React.FC = () => {
                   }
                 }}
                 placeholder="Type a message…"
-                className="flex-1 bg-[#2a3942] text-white text-sm px-4 py-2.5 rounded-xl border border-transparent focus:border-emerald-500/50 focus:outline-none placeholder-slate-400"
+                className="flex-1 bg-[#2a3942] text-white text-base sm:text-sm px-4 py-2.5 rounded-xl border border-transparent focus:border-emerald-500/50 focus:outline-none placeholder-slate-400"
               />
 
               {inputText.trim() ? (

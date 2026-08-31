@@ -196,89 +196,103 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
         </div>
       </header>
 
-      {/* Mobile Fullscreen Animated Drawer */}
+      {/* Mobile Fullscreen Animated Drawer with Backdrop */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-x-0 top-[60px] z-30 bg-obsidian-950/95 backdrop-blur-2xl border-b border-white/10 p-6 md:hidden space-y-4"
-          >
-            <div className="flex flex-col gap-2">
-              {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-3 text-base font-medium text-slate-200 hover:text-roseGlow-400 hover:bg-white/5 rounded-xl transition-colors"
-                >
-                  {link.name}
-                </a>
-              ))}
-            </div>
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 z-30 bg-black/75 backdrop-blur-sm md:hidden"
+            />
 
-            <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
-              {isAuthenticated ? (
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${isAdmin ? 'bg-purple-600 text-white' : 'bg-roseGlow-600 text-white'}`}>
-                      {user?.name?.[0] || 'M'}
+            {/* Menu Drawer Content */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.25 }}
+              className="fixed inset-x-0 top-[70px] z-40 bg-obsidian-950/98 backdrop-blur-2xl border-b border-white/10 p-5 md:hidden space-y-4 max-h-[calc(100dvh-80px)] overflow-y-auto shadow-2xl"
+            >
+              <div className="flex flex-col gap-1">
+                {navLinks.map((link) => (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-3 text-base font-medium text-slate-200 hover:text-roseGlow-400 hover:bg-white/5 active:bg-white/10 rounded-2xl transition-colors flex items-center justify-between"
+                  >
+                    <span>{link.name}</span>
+                    <span className="text-xs text-roseGlow-500 font-mono">→</span>
+                  </a>
+                ))}
+              </div>
+
+              <div className="pt-3 border-t border-white/10 flex flex-col gap-3">
+                {isAuthenticated ? (
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${isAdmin ? 'bg-purple-600 text-white' : 'bg-roseGlow-600 text-white'}`}>
+                        {user?.name?.[0] || 'M'}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white leading-tight">{user?.name || 'Mili'}</p>
+                        <p className="text-[11px] font-mono text-slate-400">
+                          {isAdmin ? 'Creator / Admin' : 'Mili'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">{user?.name || 'Mili'}</p>
-                      <p className="text-[10px] font-mono text-slate-400">
-                        {isAdmin ? 'Creator / Admin' : 'Mili'}
-                      </p>
-                    </div>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        logout();
+                      }}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-mono active:scale-95 transition-all"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Logout</span>
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      logout();
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-mono"
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-center text-sm font-semibold shadow-glow transition-all flex items-center justify-center gap-2"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-3 rounded-xl bg-roseGlow-600 hover:bg-roseGlow-500 text-white text-center text-sm font-medium shadow-glow"
-                >
-                  Sign In to Digital Universe
-                </Link>
-              )}
-
-              <div className="flex items-center justify-between pt-1">
-                {onReplayIntro && (
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      onReplayIntro();
-                    }}
-                    className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white font-mono"
-                  >
-                    <Film className="w-3.5 h-3.5" />
-                    <span>Replay Intro</span>
-                  </button>
+                    <LogIn className="w-4 h-4" />
+                    <span>Sign In to Digital Universe</span>
+                  </Link>
                 )}
 
-                <Link
-                  href="/admin"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white font-mono"
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>Admin Studio</span>
-                </Link>
+                <div className="flex items-center justify-between pt-1 text-xs font-mono text-slate-400">
+                  {onReplayIntro && (
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        onReplayIntro();
+                      }}
+                      className="flex items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 hover:text-white transition-colors"
+                    >
+                      <Film className="w-3.5 h-3.5 text-roseGlow-400" />
+                      <span>Replay Intro</span>
+                    </button>
+                  )}
+
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 hover:text-white transition-colors"
+                  >
+                    <Shield className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Admin Studio</span>
+                  </Link>
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>

@@ -164,7 +164,7 @@ export const ProjectShowcase: React.FC = () => {
         </div>
 
         {/* Category Tabs */}
-        <div className="flex items-center justify-start md:justify-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <div className="flex items-center justify-start md:justify-center gap-2 overflow-x-auto pb-2 px-1 no-scrollbar">
           {CATEGORIES.map((cat) => {
             const isSelected = selectedCategory === cat;
             return (
