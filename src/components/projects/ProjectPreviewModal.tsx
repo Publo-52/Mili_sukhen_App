@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, RefreshCw, AlertCircle, Sparkles, Heart } from 'lucide-react';
 import { Project } from '@/types';
@@ -15,19 +16,24 @@ interface ProjectPreviewModalProps {
 export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ project, onClose }) => {
   const [iframeError, setIframeError] = useState(false);
   const [iframeLoading, setIframeLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
-  if (!project) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
+  if (!project || !mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pt-16 sm:pt-8 pb-20 sm:pb-8">
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[100]"
+          className="fixed inset-0 bg-obsidian-950/90 backdrop-blur-2xl z-[99999]"
         />
 
         {/* Modal Window */}
@@ -36,7 +42,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ projec
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.3 }}
-          className="relative w-full max-w-5xl h-[80vh] sm:h-[88vh] glass-card rounded-3xl overflow-hidden flex flex-col border border-white/15 shadow-2xl z-[105]"
+          className="relative w-full max-w-5xl h-[82vh] sm:h-[88vh] glass-card rounded-3xl overflow-hidden flex flex-col border border-white/20 shadow-2xl z-[100000] my-auto"
         >
           {/* Header Bar */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-obsidian-950/85">
@@ -184,6 +190,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ projec
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

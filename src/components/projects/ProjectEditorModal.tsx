@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -270,18 +271,23 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pt-16 sm:pt-8 pb-20 sm:pb-8 overflow-y-auto">
-        {/* Backdrop */}
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        {/* Full Screen High Priority Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[100]"
+          className="fixed inset-0 bg-obsidian-950/90 backdrop-blur-2xl z-[99999]"
         />
 
         {/* Modal Window */}
@@ -290,7 +296,7 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-          className="relative w-full max-w-2xl glass-card rounded-2xl sm:rounded-3xl border border-white/15 shadow-2xl overflow-hidden z-[105] my-auto flex flex-col max-h-[82dvh] sm:max-h-[88dvh]"
+          className="relative w-full max-w-2xl glass-card rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl overflow-hidden z-[100000] my-auto flex flex-col max-h-[86dvh] sm:max-h-[90dvh]"
         >
           {/* Header */}
           <div className="p-3.5 sm:p-5 border-b border-white/10 flex items-center justify-between bg-obsidian-900/80 shrink-0">
@@ -758,6 +764,7 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
           </form>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
