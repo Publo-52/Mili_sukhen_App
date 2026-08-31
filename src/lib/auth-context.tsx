@@ -161,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
 
-  const isAdmin = user?.role === 'sukhen';
+  const isAdmin = user?.role === 'sukhen' || (typeof window !== 'undefined' && Boolean(localStorage.getItem('mili_admin_authenticated') === 'true'));
   const isMili = user?.role === 'mili';
 
   return (
