@@ -353,6 +353,7 @@ export const INITIAL_PROJECTS: Project[] = [
     themeBorder: "group-hover:border-indigo-500/50",
     themeTextAccent: "group-hover:text-indigo-300",
   },
+  /* Temporarily Hidden Birthday Project (enable whenever ready)
   {
     id: "proj-14",
     title: "A Cinematic Celebration for Mili (3D Cake, Voice Note & Fireworks)",
@@ -380,5 +381,6 @@ export const INITIAL_PROJECTS: Project[] = [
     themeBorder: "group-hover:border-yellow-400/60",
     themeTextAccent: "group-hover:text-yellow-300",
   }
+  */
 ];
 
