@@ -274,14 +274,14 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pt-16 sm:pt-8 pb-20 sm:pb-8 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-xl"
+          className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[100]"
         />
 
         {/* Modal Window */}
@@ -290,7 +290,7 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-          className="relative w-full max-w-2xl glass-card rounded-2xl sm:rounded-3xl border border-white/15 shadow-2xl overflow-hidden z-10 my-auto flex flex-col max-h-[94dvh] sm:max-h-[88dvh]"
+          className="relative w-full max-w-2xl glass-card rounded-2xl sm:rounded-3xl border border-white/15 shadow-2xl overflow-hidden z-[105] my-auto flex flex-col max-h-[82dvh] sm:max-h-[88dvh]"
         >
           {/* Header */}
           <div className="p-3.5 sm:p-5 border-b border-white/10 flex items-center justify-between bg-obsidian-900/80 shrink-0">

@@ -55,14 +55,14 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 pt-16 sm:pt-8 pb-20 sm:pb-8">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={handleResetAndClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-xl"
+          className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[100]"
         />
 
         {/* Modal Content */}
@@ -71,7 +71,7 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.35 }}
-          className="relative w-full max-w-2xl glass-card rounded-3xl overflow-hidden flex flex-col border border-roseGlow-500/30 shadow-2xl z-10 p-6 sm:p-10"
+          className="relative w-full max-w-2xl glass-card rounded-3xl overflow-hidden flex flex-col border border-roseGlow-500/30 shadow-2xl z-[105] p-6 sm:p-10"
         >
           {/* Close button */}
           <button
