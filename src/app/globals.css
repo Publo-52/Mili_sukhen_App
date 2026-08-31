@@ -171,5 +171,15 @@ body {
   animation: shimmer 4s ease-in-out infinite;
 }
 
+/* Modal Open Isolation: Automatically hide fixed headers/navbars when any modal opens */
+body.modal-open header,
+body.modal-open nav {
+  display: none !important;
+}
+
+body.modal-open {
+  overflow: hidden !important;
+}
+
 
 

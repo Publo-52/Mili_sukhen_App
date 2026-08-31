@@ -23,7 +23,15 @@ export const FullscreenLightbox: React.FC<FullscreenLightboxProps> = ({
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (creation) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [creation]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -43,23 +51,14 @@ export const FullscreenLightbox: React.FC<FullscreenLightboxProps> = ({
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center p-2.5 sm:p-6 overflow-y-auto">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-[#06040c]/95 backdrop-blur-2xl z-[99999]"
-        />
-
+      <div className="fixed inset-0 z-[999999] bg-[#06040a] flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 pt-12 sm:pt-6 pb-20 sm:pb-6 overflow-y-auto">
         {/* Modal */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.3 }}
-          className="relative w-full max-w-4xl max-h-[85vh] sm:max-h-[90vh] bg-[#0e091b] rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col border border-white/20 shadow-2xl z-[100000] my-auto"
+          className="relative w-full max-w-4xl max-h-[85vh] sm:max-h-[90vh] bg-[#0e091b] rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col border border-white/20 shadow-2xl z-[1000000] my-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/10 bg-[#130d25] shrink-0">

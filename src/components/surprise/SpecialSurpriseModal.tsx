@@ -20,7 +20,15 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [isOpen]);
 
   if (!isOpen || !mounted) return null;
 
@@ -61,23 +69,14 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={handleResetAndClose}
-          className="fixed inset-0 bg-obsidian-950/90 backdrop-blur-2xl z-[99999]"
-        />
-
+      <div className="fixed inset-0 z-[999999] bg-[#06040a] flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 pt-12 sm:pt-6 pb-20 sm:pb-6 overflow-y-auto">
         {/* Modal Content */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.35 }}
-          className="relative w-full max-w-2xl glass-card rounded-3xl overflow-hidden flex flex-col border border-roseGlow-500/30 shadow-2xl z-[100000] p-6 sm:p-10 my-auto"
+          className="relative w-full max-w-2xl bg-[#0e091b] rounded-3xl overflow-hidden flex flex-col border border-roseGlow-500/30 shadow-2xl z-[1000000] p-6 sm:p-10 my-auto"
         >
           {/* Close button */}
           <button

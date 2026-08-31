@@ -49,7 +49,15 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [isOpen]);
 
   // Form State
   const [formData, setFormData] = useState<Partial<TurtleCreation>>({
@@ -166,22 +174,13 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center p-2.5 sm:p-6 overflow-y-auto">
-        {/* Solid Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-[#06040c]/95 backdrop-blur-2xl z-[99999]"
-        />
-
+      <div className="fixed inset-0 z-[999999] bg-[#06040a] flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 pt-12 sm:pt-6 pb-20 sm:pb-6 overflow-y-auto">
         {/* Modal Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-[#0e091b] rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-500/30 shadow-2xl z-[100000] my-auto flex flex-col max-h-[85vh] sm:max-h-[88vh]"
+          className="relative w-full max-w-2xl bg-[#0e091b] rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-500/30 shadow-2xl z-[1000000] my-auto flex flex-col max-h-[85vh] sm:max-h-[88vh]"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-white/10 bg-[#130d25] shrink-0">

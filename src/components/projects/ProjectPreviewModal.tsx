@@ -20,29 +20,28 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ projec
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (project) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [project]);
 
   if (!project || !mounted) return null;
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-obsidian-950/90 backdrop-blur-2xl z-[99999]"
-        />
-
+      <div className="fixed inset-0 z-[999999] bg-[#06040a] flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 pt-12 sm:pt-6 pb-20 sm:pb-6 overflow-y-auto">
         {/* Modal Window */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.3 }}
-          className="relative w-full max-w-5xl h-[82vh] sm:h-[88vh] glass-card rounded-3xl overflow-hidden flex flex-col border border-white/20 shadow-2xl z-[100000] my-auto"
+          className="relative w-full max-w-5xl h-[82vh] sm:h-[88vh] bg-[#0e091b] rounded-3xl overflow-hidden flex flex-col border border-white/20 shadow-2xl z-[1000000] my-auto"
         >
           {/* Header Bar */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-obsidian-950/85">
