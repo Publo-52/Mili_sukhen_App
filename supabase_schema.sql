@@ -28,6 +28,11 @@ CREATE TABLE IF NOT EXISTS public.projects (
     technologies TEXT[] DEFAULT ARRAY['React', 'Next.js', 'Tailwind CSS'],
     featured BOOLEAN DEFAULT TRUE,
     order_index INTEGER DEFAULT 1,
+    theme_gradient TEXT,
+    theme_accent TEXT,
+    theme_badge TEXT,
+    theme_border TEXT,
+    theme_text_accent TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

@@ -79,6 +79,11 @@ export async function POST(request: Request) {
           technologies: project.technologies,
           featured: project.featured,
           order_index: project.order || 1,
+          theme_gradient: project.themeGradient || null,
+          theme_accent: project.themeAccent || null,
+          theme_badge: project.themeBadge || null,
+          theme_border: project.themeBorder || null,
+          theme_text_accent: project.themeTextAccent || null,
           created_at: project.createdAt || new Date().toISOString(),
         },
       ]);
