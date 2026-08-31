@@ -7,11 +7,14 @@ import { Heart, Sparkles, ArrowDown, BookOpen, Layers } from 'lucide-react';
 import { ROMANTIC_QUOTES } from '@/data/config';
 import { MemoryCounter } from './MemoryCounter';
 
+import { SectionType } from '@/components/navigation/SectionNavigator';
+
 interface HeroProps {
   onOpenSurprise?: () => void;
+  onSelectSection?: (section: SectionType) => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
+export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
 
   useEffect(() => {
@@ -118,22 +121,22 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1 w-full max-w-xs sm:max-w-none mx-auto px-4"
         >
-          <a
-            href="#projects"
-            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-6 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-roseGlow-600 via-pink-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white font-semibold text-xs sm:text-sm shadow-glow transition-all active:scale-95"
+          <button
+            onClick={() => onSelectSection ? onSelectSection('projects') : window.location.assign('#projects')}
+            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-6 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-roseGlow-600 via-pink-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white font-semibold text-xs sm:text-sm shadow-glow transition-all active:scale-95 cursor-pointer"
           >
             <Layers className="w-4 h-4" />
             <span>Explore Creations</span>
             <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
-          </a>
+          </button>
 
-          <a
-            href="#love-notes"
-            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-2.5 sm:py-3 rounded-full glass-card hover:border-roseGlow-500/40 text-slate-200 hover:text-white font-medium text-xs sm:text-sm transition-all shadow-sm"
+          <button
+            onClick={() => onSelectSection ? onSelectSection('love-notes') : window.location.assign('#love-notes')}
+            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-2.5 sm:py-3 rounded-full glass-card hover:border-roseGlow-500/40 text-slate-200 hover:text-white font-medium text-xs sm:text-sm transition-all shadow-sm cursor-pointer"
           >
             <BookOpen className="w-3.5 h-3.5 text-roseGlow-400" />
             <span>Read Love Notes</span>
-          </a>
+          </button>
 
           {onOpenSurprise && (
             <button

@@ -8,12 +8,21 @@ import { Heart, Sparkles, Menu, X, Shield, Film, LogIn, LogOut, User, Music, Vol
 import { useAuth } from '@/lib/auth-context';
 import { audioEngine, AudioTrack } from '@/lib/audio';
 
+import { SectionType } from './SectionNavigator';
+
 interface NavbarProps {
   onReplayIntro?: () => void;
   onOpenSurprise?: () => void;
+  activeSection?: SectionType;
+  onSelectSection?: (section: SectionType) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  onReplayIntro,
+  onOpenSurprise,
+  activeSection,
+  onSelectSection,
+}) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoClicks, setLogoClicks] = useState(0);
@@ -55,13 +64,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
     }
   };
 
-  const navLinks = [
-    { name: 'Home', href: '/#hero' },
-    { name: 'Projects', href: '/#projects' },
-    { name: 'Python Art', href: '/#python-art' },
-    { name: 'Memories', href: '/#memories' },
-    { name: 'Love Notes', href: '/#love-notes' },
+  const navLinks: { name: string; href: string; sectionId: SectionType }[] = [
+    { name: 'All', href: '#all', sectionId: 'all' },
+    { name: 'Projects', href: '#projects', sectionId: 'projects' },
+    { name: 'Python Art', href: '#python-art', sectionId: 'turtle' },
+    { name: 'Memories', href: '#memories', sectionId: 'memories' },
+    { name: 'Love Notes', href: '#love-notes', sectionId: 'love-notes' },
   ];
+
+  const handleNavClick = (sectionId: SectionType, e?: React.MouseEvent) => {
+    if (onSelectSection) {
+      if (e) e.preventDefault();
+      onSelectSection(sectionId);
+    }
+    setMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -74,7 +91,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
           {/* Logo & Easter Egg Trigger */}
           <div className="flex items-center gap-2.5">
             <button
-              onClick={handleLogoClick}
+              onClick={() => {
+                handleLogoClick();
+                if (onSelectSection) onSelectSection('all');
+              }}
               className="group flex items-center gap-2.5 text-left focus:outline-none"
               title="Suksharmi — Digital Universe"
             >
@@ -102,16 +122,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
           </div>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 backdrop-blur-md">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="px-3.5 py-1.5 text-xs uppercase tracking-wider font-medium text-slate-300 hover:text-roseGlow-400 hover:bg-white/5 rounded-full transition-all duration-200"
-              >
-                {link.name}
-              </a>
-            ))}
+          <nav className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 backdrop-blur-md">
+            {navLinks.map((link) => {
+              const isActive = activeSection === link.sectionId;
+              return (
+                <button
+                  key={link.name}
+                  onClick={(e) => handleNavClick(link.sectionId, e)}
+                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-medium rounded-full transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? 'bg-roseGlow-600 text-white shadow-glow font-bold'
+                      : 'text-slate-300 hover:text-roseGlow-400 hover:bg-white/5'
+                  }`}
+                >
+                  {link.name}
+                </button>
+              );
+            })}
           </nav>
 
           {/* Right Action Icons (Desktop) */}
@@ -263,17 +290,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
               className="fixed inset-x-0 top-[70px] z-40 bg-obsidian-950/98 backdrop-blur-2xl border-b border-white/10 p-5 md:hidden space-y-4 max-h-[calc(100dvh-80px)] overflow-y-auto shadow-2xl"
             >
               <div className="flex flex-col gap-1">
-                {navLinks.map((link) => (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-3 text-base font-medium text-slate-200 hover:text-roseGlow-400 hover:bg-white/5 active:bg-white/10 rounded-2xl transition-colors flex items-center justify-between"
-                  >
-                    <span>{link.name}</span>
-                    <span className="text-xs text-roseGlow-500 font-mono">→</span>
-                  </a>
-                ))}
+                {navLinks.map((link) => {
+                  const isActive = activeSection === link.sectionId;
+                  return (
+                    <button
+                      key={link.name}
+                      onClick={(e) => handleNavClick(link.sectionId, e)}
+                      className={`px-4 py-3 text-base font-medium rounded-2xl transition-colors flex items-center justify-between text-left ${
+                        isActive
+                          ? 'bg-roseGlow-600/20 text-roseGlow-300 font-bold border border-roseGlow-500/30'
+                          : 'text-slate-200 hover:text-roseGlow-400 hover:bg-white/5 active:bg-white/10'
+                      }`}
+                    >
+                      <span>{link.name}</span>
+                      <span className="text-xs text-roseGlow-500 font-mono">→</span>
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="pt-3 border-t border-white/10 flex flex-col gap-3">
