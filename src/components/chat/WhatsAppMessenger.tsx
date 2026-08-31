@@ -444,9 +444,9 @@ export const WhatsAppMessenger: React.FC = () => {
               {/* Messages list */}
               {messages.map((msg) => {
                 const isMine =
-                  (currentUser.userRole === 'sukhen' && msg.senderRole === 'sukhen') ||
-                  (currentUser.userRole === 'mili' && msg.senderRole === 'mili') ||
-                  msg.sender?.toLowerCase().includes(currentUser.userName.toLowerCase());
+                  (user?.role === 'sukhen' && msg.senderRole === 'sukhen') ||
+                  (user?.role === 'mili' && msg.senderRole === 'mili') ||
+                  (user?.name ? msg.sender?.toLowerCase().includes(user.name.toLowerCase()) : false);
 
                 const timeFormatted = new Date(msg.createdAt).toLocaleTimeString([], {
                   hour: '2-digit',
