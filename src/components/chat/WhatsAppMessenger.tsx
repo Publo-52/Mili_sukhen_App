@@ -657,7 +657,7 @@ export const WhatsAppMessenger: React.FC = () => {
                     handleSendMessage();
                   }
                 }}
-                placeholder={`Type a message to ${partnerName}...`}
+                placeholder="Type a message…"
                 className="flex-1 bg-[#2a3942] text-white text-sm px-4 py-2.5 rounded-xl border border-transparent focus:border-emerald-500/50 focus:outline-none placeholder-slate-400"
               />
 

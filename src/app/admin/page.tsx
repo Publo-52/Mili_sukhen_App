@@ -334,7 +334,7 @@ export default function AdminPage() {
               type="password"
               value={passcode}
               onChange={(e) => setPasscode(e.target.value)}
-              placeholder="Enter Admin Passcode..."
+              placeholder="Enter admin passcode"
               className={`w-full px-4 py-3 rounded-2xl glass-card text-center text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-roseGlow-500 ${
                 loginError ? 'border-red-500 ring-2 ring-red-500 animate-shake' : 'border-white/10'
               }`}
@@ -524,7 +524,7 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2 pt-2">
                         <input
                           type="text"
-                          placeholder="Type your reply to Mili..."
+                          placeholder="Type your reply message…"
                           value={replyTextMap[msg.id] || ''}
                           onChange={(e) =>
                             setReplyTextMap({ ...replyTextMap, [msg.id]: e.target.value })
@@ -589,7 +589,7 @@ export default function AdminPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Mili Anniversary Galaxy"
+                      placeholder="e.g., Mili Anniversary Galaxy"
                       value={newProject.title || ''}
                       onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
@@ -625,7 +625,7 @@ export default function AdminPage() {
                     <input
                       type="url"
                       required
-                      placeholder="https://example.vercel.app"
+                      placeholder="https://your-project.vercel.app"
                       value={newProject.url || ''}
                       onChange={(e) => setNewProject({ ...newProject, url: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
@@ -638,7 +638,7 @@ export default function AdminPage() {
                     </label>
                     <input
                       type="url"
-                      placeholder="https://github.com/..."
+                      placeholder="https://github.com/username/repository"
                       value={newProject.githubUrl || ''}
                       onChange={(e) =>
                         setNewProject({ ...newProject, githubUrl: e.target.value })
@@ -653,7 +653,7 @@ export default function AdminPage() {
                     </label>
                     <input
                       type="url"
-                      placeholder="https://images.unsplash.com/..."
+                      placeholder="https://images.unsplash.com/photo-..."
                       value={newProject.thumbnail || ''}
                       onChange={(e) =>
                         setNewProject({ ...newProject, thumbnail: e.target.value })
@@ -668,7 +668,7 @@ export default function AdminPage() {
                     </label>
                     <input
                       type="text"
-                      placeholder="React, Next.js, Three.js, Tailwind CSS"
+                      placeholder="React, Next.js, TypeScript, Tailwind CSS"
                       value={
                         Array.isArray(newProject.technologies)
                           ? newProject.technologies.join(', ')
@@ -691,7 +691,7 @@ export default function AdminPage() {
                   </label>
                   <textarea
                     rows={2}
-                    placeholder="Short summary for the project card..."
+                    placeholder="Brief summary for the showcase card…"
                     value={newProject.description || ''}
                     onChange={(e) =>
                       setNewProject({ ...newProject, description: e.target.value })
@@ -706,7 +706,7 @@ export default function AdminPage() {
                   </label>
                   <textarea
                     rows={3}
-                    placeholder="Why and how you created this for Mili..."
+                    placeholder="Inspiration and background story behind this project…"
                     value={newProject.detailedStory || ''}
                     onChange={(e) =>
                       setNewProject({ ...newProject, detailedStory: e.target.value })

@@ -103,7 +103,7 @@ export const SendMessageForm: React.FC = () => {
                 type="text"
                 value={senderName}
                 onChange={(e) => setSenderName(e.target.value)}
-                placeholder="Mili"
+                placeholder="Enter your name"
                 className="w-full px-4 py-3 rounded-2xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 transition-all border border-white/10"
               />
             </div>
@@ -144,7 +144,7 @@ export const SendMessageForm: React.FC = () => {
                 rows={4}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Write whatever is on your mind today..."
+                placeholder="Write your message here…"
                 required
                 className="w-full px-4 py-3 rounded-2xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 transition-all border border-white/10 resize-none"
               />

@@ -105,7 +105,7 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
                   type="password"
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter secret word..."
+                  placeholder="Enter secret passcode"
                   className={`w-full px-4 py-3 rounded-2xl glass-card text-center text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-roseGlow-500 transition-all ${
                     error ? 'border-red-500 ring-2 ring-red-500 animate-shake' : 'border-white/10'
                   }`}

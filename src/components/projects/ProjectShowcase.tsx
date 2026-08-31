@@ -89,7 +89,7 @@ export const ProjectShowcase: React.FC = () => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search projects by name, tech (React, Three.js), or tag…"
+            placeholder="Search projects by title, technology, or tag…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-11 pr-4 py-3.5 rounded-2xl glass-card text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 focus:ring-1 focus:ring-roseGlow-500 transition-all"

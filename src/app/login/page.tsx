@@ -294,7 +294,7 @@ function LoginContent() {
                         setEmail(e.target.value);
                         setError('');
                       }}
-                      placeholder="dassukhen@gmail.com or mandalsharmili@06gmail.com"
+                      placeholder="Enter your email address"
                       required
                       autoFocus
                       className="w-full px-4 py-3.5 rounded-2xl bg-black/40 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 focus:ring-2 focus:ring-roseGlow-500/20 transition-all"
@@ -316,7 +316,7 @@ function LoginContent() {
                           setPassword(e.target.value);
                           setError('');
                         }}
-                        placeholder="Enter your password..."
+                        placeholder="Enter your password"
                         required
                         className="w-full px-4 py-3.5 pr-12 rounded-2xl bg-black/40 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 focus:ring-2 focus:ring-roseGlow-500/20 transition-all"
                       />

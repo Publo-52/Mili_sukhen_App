@@ -78,7 +78,7 @@ export const ContactSection: React.FC = () => {
                   type="password"
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter PIN (e.g. 143)..."
+                  placeholder="Enter passcode to reveal"
                   className={`w-full px-4 py-2.5 rounded-2xl glass-card text-center text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-roseGlow-500 ${
                     error ? 'border-red-500 ring-2 ring-red-500 animate-shake' : 'border-white/10'
                   }`}
