@@ -280,14 +280,14 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-        {/* Full Screen High Priority Backdrop */}
+      <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center p-2.5 sm:p-6 overflow-y-auto">
+        {/* Solid Dark Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-obsidian-950/90 backdrop-blur-2xl z-[99999]"
+          className="fixed inset-0 bg-[#06040c]/95 backdrop-blur-2xl z-[99999]"
         />
 
         {/* Modal Window */}
@@ -296,24 +296,24 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-          className="relative w-full max-w-2xl glass-card rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl overflow-hidden z-[100000] my-auto flex flex-col max-h-[86dvh] sm:max-h-[90dvh]"
+          className="relative w-full max-w-2xl bg-[#0e091b] border border-white/20 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden z-[100000] my-auto flex flex-col max-h-[85vh] sm:max-h-[88vh]"
         >
           {/* Header */}
-          <div className="p-3.5 sm:p-5 border-b border-white/10 flex items-center justify-between bg-obsidian-900/80 shrink-0">
+          <div className="p-3.5 sm:p-4 border-b border-white/10 flex items-center justify-between bg-[#130d25] shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-purple-600 to-roseGlow-500 p-0.5 shadow-glow flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-tr from-purple-600 to-roseGlow-500 p-0.5 shadow-glow flex items-center justify-center shrink-0">
                 <div className="w-full h-full rounded-[14px] bg-[#0c0817] flex items-center justify-center text-roseGlow-400">
                   <Wand2 className="w-4 h-4" />
                 </div>
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                   <span>{editingProject ? 'Edit Project' : 'Magic Project Creator'}</span>
                   <span className="text-[9px] font-mono uppercase px-2 py-0.5 rounded-full bg-roseGlow-500/20 text-roseGlow-300 border border-roseGlow-500/30">
                     Admin
                   </span>
                 </h3>
-                <p className="text-[11px] text-slate-400 font-mono hidden sm:block">
+                <p className="text-[10px] text-slate-400 font-mono hidden sm:block">
                   Paste any Vercel/website URL to auto-extract details & theme
                 </p>
               </div>
@@ -321,14 +321,14 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl glass-card hover:border-white/30 text-slate-400 hover:text-white transition-colors"
+              className="p-1.5 sm:p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Tab Navigation */}
-          <div className="px-3 sm:px-5 pt-2 border-b border-white/10 flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap bg-black/20 shrink-0">
+          <div className="px-3 sm:px-5 pt-2 border-b border-white/10 flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap bg-[#0a0714] shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab('details')}
@@ -370,7 +370,7 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
           </div>
 
           {/* Form Content */}
-          <form onSubmit={handleSubmit} className="p-3.5 sm:p-5 space-y-4 overflow-y-auto flex-1">
+          <form onSubmit={handleSubmit} className="p-3.5 sm:p-5 space-y-4 overflow-y-auto flex-1 bg-[#0e091b]">
             {extractError && (
               <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2 text-xs text-red-300 font-mono">
                 <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
@@ -382,7 +382,7 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
             {activeTab === 'details' && (
               <div className="space-y-3.5">
                 {/* Magic URL Box */}
-                <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-purple-900/20 via-roseGlow-950/20 to-black/40 border border-roseGlow-500/30 space-y-2">
+                <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-purple-900/30 via-roseGlow-950/30 to-black/50 border border-roseGlow-500/35 space-y-2">
                   <label className="text-xs font-mono text-roseGlow-300 flex items-center justify-between">
                     <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider">
                       <Sparkles className="w-3.5 h-3.5 text-roseGlow-400" />
@@ -400,7 +400,7 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
                       placeholder="https://mili-mocha.vercel.app/"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
-                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/10 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
+                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
                     />
 
                     <button
@@ -436,32 +436,32 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
                       placeholder="e.g. My Dear Mili (Love Envelope)"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
                     />
                   </div>
 
                   {/* Category */}
                   <div>
-                    <label className="text-xs font-mono text-slate-300 block mb-1.5">
+                    <label className="text-xs font-mono text-slate-300 block mb-1">
                       Category
                     </label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value as ProjectCategory)}
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white bg-obsidian-900 focus:outline-none focus:border-roseGlow-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-sm text-white focus:outline-none focus:border-roseGlow-500"
                     >
-                      <option value="Websites">Websites</option>
-                      <option value="Special Projects">Special Projects</option>
-                      <option value="Creative Projects">Creative Projects</option>
-                      <option value="Interactive Experiences">Interactive Experiences</option>
-                      <option value="Python Turtle">Python Turtle</option>
+                      <option value="Websites" className="bg-[#0e091b] text-white">Websites</option>
+                      <option value="Special Projects" className="bg-[#0e091b] text-white">Special Projects</option>
+                      <option value="Creative Projects" className="bg-[#0e091b] text-white">Creative Projects</option>
+                      <option value="Interactive Experiences" className="bg-[#0e091b] text-white">Interactive Experiences</option>
+                      <option value="Python Turtle" className="bg-[#0e091b] text-white">Python Turtle</option>
                     </select>
                   </div>
 
                   {/* Thumbnail Image URL */}
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-mono text-slate-300 block mb-1.5 flex items-center justify-between">
-                      <span>Thumbnail Image URL</span>
+                    <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                      <span className="text-xs font-mono text-slate-300">Thumbnail Image URL</span>
                       <button
                         type="button"
                         onClick={() =>
@@ -469,18 +469,18 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
                             `https://image.thum.io/get/width/1200/crop/675/maxAge/24/noanimate/${url}`
                           )
                         }
-                        className="text-[10px] text-roseGlow-400 hover:underline"
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-roseGlow-500/15 border border-roseGlow-500/30 text-[10px] font-mono text-roseGlow-300 hover:text-white hover:bg-roseGlow-500/25 transition-all"
                       >
-                        Use Live Screenshot from URL
+                        <span>📸 Auto Screenshot</span>
                       </button>
-                    </label>
+                    </div>
                     <div className="flex items-center gap-2">
                       <input
                         type="url"
                         placeholder="https://images.unsplash.com/photo-..."
                         value={thumbnail}
                         onChange={(e) => setThumbnail(e.target.value)}
-                        className="flex-1 px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
+                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
                       />
                       {thumbnail && (
                         <div className="w-12 h-10 rounded-lg overflow-hidden border border-white/20 relative flex-shrink-0">
@@ -492,7 +492,7 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
 
                   {/* Technologies */}
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-mono text-slate-300 block mb-1.5">
+                    <label className="text-xs font-mono text-slate-300 block mb-1">
                       Technologies (comma separated)
                     </label>
                     <input
@@ -500,13 +500,13 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
                       placeholder="React, Next.js, Tailwind CSS, Framer Motion"
                       value={technologiesText}
                       onChange={(e) => setTechnologiesText(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
                     />
                   </div>
 
                   {/* Short Description */}
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-mono text-slate-300 block mb-1.5">
+                    <label className="text-xs font-mono text-slate-300 block mb-1">
                       Short Description (for card)
                     </label>
                     <textarea
@@ -514,13 +514,13 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
                       placeholder="Brief emotional summary…"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500 resize-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500 resize-none"
                     />
                   </div>
 
                   {/* Detailed Story */}
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-mono text-slate-300 block mb-1.5">
+                    <label className="text-xs font-mono text-slate-300 block mb-1">
                       The Story Behind It (Detailed for Project Page)
                     </label>
                     <textarea
@@ -528,13 +528,13 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
                       placeholder="The inspiration, feelings, and thoughts that went into creating this…"
                       value={detailedStory}
                       onChange={(e) => setDetailedStory(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500 resize-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500 resize-none"
                     />
                   </div>
 
                   {/* GitHub URL */}
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-mono text-slate-300 block mb-1.5">
+                    <label className="text-xs font-mono text-slate-300 block mb-1">
                       GitHub Source URL (Optional)
                     </label>
                     <input
@@ -542,7 +542,7 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
                       placeholder="https://github.com/sukhen/repository"
                       value={githubUrl}
                       onChange={(e) => setGithubUrl(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
                     />
                   </div>
                 </div>
