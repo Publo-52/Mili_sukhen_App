@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Layers, Terminal, History, BookOpen, ArrowRight, Sparkles } from 'lucide-react';
-import { SectionType } from '@/components/navigation/SectionNavigator';
+import { SectionType } from '@/types';
 
 interface UniversePortalHubProps {
   onSelectSection: (section: SectionType) => void;

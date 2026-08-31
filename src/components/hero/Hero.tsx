@@ -7,7 +7,7 @@ import { Heart, Sparkles, ArrowDown, BookOpen, Layers } from 'lucide-react';
 import { ROMANTIC_QUOTES } from '@/data/config';
 import { MemoryCounter } from './MemoryCounter';
 
-import { SectionType } from '@/components/navigation/SectionNavigator';
+import { SectionType } from '@/types';
 
 interface HeroProps {
   onOpenSurprise?: () => void;

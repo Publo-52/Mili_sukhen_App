@@ -8,7 +8,7 @@ import { Heart, Sparkles, Menu, X, Shield, Film, LogIn, LogOut, User, Music, Vol
 import { useAuth } from '@/lib/auth-context';
 import { audioEngine, AudioTrack } from '@/lib/audio';
 
-import { SectionType } from './SectionNavigator';
+import { SectionType } from '@/types';
 
 interface NavbarProps {
   onReplayIntro?: () => void;

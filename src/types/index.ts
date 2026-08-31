@@ -1,3 +1,5 @@
+export type SectionType = 'home' | 'projects' | 'turtle' | 'memories' | 'love-notes';
+
 export type ProjectCategory = 
   | 'Websites' 
   | 'Python Turtle' 

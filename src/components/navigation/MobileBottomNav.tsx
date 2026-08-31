@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Home, Layers, Sparkles, History, BookOpen } from 'lucide-react';
-import { SectionType } from './SectionNavigator';
+import { SectionType } from '@/types';
 
 interface MobileBottomNavProps {
   activeSection?: SectionType;

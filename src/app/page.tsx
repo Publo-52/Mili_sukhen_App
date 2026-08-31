@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navbar } from '@/components/navigation/Navbar';
 import { MobileBottomNav } from '@/components/navigation/MobileBottomNav';
-import { SectionNavigator, SectionType } from '@/components/navigation/SectionNavigator';
+import { SectionType } from '@/types';
 import { ParticleCanvas } from '@/components/hero/ParticleCanvas';
 import { CinematicIntro } from '@/components/hero/CinematicIntro';
 import { Hero } from '@/components/hero/Hero';
@@ -92,13 +92,6 @@ export default function HomePage() {
         onOpenSurprise={() => setShowSurprise(true)}
         activeSection={activeSection}
         onSelectSection={handleSelectSection}
-      />
-
-      {/* Interactive Sticky Section Navigator */}
-      <SectionNavigator
-        activeSection={activeSection}
-        onSelectSection={handleSelectSection}
-        counts={counts}
       />
 
       {/* Strictly Isolated Section Content (Zero Extra Space) */}
