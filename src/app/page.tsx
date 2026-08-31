@@ -6,7 +6,6 @@ import { Navbar } from '@/components/navigation/Navbar';
 import { MobileBottomNav } from '@/components/navigation/MobileBottomNav';
 import { SectionType } from '@/types';
 import { Hero } from '@/components/hero/Hero';
-import { UniversePortalHub } from '@/components/hero/UniversePortalHub';
 import { ProjectShowcase } from '@/components/projects/ProjectShowcase';
 import { TurtleGallery } from '@/components/turtle/TurtleGallery';
 import { MemoriesTimeline } from '@/components/timeline/MemoriesTimeline';
@@ -97,17 +96,13 @@ export default function HomePage() {
       />
 
       {/* Strict Isolated View Container (Only Selected Section Renders) */}
-      <main className="relative z-10 min-h-[80vh]">
-        {/* 1. Home Sanctuary View (Hero + Live Counter + Universe Portal Hub) */}
+      <main className="relative z-10 min-h-[75vh]">
+        {/* 1. Home Sanctuary View (ONLY Hero Portion: Portrait, Live Counter, Romantic Quote & CTAs) */}
         {activeSection === 'home' && (
-          <div className="space-y-4 pt-20 sm:pt-24 pb-12 animate-fade-in">
+          <div className="pt-18 sm:pt-22 pb-8 animate-fade-in">
             <Hero
               onOpenSurprise={() => setShowSurprise(true)}
               onSelectSection={handleSelectSection}
-            />
-            <UniversePortalHub
-              onSelectSection={handleSelectSection}
-              counts={counts}
             />
           </div>
         )}
