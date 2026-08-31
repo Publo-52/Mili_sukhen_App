@@ -4,6 +4,10 @@ import { AuthProvider } from "@/lib/auth-context";
 import { WhatsAppMessenger } from "@/components/chat/WhatsAppMessenger";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://mili-universe.vercel.app')
+  ),
   title: "Mili ❤️ — A Digital Universe Made For You",
   description: "A cinematic personal digital world dedicated to Mili. A collection of every website, Python turtle artwork, memory, and love note created by Sukhen.",
   authors: [{ name: "Sukhen" }],
@@ -14,8 +18,8 @@ export const metadata: Metadata = {
     type: "website",
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-icon.png",
+    icon: "/icon",
+    apple: "/apple-icon",
   },
 };
 
