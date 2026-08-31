@@ -52,29 +52,3 @@ export function slugify(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-/**
- * Generates a bulletproof WhatsApp URL for web and mobile devices.
- * Automatically strips invalid symbols (+, -, spaces) and adds country code if missing.
- */
-export function getWhatsAppUrl(phoneNumber: string | undefined, message?: string): string {
-  if (!phoneNumber) return 'https://api.whatsapp.com/send';
-
-  // Strip all non-digit characters
-  let cleanNumber = phoneNumber.replace(/\D/g, '');
-
-  // If number starts with 0 and has 11 digits (e.g. 09832695291), replace leading 0 with 91
-  if (cleanNumber.startsWith('0') && cleanNumber.length === 11) {
-    cleanNumber = '91' + cleanNumber.slice(1);
-  }
-
-  // If 10 digits without country code (e.g. 9832695291 or 9732934032), add India country code 91
-  if (cleanNumber.length === 10) {
-    cleanNumber = '91' + cleanNumber;
-  }
-
-  const encodedText = message ? encodeURIComponent(message) : '';
-  const textParam = encodedText ? `&text=${encodedText}` : '';
-
-  return `https://api.whatsapp.com/send?phone=${cleanNumber}${textParam}`;
-}
-

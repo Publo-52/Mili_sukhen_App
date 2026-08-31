@@ -49,7 +49,7 @@ export default function AdminPage() {
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'messages' | 'projects' | 'turtle' | 'sessions'>('messages');
+  const [activeTab, setActiveTab] = useState<'projects' | 'turtle' | 'sessions'>('projects');
 
   // Messages State
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -447,20 +447,8 @@ export default function AdminPage() {
         {/* Navigation Tabs */}
         <div className="flex items-center gap-2 border-b border-white/10 pb-4 overflow-x-auto no-scrollbar whitespace-nowrap">
           <button
-            onClick={() => setActiveTab('messages')}
-            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
-              activeTab === 'messages'
-                ? 'bg-roseGlow-600 text-white shadow-glow'
-                : 'glass-card text-slate-400 hover:text-white'
-            }`}
-          >
-            <MessageSquareHeart className="w-3.5 h-3.5" />
-            <span>Messages from Mili ({messages.length})</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('projects')}
-            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
               activeTab === 'projects'
                 ? 'bg-roseGlow-600 text-white shadow-glow'
                 : 'glass-card text-slate-400 hover:text-white'
@@ -472,7 +460,7 @@ export default function AdminPage() {
 
           <button
             onClick={() => setActiveTab('turtle')}
-            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
               activeTab === 'turtle'
                 ? 'bg-roseGlow-600 text-white shadow-glow'
                 : 'glass-card text-slate-400 hover:text-white'
@@ -484,7 +472,7 @@ export default function AdminPage() {
 
           <button
             onClick={() => { setActiveTab('sessions'); loadSessions(); }}
-            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
               activeTab === 'sessions'
                 ? 'bg-roseGlow-600 text-white shadow-glow'
                 : 'glass-card text-slate-400 hover:text-white'
@@ -494,100 +482,6 @@ export default function AdminPage() {
             <span>Device Sessions ({deviceSessions.length})</span>
           </button>
         </div>
-
-        {/* Tab 1: Messages Inbox */}
-        {activeTab === 'messages' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-white">Direct Messages Inbox</h2>
-                <p className="text-xs text-slate-400 font-mono">
-                  Messages submitted by Mili through the website
-                </p>
-              </div>
-            </div>
-
-            {messages.length === 0 ? (
-              <div className="glass-card p-12 rounded-3xl text-center text-slate-400 space-y-2">
-                <MessageSquareHeart className="w-8 h-8 mx-auto text-roseGlow-400" />
-                <p>No messages received yet.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`glass-card rounded-2xl p-6 border space-y-4 ${
-                      msg.read ? 'border-white/10' : 'border-roseGlow-500/40 bg-roseGlow-950/10'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">{msg.mood}</span>
-                        <div>
-                          <h4 className="text-sm font-bold text-white">{msg.sender}</h4>
-                          <span className="text-[11px] text-slate-400 font-mono">
-                            {formatDate(msg.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {!msg.read && (
-                          <button
-                            onClick={() => handleMarkRead(msg.id)}
-                            className="p-1.5 text-slate-400 hover:text-roseGlow-400 transition-colors"
-                            title="Mark as read"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteMsg(msg.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
-                          title="Delete message"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-slate-200 leading-relaxed font-light pl-2 border-l-2 border-roseGlow-500/50">
-                      “{msg.message}”
-                    </p>
-
-                    {msg.reply ? (
-                      <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
-                        <span className="text-[10px] font-mono text-roseGlow-300 block">
-                          Your Reply:
-                        </span>
-                        <p className="text-xs text-slate-300 italic">{msg.reply}</p>
-                      </div>
-                    ) : (
-                      <div className="pt-2 flex items-center gap-2">
-                        <input
-                          type="text"
-                          placeholder="Write a sweet reply…"
-                          value={replyTextMap[msg.id] || ''}
-                          onChange={(e) =>
-                            setReplyTextMap({ ...replyTextMap, [msg.id]: e.target.value })
-                          }
-                          className="flex-1 px-3 py-1.5 rounded-xl glass-card text-xs text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
-                        />
-                        <button
-                          onClick={() => handleSendReply(msg.id)}
-                          className="px-3 py-1.5 rounded-xl bg-roseGlow-600 hover:bg-roseGlow-500 text-white text-xs font-mono"
-                        >
-                          Reply
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Tab 2: Projects Management */}
         {activeTab === 'projects' && (
