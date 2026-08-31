@@ -100,20 +100,24 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
       {/* Card Body */}
       <div className="p-6 flex-1 flex flex-col justify-between space-y-4 relative z-10">
-        <div className="space-y-2">
-          {/* Mobile Theme Badge if hidden on thumbnail */}
-          {project.themeBadge && (
-            <div className="sm:hidden pb-1">
+        <div className="space-y-2.5">
+          {/* Metadata Row: Date & Theme Badge */}
+          <div className="flex items-center justify-between gap-2 text-xs font-mono text-slate-400">
+            <span className="inline-flex items-center gap-1.5 text-roseGlow-300">
+              <Calendar className="w-3.5 h-3.5 text-roseGlow-400" />
+              <span>{formatDate(project.createdAt)}</span>
+            </span>
+            {project.themeBadge && (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 border border-white/10 text-slate-200"
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-white/5 border border-white/10 text-slate-300"
                 style={{
                   borderColor: project.themeAccent ? `${project.themeAccent}40` : undefined,
                 }}
               >
                 {project.themeBadge}
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
           <h3 className={`text-xl font-bold font-sans text-white ${titleAccentClass} transition-colors line-clamp-1`}>
             {project.title}
