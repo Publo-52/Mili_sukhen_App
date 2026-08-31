@@ -69,9 +69,9 @@ export const TurtleGallery: React.FC = () => {
   };
 
   return (
-    <section id="python-art" className="py-14 sm:py-18 px-3 sm:px-6 lg:px-8 max-w-6xl mx-auto relative">
+    <section id="python-art" className="pt-1 pb-4 px-3 sm:px-6 lg:px-8 max-w-6xl mx-auto relative">
       {/* Section Header */}
-      <div className="text-center space-y-3 mb-10 sm:mb-12">
+      <div className="text-center space-y-2 mb-4 sm:mb-6">
         <div className="flex items-center justify-center gap-2 flex-wrap">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono tracking-wider uppercase">
             <Terminal className="w-3.5 h-3.5" />

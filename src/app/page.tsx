@@ -101,8 +101,8 @@ export default function HomePage() {
         counts={counts}
       />
 
-      {/* Strictly Isolated Section Content */}
-      <main className="relative z-10 space-y-12 sm:space-y-16">
+      {/* Strictly Isolated Section Content (Zero Extra Space) */}
+      <main className="relative z-10">
         <AnimatePresence mode="wait">
           {/* 0. Home Sanctuary View (Hero + Live Counter + 4 Dedicated Portal Hub Cards) */}
           {activeSection === 'home' && (
@@ -112,7 +112,7 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
-              className="space-y-4"
+              className="space-y-2"
             >
               <Hero
                 onOpenSurprise={() => setShowSurprise(true)}
@@ -133,7 +133,6 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
-              className="pt-4 sm:pt-8"
             >
               <ProjectShowcase />
             </motion.div>
@@ -147,7 +146,6 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
-              className="pt-4 sm:pt-8"
             >
               <TurtleGallery />
             </motion.div>
@@ -161,7 +159,6 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
-              className="pt-4 sm:pt-8"
             >
               <MemoriesTimeline />
             </motion.div>
@@ -175,7 +172,6 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
-              className="pt-4 sm:pt-8"
             >
               <LoveNotesVault />
             </motion.div>

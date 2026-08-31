@@ -19,11 +19,11 @@ export const Footer: React.FC<FooterProps> = ({ onReplayIntro, onOpenSurprise })
   };
 
   return (
-    <footer className="relative border-t border-white/10 bg-obsidian-950/90 pt-6 pb-20 md:pb-8 px-4 sm:px-6 lg:px-8 text-center overflow-hidden">
+    <footer className="relative border-t border-white/5 bg-obsidian-950/90 pt-3 pb-16 md:pb-3 px-3 sm:px-6 lg:px-8 text-center overflow-hidden">
       {/* Subtle background glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[350px] h-[100px] bg-roseGlow-600/5 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[60px] bg-roseGlow-600/5 rounded-full blur-[60px] pointer-events-none" />
 
-      <div className="max-w-2xl mx-auto space-y-3 relative z-10">
+      <div className="max-w-2xl mx-auto space-y-2 relative z-10">
         {/* Compact Logo & Brand */}
         <div className="inline-flex items-center gap-2.5">
           <div className="relative w-7 h-7 rounded-xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 p-0.5 shadow-glow border border-white/20 overflow-hidden">

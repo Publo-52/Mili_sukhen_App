@@ -109,9 +109,9 @@ export const ProjectShowcase: React.FC = () => {
   }, [projects, selectedCategory, searchQuery, favoriteIds]);
 
   return (
-    <section id="projects" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
+    <section id="projects" className="pt-1 pb-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
       {/* Section Header */}
-      <div className="text-center space-y-4 mb-12">
+      <div className="text-center space-y-2 mb-4 sm:mb-6">
         <div className="flex items-center justify-center gap-2 flex-wrap">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/30 text-roseGlow-400 text-xs font-mono tracking-widest uppercase">
             <Layers className="w-3.5 h-3.5" />

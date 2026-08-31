@@ -59,8 +59,8 @@ export const UniversePortalHub: React.FC<UniversePortalHubProps> = ({
   ];
 
   return (
-    <section className="py-8 sm:py-12 px-3 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
-      <div className="text-center space-y-2.5 mb-8">
+    <section className="pt-1 pb-4 px-3 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
+      <div className="text-center space-y-2 mb-4">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/5 border border-white/10 text-roseGlow-300 text-xs font-mono tracking-wider uppercase">
           <Sparkles className="w-3.5 h-3.5 text-roseGlow-400" />
           <span>Explore Portals</span>

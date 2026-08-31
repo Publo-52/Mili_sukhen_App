@@ -127,9 +127,9 @@ export const LoveNotesVault: React.FC = () => {
   };
 
   return (
-    <section id="love-notes" className="py-14 sm:py-18 px-3 sm:px-6 lg:px-8 max-w-4xl mx-auto relative">
+    <section id="love-notes" className="pt-1 pb-4 px-3 sm:px-6 lg:px-8 max-w-4xl mx-auto relative">
       {/* Header */}
-      <div className="text-center space-y-3 mb-6 sm:mb-8">
+      <div className="text-center space-y-2 mb-4 sm:mb-6">
         <div className="flex items-center justify-center gap-2 flex-wrap">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-300 text-xs font-mono tracking-wider uppercase">
             <BookOpen className="w-3.5 h-3.5" />

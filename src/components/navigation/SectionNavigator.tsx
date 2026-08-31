@@ -31,7 +31,7 @@ export const SectionNavigator: React.FC<SectionNavigatorProps> = ({
   ];
 
   return (
-    <div className="sticky top-16 sm:top-20 z-30 py-2 sm:py-3 px-3 sm:px-6 max-w-4xl mx-auto w-full pointer-events-auto">
+    <div className="sticky top-14 sm:top-18 z-30 py-1 px-2 sm:px-6 max-w-4xl mx-auto w-full pointer-events-auto">
       <div className="glass-nav rounded-2xl p-1.5 border border-white/10 shadow-2xl flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap bg-obsidian-950/90 backdrop-blur-2xl">
         {sections.map((sec) => {
           const Icon = sec.icon;
