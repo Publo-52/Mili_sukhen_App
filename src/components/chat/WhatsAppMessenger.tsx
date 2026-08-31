@@ -30,21 +30,15 @@ import { getWhatsAppUrl } from '@/lib/utils';
 import { addMessage } from '@/lib/storage';
 import { InWebsiteCallModal } from './InWebsiteCallModal';
 import { ActiveCallState } from '@/app/api/calls/route';
-
-interface UserSessionState {
-  userName: string;
-  userRole: 'sukhen' | 'mili' | 'guest';
-}
+import { useAuth } from '@/lib/auth-context';
 
 export const WhatsAppMessenger: React.FC = () => {
+  const { isAuthenticated, user, loading } = useAuth();
+
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  const [currentUser, setCurrentUser] = useState<UserSessionState>({
-    userName: 'Guest',
-    userRole: 'guest',
-  });
   const [partnerTyping, setPartnerTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -57,7 +51,7 @@ export const WhatsAppMessenger: React.FC = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
 
   // Determine Current User & Partner
-  const isSukhen = currentUser.userRole === 'sukhen';
+  const isSukhen = user?.role === 'sukhen';
   const partnerName = isSukhen ? 'Mili' : 'Sukhen';
   const partnerPhone = isSukhen ? '9732934032' : '9832695291';
   const partnerFormattedPhone = isSukhen ? '+91 97329 34032' : '+91 98326 95291';
@@ -67,29 +61,9 @@ export const WhatsAppMessenger: React.FC = () => {
     inputText.trim() || `Hi ${isSukhen ? 'Mili' : 'Sukhen'}!`
   );
 
-  // Fetch Current Auth Session
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.authenticated && data.user) {
-            setCurrentUser({
-              userName: data.user.name,
-              userRole: data.user.role,
-            });
-          }
-        }
-      } catch (e) {
-        console.warn('Auth check error in WhatsApp Messenger:', e);
-      }
-    };
-    checkAuth();
-  }, []);
-
   // Fetch & Poll Messages & Active Calls
   const fetchMessagesAndCalls = async () => {
+    if (!isAuthenticated) return;
     try {
       // 1. Messages
       const msgRes = await fetch('/api/messages');
@@ -99,7 +73,7 @@ export const WhatsAppMessenger: React.FC = () => {
           setMessages(data.messages);
 
           if (!isOpen) {
-            const currentRole = currentUser.userRole;
+            const currentRole = user?.role;
             const unread = data.messages.filter(
               (m: DirectMessage) =>
                 !m.read &&
@@ -120,15 +94,16 @@ export const WhatsAppMessenger: React.FC = () => {
         }
       }
     } catch (e) {
-      console.warn('Polling error:', e);
+      console.warn('Poll error:', e);
     }
   };
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     fetchMessagesAndCalls();
-    const interval = setInterval(fetchMessagesAndCalls, 2500);
+    const interval = setInterval(fetchMessagesAndCalls, 3000);
     return () => clearInterval(interval);
-  }, [currentUser, isOpen]);
+  }, [isAuthenticated, user, isOpen]);
 
   // Call Actions
   const handleStartCall = async (type: 'audio' | 'video') => {
@@ -220,8 +195,8 @@ export const WhatsAppMessenger: React.FC = () => {
 
     const tempMsg: DirectMessage = {
       id: `temp-${Date.now()}`,
-      sender: currentUser.userName || (isSukhen ? 'Sukhen' : 'Mili'),
-      senderRole: currentUser.userRole === 'sukhen' ? 'sukhen' : 'mili',
+      sender: user?.name || (isSukhen ? 'Sukhen' : 'Mili'),
+      senderRole: user?.role === 'sukhen' ? 'sukhen' : 'mili',
       senderPhone: isSukhen ? '+91 98326 95291' : '+91 97329 34032',
       message: textToSend.trim(),
       mood: '❤️',
@@ -312,6 +287,10 @@ export const WhatsAppMessenger: React.FC = () => {
     { emoji: '💍', title: 'Forever Promise' },
     { emoji: '👑', title: 'For My Queen' },
   ];
+
+  if (loading || !isAuthenticated) {
+    return null;
+  }
 
   return (
     <>
@@ -715,7 +694,7 @@ export const WhatsAppMessenger: React.FC = () => {
       {/* ───────────────────────────────────────────────────────────────────────── */}
       <InWebsiteCallModal
         call={activeCall}
-        currentUserRole={currentUser.userRole}
+        currentUserRole={user?.role === 'sukhen' ? 'sukhen' : 'mili'}
         onAcceptCall={handleAcceptCall}
         onEndCall={handleEndCall}
       />
