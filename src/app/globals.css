@@ -83,48 +83,51 @@ body {
   scrollbar-width: none;
 }
 
-/* Luxury Glassmorphic Design System */
+/* Luxury Glassmorphic Design System (Hardware-Accelerated) */
 .glass-card {
-  background: rgba(14, 10, 24, 0.65);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(14, 10, 24, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.35);
+  transform: translateZ(0);
+  will-change: transform, opacity;
 }
 
 .glass-card-hover {
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .glass-card-hover:hover {
-  background: rgba(24, 16, 42, 0.85);
-  border-color: rgba(244, 63, 94, 0.4);
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px -15px rgba(244, 63, 94, 0.25), 0 0 25px -5px rgba(244, 63, 94, 0.15);
+  background: rgba(22, 14, 38, 0.88);
+  border-color: rgba(244, 63, 94, 0.45);
+  transform: translateY(-3px) translateZ(0);
+  box-shadow: 0 12px 28px -10px rgba(244, 63, 94, 0.25);
 }
 
 .glass-nav {
-  background: rgba(6, 4, 10, 0.85);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: rgba(6, 4, 10, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transform: translateZ(0);
 }
 
-/* Glowing Elements & Text */
+/* Optimized Lightweight Glowing Elements */
 .shadow-glow {
-  box-shadow: 0 0 35px -5px rgba(244, 63, 94, 0.35);
+  box-shadow: 0 0 24px -4px rgba(244, 63, 94, 0.35);
 }
 
 .shadow-glow-lg {
-  box-shadow: 0 0 60px -8px rgba(244, 63, 94, 0.5);
+  box-shadow: 0 0 40px -6px rgba(244, 63, 94, 0.45);
 }
 
 .shadow-glow-gold {
-  box-shadow: 0 0 35px -5px rgba(253, 224, 71, 0.3);
+  box-shadow: 0 0 24px -4px rgba(253, 224, 71, 0.3);
 }
 
 .shadow-glow-violet {
-  box-shadow: 0 0 35px -5px rgba(192, 132, 252, 0.35);
+  box-shadow: 0 0 24px -4px rgba(192, 132, 252, 0.35);
 }
 
 .text-glow {

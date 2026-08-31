@@ -62,8 +62,8 @@ export default function HomePage() {
   const handleSelectSection = (section: SectionType) => {
     setActiveSection(section);
     
-    // Scroll to top immediately when switching views
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Instant scroll to top when switching views for buttery-smooth responsiveness
+    window.scrollTo(0, 0);
 
     const targetHash = section === 'home' ? '' : section === 'turtle' ? 'python-art' : section;
     if (targetHash) {
