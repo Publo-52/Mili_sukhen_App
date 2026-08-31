@@ -14,6 +14,7 @@ export interface DeviceSession {
   id: string;            // Unique session token (UUID-like)
   userName: string;      // "Mili" or "Sukhen"
   userRole: 'mili' | 'sukhen' | 'guest'; // Role identifier
+  userEmail?: string;    // Logged in email
   avatar?: string;       // User avatar emoji/icon
   deviceName: string;    // Friendly derived device label
   userAgent: string;     // Raw user-agent string
@@ -64,8 +65,8 @@ function deriveDeviceName(userAgent: string): string {
   if (ua.includes('android')) os = 'Android';
   else if (ua.includes('iphone')) os = 'iPhone';
   else if (ua.includes('ipad')) os = 'iPad';
-  else if (ua.includes('windows')) os = 'Windows';
-  else if (ua.includes('mac os')) os = 'Mac';
+  else if (ua.includes('windows')) os = 'Windows PC';
+  else if (ua.includes('mac os') || ua.includes('macintosh')) os = 'Mac';
   else if (ua.includes('linux')) os = 'Linux';
 
   // Browser Detection
@@ -75,9 +76,9 @@ function deriveDeviceName(userAgent: string): string {
   else if (ua.includes('edg')) browser = 'Edge';
   else if (ua.includes('opera') || ua.includes('opr')) browser = 'Opera';
 
-  if (os && browser) return `${os} · ${browser}`;
+  if (os && browser) return `${os} (${browser})`;
   if (os) return os;
-  return 'Unknown Device';
+  return 'Mobile / Web Browser';
 }
 
 function isExpired(session: DeviceSession): boolean {
@@ -101,7 +102,7 @@ function getActiveSessions(): DeviceSession[] {
 export function createSession(
   userAgent: string,
   ip: string,
-  userInfo: { userName?: string; userRole?: 'mili' | 'sukhen' | 'guest'; avatar?: string } = {},
+  userInfo: { userName?: string; userRole?: 'mili' | 'sukhen' | 'guest'; userEmail?: string; avatar?: string } = {},
   existingSessionId?: string
 ): { session: DeviceSession } | { error: string; sessions?: DeviceSession[] } {
   let active = getActiveSessions();
@@ -116,6 +117,7 @@ export function createSession(
         id: generateId(),
         userName: userInfo.userName || active[existingIndex].userName || 'Mili',
         userRole: userInfo.userRole || active[existingIndex].userRole || 'mili',
+        userEmail: userInfo.userEmail || active[existingIndex].userEmail || (userInfo.userRole === 'sukhen' ? 'dassukhen@gmail.com' : 'mandalsharmili06@gmail.com'),
         avatar: userInfo.avatar || active[existingIndex].avatar || (userInfo.userRole === 'sukhen' ? '✨' : '👑'),
         deviceName: deriveDeviceName(userAgent),
         userAgent,
@@ -144,6 +146,7 @@ export function createSession(
     id: generateId(),
     userName: userInfo.userName || 'Mili',
     userRole: userInfo.userRole || 'mili',
+    userEmail: userInfo.userEmail || (userInfo.userRole === 'sukhen' ? 'dassukhen@gmail.com' : 'mandalsharmili06@gmail.com'),
     avatar: userInfo.avatar || (userInfo.userRole === 'sukhen' ? '✨' : '👑'),
     deviceName: deriveDeviceName(userAgent),
     userAgent,

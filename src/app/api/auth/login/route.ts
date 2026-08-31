@@ -167,6 +167,7 @@ export async function POST(request: NextRequest) {
       {
         userName: authenticatedUser.name,
         userRole: authenticatedUser.role,
+        userEmail: cleanEmail || authenticatedUser.defaultEmail,
         avatar: authenticatedUser.avatar,
       },
       existingSessionId

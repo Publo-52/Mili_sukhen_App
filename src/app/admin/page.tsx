@@ -47,8 +47,10 @@ import {
   setAdminLoggedIn,
 } from '@/lib/storage';
 import { formatDate } from '@/lib/utils';
+import { useAuth } from '@/lib/auth-context';
 
 export default function AdminPage() {
+  const { user, isAdmin } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState(false);
@@ -76,8 +78,16 @@ export default function AdminPage() {
 
   // Sessions State
   const [deviceSessions, setDeviceSessions] = useState<{
-    id: string; deviceName: string; ip: string;
-    createdAt: string; lastSeenAt: string; expiresAt: string;
+    id: string;
+    userName: string;
+    userRole: string;
+    userEmail?: string;
+    avatar?: string;
+    deviceName: string;
+    ip: string;
+    createdAt: string;
+    lastSeenAt: string;
+    expiresAt: string;
   }[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
 
@@ -97,15 +107,24 @@ export default function AdminPage() {
     order: 1,
   });
 
-  useEffect(() => {
-    const logged = isAdminLoggedIn();
-    setIsAuthenticated(logged);
-    if (logged) {
-      loadData();
+  const loadSessions = useCallback(async () => {
+    setSessionsLoading(true);
+    try {
+      const res = await fetch('/api/auth/sessions', {
+        headers: { 'x-admin-token': APP_CONFIG.adminPasscode },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDeviceSessions(data.sessions || []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSessionsLoading(false);
     }
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     // 1. Load Messages from API / Supabase
     try {
       const msgRes = await fetch('/api/messages');
@@ -159,24 +178,19 @@ export default function AdminPage() {
 
     // 4. Load Love Notes
     setLoveNotes(getLoveNotes());
-  };
 
-  const loadSessions = useCallback(async () => {
-    setSessionsLoading(true);
-    try {
-      const res = await fetch('/api/auth/sessions', {
-        headers: { 'x-admin-token': APP_CONFIG.adminPasscode },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setDeviceSessions(data.sessions || []);
-      }
-    } catch {
-      // ignore
-    } finally {
-      setSessionsLoading(false);
+    // 5. Load Active Device Sessions
+    loadSessions();
+  }, [loadSessions]);
+
+  useEffect(() => {
+    const logged = isAdminLoggedIn() || isAdmin || user?.role === 'sukhen';
+    if (logged) {
+      setIsAuthenticated(true);
+      setAdminLoggedIn(true);
+      loadData();
     }
-  }, []);
+  }, [isAdmin, user, loadData]);
 
   const handleRevokeSession = async (sessionId: string, revokeAll = false) => {
     const label = revokeAll ? 'ALL active sessions' : 'this device session';
@@ -740,6 +754,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {deviceSessions.map((sess) => {
                   const isExpired = new Date(sess.expiresAt).getTime() < Date.now();
+                  const isSukhen = sess.userRole === 'sukhen';
                   return (
                     <div
                       key={sess.id}
@@ -747,24 +762,27 @@ export default function AdminPage() {
                         isExpired ? 'border-red-500/30 opacity-60' : 'border-white/10'
                       }`}
                     >
-                      {/* Session Header */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-2xl bg-roseGlow-500/10 border border-roseGlow-500/20 flex items-center justify-center text-roseGlow-400 flex-shrink-0">
-                            {sess.deviceName.toLowerCase().includes('phone') ||
-                            sess.deviceName.toLowerCase().includes('iphone') ||
-                            sess.deviceName.toLowerCase().includes('android') ? (
-                              <Smartphone className="w-5 h-5" />
-                            ) : (
-                              <Monitor className="w-5 h-5" />
-                            )}
+                      {/* User Profile & Role Info */}
+                      <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                            isSukhen ? 'bg-purple-600/30 text-purple-300 border border-purple-500/30' : 'bg-roseGlow-600/30 text-roseGlow-300 border border-roseGlow-500/30'
+                          }`}>
+                            {sess.avatar || (isSukhen ? 'S' : 'M')}
                           </div>
                           <div>
-                            <h4 className="text-sm font-bold text-white leading-tight">
-                              {sess.deviceName}
-                            </h4>
-                            <p className="text-[11px] font-mono text-slate-400">
-                              IP: {sess.ip || 'Unknown'}
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-bold text-white">
+                                {sess.userName}
+                              </span>
+                              <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full uppercase tracking-wider ${
+                                isSukhen ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-roseGlow-500/20 text-roseGlow-300 border border-roseGlow-500/30'
+                              }`}>
+                                {isSukhen ? 'Admin' : 'Mili'}
+                              </span>
+                            </div>
+                            <p className="text-[11px] font-mono text-roseGlow-300/90 truncate max-w-[190px]">
+                              {sess.userEmail || (isSukhen ? 'dassukhen@gmail.com' : 'mandalsharmili06@gmail.com')}
                             </p>
                           </div>
                         </div>
@@ -778,6 +796,27 @@ export default function AdminPage() {
                         >
                           {isExpired ? 'Expired' : 'Active'}
                         </span>
+                      </div>
+
+                      {/* Device & IP Details */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 flex-shrink-0">
+                          {sess.deviceName.toLowerCase().includes('phone') ||
+                          sess.deviceName.toLowerCase().includes('iphone') ||
+                          sess.deviceName.toLowerCase().includes('android') ? (
+                            <Smartphone className="w-4 h-4 text-roseGlow-400" />
+                          ) : (
+                            <Monitor className="w-4 h-4 text-purple-400" />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-semibold text-slate-200 leading-tight">
+                            {sess.deviceName}
+                          </h4>
+                          <p className="text-[11px] font-mono text-slate-400">
+                            IP: {sess.ip || '127.0.0.1'}
+                          </p>
+                        </div>
                       </div>
 
                       {/* Timestamps */}

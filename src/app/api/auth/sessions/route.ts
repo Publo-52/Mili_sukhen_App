@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
       id: s.id,
       userName: s.userName || 'Mili',
       userRole: s.userRole || 'mili',
+      userEmail: s.userEmail || (s.userRole === 'sukhen' ? 'dassukhen@gmail.com' : 'mandalsharmili06@gmail.com'),
       avatar: s.avatar || '👑',
       deviceName: s.deviceName,
       ip: s.ip,
