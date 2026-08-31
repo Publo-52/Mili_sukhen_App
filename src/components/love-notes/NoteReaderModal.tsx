@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, Sparkles, BookOpen, Quote } from 'lucide-react';
 import { LoveNote } from '@/types';
@@ -11,6 +12,20 @@ interface NoteReaderModalProps {
 }
 
 export const NoteReaderModal: React.FC<NoteReaderModalProps> = ({ note, onClose }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    if (note) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [note]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -19,27 +34,18 @@ export const NoteReaderModal: React.FC<NoteReaderModalProps> = ({ note, onClose 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  if (!note) return null;
+  if (!note || !mounted) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-        {/* Backdrop with dreamy blur */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-[#06040a]/90 backdrop-blur-2xl"
-        />
-
+      <div className="fixed inset-0 z-[999999] bg-[#06040a] flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 pt-12 sm:pt-6 pb-20 sm:pb-6 overflow-y-auto">
         {/* Modal Window */}
         <motion.div
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 20 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-2xl max-h-[85vh] glass-card rounded-3xl overflow-hidden flex flex-col border border-roseGlow-500/20 shadow-2xl z-10 p-6 sm:p-10"
+          className="relative w-full max-w-2xl max-h-[85vh] bg-[#0e091b] rounded-3xl overflow-hidden flex flex-col border border-roseGlow-500/20 shadow-2xl z-[1000000] p-6 sm:p-10 my-auto"
         >
           {/* Close button */}
           <button
@@ -76,6 +82,7 @@ export const NoteReaderModal: React.FC<NoteReaderModalProps> = ({ note, onClose 
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
