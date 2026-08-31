@@ -33,7 +33,7 @@ export default function HomePage() {
     loveNotes: 0,
   });
 
-  // Sync with URL Hash, active scroll position, and count data
+  // Sync with URL Hash and count data on load
   useEffect(() => {
     // Load dynamic counts
     setCounts({
@@ -55,49 +55,16 @@ export default function HomePage() {
     handleHash();
     window.addEventListener('hashchange', handleHash);
 
-    // Active Section Intersection Observer
-    const sectionIds = ['home', 'projects', 'python-art', 'memories', 'love-notes'];
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = entry.target.id;
-            if (id === 'home') setActiveSection('home');
-            else if (id === 'projects') setActiveSection('projects');
-            else if (id === 'python-art') setActiveSection('turtle');
-            else if (id === 'memories') setActiveSection('memories');
-            else if (id === 'love-notes') setActiveSection('love-notes');
-          }
-        });
-      },
-      {
-        rootMargin: '-20% 0px -55% 0px',
-        threshold: 0.1,
-      }
-    );
-
-    sectionIds.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-
     return () => {
       window.removeEventListener('hashchange', handleHash);
-      observer.disconnect();
     };
   }, []);
 
   const handleSelectSection = (section: SectionType) => {
     setActiveSection(section);
     
-    const targetId = section === 'home' ? 'home' : section === 'turtle' ? 'python-art' : section;
-    const targetElement = document.getElementById(targetId);
-    
-    if (targetElement) {
-      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else if (section === 'home') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    // Scroll to top immediately when switching views
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     const targetHash = section === 'home' ? '' : section === 'turtle' ? 'python-art' : section;
     if (targetHash) {
@@ -129,39 +96,49 @@ export default function HomePage() {
         onSelectSection={handleSelectSection}
       />
 
-      {/* All Sections Rendered Together on One Continuous Page */}
-      <main className="relative z-10 space-y-12 sm:space-y-20 pt-20 sm:pt-24">
-        {/* 1. Home Sanctuary & Hero Section */}
-        <section id="home" className="space-y-4">
-          <Hero
-            onOpenSurprise={() => setShowSurprise(true)}
-            onSelectSection={handleSelectSection}
-          />
-          <UniversePortalHub
-            onSelectSection={handleSelectSection}
-            counts={counts}
-          />
-        </section>
+      {/* Strict Isolated View Container (Only Selected Section Renders) */}
+      <main className="relative z-10 min-h-[80vh]">
+        {/* 1. Home Sanctuary View (Hero + Live Counter + Universe Portal Hub) */}
+        {activeSection === 'home' && (
+          <div className="space-y-4 pt-20 sm:pt-24 pb-12 animate-fade-in">
+            <Hero
+              onOpenSurprise={() => setShowSurprise(true)}
+              onSelectSection={handleSelectSection}
+            />
+            <UniversePortalHub
+              onSelectSection={handleSelectSection}
+              counts={counts}
+            />
+          </div>
+        )}
 
-        {/* 2. Projects Showcase Section */}
-        <section id="projects" className="scroll-mt-24 sm:scroll-mt-28">
-          <ProjectShowcase />
-        </section>
+        {/* 2. Projects Showcase View (ONLY Projects) */}
+        {activeSection === 'projects' && (
+          <div className="pt-24 sm:pt-28 pb-16 animate-fade-in">
+            <ProjectShowcase />
+          </div>
+        )}
 
-        {/* 3. Python Turtle Art Gallery Section */}
-        <section id="python-art" className="scroll-mt-24 sm:scroll-mt-28">
-          <TurtleGallery />
-        </section>
+        {/* 3. Python Turtle Art Gallery View (ONLY Python Art) */}
+        {activeSection === 'turtle' && (
+          <div className="pt-24 sm:pt-28 pb-16 animate-fade-in">
+            <TurtleGallery />
+          </div>
+        )}
 
-        {/* 4. Memories Timeline Section */}
-        <section id="memories" className="scroll-mt-24 sm:scroll-mt-28">
-          <MemoriesTimeline />
-        </section>
+        {/* 4. Memories Timeline View (ONLY Memories) */}
+        {activeSection === 'memories' && (
+          <div className="pt-24 sm:pt-28 pb-16 animate-fade-in">
+            <MemoriesTimeline />
+          </div>
+        )}
 
-        {/* 5. Love Notes Vault Section */}
-        <section id="love-notes" className="scroll-mt-24 sm:scroll-mt-28 pb-10">
-          <LoveNotesVault />
-        </section>
+        {/* 5. Love Notes Vault View (ONLY Love Notes) */}
+        {activeSection === 'love-notes' && (
+          <div className="pt-24 sm:pt-28 pb-16 animate-fade-in">
+            <LoveNotesVault />
+          </div>
+        )}
       </main>
 
       {/* Footer */}
