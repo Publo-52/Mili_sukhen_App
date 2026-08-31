@@ -65,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const navLinks: { name: string; href: string; sectionId: SectionType }[] = [
-    { name: 'All', href: '#all', sectionId: 'all' },
+    { name: 'Home', href: '#home', sectionId: 'home' },
     { name: 'Projects', href: '#projects', sectionId: 'projects' },
     { name: 'Python Art', href: '#python-art', sectionId: 'turtle' },
     { name: 'Memories', href: '#memories', sectionId: 'memories' },
@@ -93,7 +93,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={() => {
                 handleLogoClick();
-                if (onSelectSection) onSelectSection('all');
+                if (onSelectSection) onSelectSection('home');
               }}
               className="group flex items-center gap-2.5 text-left focus:outline-none"
               title="Suksharmi — Digital Universe"

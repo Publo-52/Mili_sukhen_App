@@ -19,10 +19,12 @@ import { EasterEggListener } from '@/components/easter-eggs/EasterEggListener';
 import { getProjects, getTurtleCreations, getLoveNotes } from '@/lib/storage';
 import { INITIAL_MEMORIES } from '@/data/memories';
 
+import { UniversePortalHub } from '@/components/hero/UniversePortalHub';
+
 export default function HomePage() {
   const [showIntro, setShowIntro] = useState(false);
   const [showSurprise, setShowSurprise] = useState(false);
-  const [activeSection, setActiveSection] = useState<SectionType>('all');
+  const [activeSection, setActiveSection] = useState<SectionType>('home');
   const [counts, setCounts] = useState({
     projects: 0,
     turtles: 0,
@@ -38,7 +40,7 @@ export default function HomePage() {
       else if (hash === 'python-art' || hash === 'turtle') setActiveSection('turtle');
       else if (hash === 'memories') setActiveSection('memories');
       else if (hash === 'love-notes') setActiveSection('love-notes');
-      else if (hash === 'all' || hash === 'hero') setActiveSection('all');
+      else if (hash === 'home' || hash === 'hero' || !hash) setActiveSection('home');
     };
 
     handleHash();
@@ -59,22 +61,19 @@ export default function HomePage() {
     setActiveSection(section);
     
     // Update hash cleanly without reload
-    const targetHash = section === 'all' ? '' : section === 'turtle' ? 'python-art' : section;
+    const targetHash = section === 'home' ? '' : section === 'turtle' ? 'python-art' : section;
     if (targetHash) {
       window.history.pushState(null, '', `#${targetHash}`);
     } else {
       window.history.pushState(null, '', window.location.pathname);
     }
 
-    // Smooth scroll to navigator on small devices
-    const navEl = document.getElementById('section-navigator-anchor');
-    if (navEl && section !== 'all') {
-      navEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    // Scroll to top of section cleanly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain pb-16 md:pb-0">
+    <div className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain pb-20 md:pb-8">
       {/* Dynamic Stardust & Ambient Particle Layer */}
       <ParticleCanvas />
 
@@ -95,15 +94,6 @@ export default function HomePage() {
         onSelectSection={handleSelectSection}
       />
 
-      {/* Hero Section */}
-      <Hero
-        onOpenSurprise={() => setShowSurprise(true)}
-        onSelectSection={handleSelectSection}
-      />
-
-      {/* Anchor for Smooth Scrolling */}
-      <div id="section-navigator-anchor" className="scroll-mt-24" />
-
       {/* Interactive Sticky Section Navigator */}
       <SectionNavigator
         activeSection={activeSection}
@@ -111,56 +101,81 @@ export default function HomePage() {
         counts={counts}
       />
 
-      {/* Isolated Section Views according to User Selection */}
-      <main className="relative z-10 space-y-12 sm:space-y-20 pt-4">
+      {/* Strictly Isolated Section Content */}
+      <main className="relative z-10 space-y-12 sm:space-y-16">
         <AnimatePresence mode="wait">
-          {/* 1. Projects Showcase Section */}
-          {(activeSection === 'all' || activeSection === 'projects') && (
+          {/* 0. Home Sanctuary View (Hero + Live Counter + 4 Dedicated Portal Hub Cards) */}
+          {activeSection === 'home' && (
+            <motion.div
+              key="home-section"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.35 }}
+              className="space-y-4"
+            >
+              <Hero
+                onOpenSurprise={() => setShowSurprise(true)}
+                onSelectSection={handleSelectSection}
+              />
+              <UniversePortalHub
+                onSelectSection={handleSelectSection}
+                counts={counts}
+              />
+            </motion.div>
+          )}
+
+          {/* 1. Projects Showcase Section (ONLY Projects) */}
+          {activeSection === 'projects' && (
             <motion.div
               key="projects-section"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
+              className="pt-4 sm:pt-8"
             >
               <ProjectShowcase />
             </motion.div>
           )}
 
-          {/* 2. Python Turtle Art Gallery Section */}
-          {(activeSection === 'all' || activeSection === 'turtle') && (
+          {/* 2. Python Turtle Art Gallery Section (ONLY Python Art) */}
+          {activeSection === 'turtle' && (
             <motion.div
               key="turtle-section"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
+              className="pt-4 sm:pt-8"
             >
               <TurtleGallery />
             </motion.div>
           )}
 
-          {/* 3. Memories Timeline Section */}
-          {(activeSection === 'all' || activeSection === 'memories') && (
+          {/* 3. Memories Timeline Section (ONLY Memories Timeline) */}
+          {activeSection === 'memories' && (
             <motion.div
               key="memories-section"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
+              className="pt-4 sm:pt-8"
             >
               <MemoriesTimeline />
             </motion.div>
           )}
 
-          {/* 4. Love Notes Vault Section */}
-          {(activeSection === 'all' || activeSection === 'love-notes') && (
+          {/* 4. Love Notes Vault Section (ONLY Love Notes) */}
+          {activeSection === 'love-notes' && (
             <motion.div
               key="love-notes-section"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
+              className="pt-4 sm:pt-8"
             >
               <LoveNotesVault />
             </motion.div>

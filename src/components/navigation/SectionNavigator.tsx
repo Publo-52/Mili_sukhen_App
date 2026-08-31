@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Layers, Terminal, History, BookOpen, Heart } from 'lucide-react';
+import { Sparkles, Layers, Terminal, History, BookOpen, Home } from 'lucide-react';
 
-export type SectionType = 'all' | 'projects' | 'turtle' | 'memories' | 'love-notes';
+export type SectionType = 'home' | 'projects' | 'turtle' | 'memories' | 'love-notes';
 
 interface SectionNavigatorProps {
   activeSection: SectionType;
@@ -23,16 +23,16 @@ export const SectionNavigator: React.FC<SectionNavigatorProps> = ({
   counts,
 }) => {
   const sections: { id: SectionType; label: string; icon: React.ElementType; count?: number }[] = [
-    { id: 'all', label: 'All Universe', icon: Sparkles },
-    { id: 'projects', label: 'Websites & Projects', icon: Layers, count: counts?.projects },
+    { id: 'home', label: 'Home Sanctuary', icon: Home },
+    { id: 'projects', label: 'Projects & Apps', icon: Layers, count: counts?.projects },
     { id: 'turtle', label: 'Python Art', icon: Terminal, count: counts?.turtles },
     { id: 'memories', label: 'Memories Timeline', icon: History, count: counts?.memories },
     { id: 'love-notes', label: 'Love Notes', icon: BookOpen, count: counts?.loveNotes },
   ];
 
   return (
-    <div className="sticky top-16 sm:top-20 z-30 py-2.5 px-3 sm:px-6 max-w-4xl mx-auto w-full pointer-events-auto">
-      <div className="glass-nav rounded-2xl p-1.5 border border-white/10 shadow-2xl flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap bg-obsidian-950/85 backdrop-blur-xl">
+    <div className="sticky top-16 sm:top-20 z-30 py-2 sm:py-3 px-3 sm:px-6 max-w-4xl mx-auto w-full pointer-events-auto">
+      <div className="glass-nav rounded-2xl p-1.5 border border-white/10 shadow-2xl flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap bg-obsidian-950/90 backdrop-blur-2xl">
         {sections.map((sec) => {
           const Icon = sec.icon;
           const isActive = activeSection === sec.id;
@@ -43,7 +43,7 @@ export const SectionNavigator: React.FC<SectionNavigatorProps> = ({
               onClick={() => onSelectSection(sec.id)}
               className={`relative px-3 sm:px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all duration-300 flex items-center gap-2 flex-shrink-0 cursor-pointer ${
                 isActive
-                  ? 'text-white font-bold'
+                  ? 'text-white font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
               }`}
             >

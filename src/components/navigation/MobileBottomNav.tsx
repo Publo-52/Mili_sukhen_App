@@ -14,7 +14,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onSelectSection,
 }) => {
   const items: { label: string; sectionId: SectionType; icon: React.ElementType }[] = [
-    { label: 'All', sectionId: 'all', icon: Home },
+    { label: 'Home', sectionId: 'home', icon: Home },
     { label: 'Projects', sectionId: 'projects', icon: Layers },
     { label: 'Python Art', sectionId: 'turtle', icon: Sparkles },
     { label: 'Memories', sectionId: 'memories', icon: History },
