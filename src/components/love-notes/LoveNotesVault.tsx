@@ -42,23 +42,23 @@ export const LoveNotesVault: React.FC = () => {
   };
 
   return (
-    <section id="love-notes" className="py-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto relative">
+    <section id="love-notes" className="py-14 sm:py-18 px-3 sm:px-6 lg:px-8 max-w-4xl mx-auto relative">
       {/* Header */}
-      <div className="text-center space-y-4 mb-12">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-300 text-xs font-mono tracking-widest uppercase">
+      <div className="text-center space-y-3 mb-10">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-300 text-xs font-mono tracking-wider uppercase">
           <BookOpen className="w-3.5 h-3.5" />
           <span>Private Love Notes Vault</span>
         </div>
-        <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+        <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight">
           Letters & Notes for Mili
         </h2>
-        <p className="text-slate-400 text-sm sm:text-base max-w-xl mx-auto font-light">
+        <p className="text-slate-400 text-xs sm:text-sm max-w-xl mx-auto font-light leading-relaxed">
           Words written on quiet nights and ordinary mornings. A personal collection of thoughts, promises, and reasons why you mean everything.
         </p>
       </div>
 
       {/* Main Love Note Carousel Card */}
-      <div className="relative">
+      <div className="relative max-w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentNote.id}
@@ -66,15 +66,15 @@ export const LoveNotesVault: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -15, scale: 0.98 }}
             transition={{ duration: 0.4 }}
-            className="glass-card rounded-3xl p-6 sm:p-10 border border-roseGlow-500/20 shadow-2xl relative overflow-hidden space-y-6"
+            className="glass-card rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-roseGlow-500/20 shadow-2xl relative overflow-hidden space-y-4 sm:space-y-5"
           >
             {/* Top Bar inside Card */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full text-xs font-mono bg-white/5 text-roseGlow-300 border border-white/5">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-white/5 text-roseGlow-300 border border-white/5">
                   Note #{currentIndex + 1} of {INITIAL_LOVE_NOTES.length}
                 </span>
-                <span className="text-xs text-slate-400 font-mono hidden sm:inline-block">
+                <span className="text-[11px] text-slate-400 font-mono hidden sm:inline-block">
                   • {currentNote.date}
                 </span>
               </div>
@@ -82,33 +82,33 @@ export const LoveNotesVault: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleToggleFavorite}
-                  className={`p-2 rounded-full transition-all ${
+                  className={`p-1.5 sm:p-2 rounded-full transition-all ${
                     isFavorite
                       ? 'bg-roseGlow-600 text-white shadow-glow'
                       : 'glass-card text-slate-400 hover:text-white'
                   }`}
                   aria-label={isFavorite ? "Remove favorite" : "Add to favorites"}
                 >
-                  <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
+                  <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorite ? 'fill-white' : ''}`} />
                 </button>
 
                 <button
                   onClick={() => setReadingNote(currentNote)}
-                  className="p-2 rounded-full glass-card text-slate-300 hover:text-white transition-colors"
+                  className="p-1.5 sm:p-2 rounded-full glass-card text-slate-300 hover:text-white transition-colors"
                   title="Fullscreen reading mode"
                   aria-label="Fullscreen reading mode"
                 >
-                  <Maximize2 className="w-4 h-4" />
+                  <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
 
             {/* Note Title & Preview */}
-            <div className="space-y-4">
-              <h3 className="text-2xl sm:text-3xl font-serif font-bold text-white tracking-tight">
+            <div className="space-y-2.5">
+              <h3 className="text-lg sm:text-2xl font-serif font-bold text-white tracking-tight">
                 {currentNote.title}
               </h3>
-              <p className="text-slate-300 font-serif text-lg sm:text-xl leading-relaxed italic border-l-2 border-roseGlow-500 pl-4 py-1">
+              <p className="text-slate-300 font-serif text-sm sm:text-lg leading-relaxed italic border-l-2 border-roseGlow-500 pl-3 sm:pl-4 py-0.5">
                 “{currentNote.snippet}”
               </p>
             </div>

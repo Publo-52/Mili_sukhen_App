@@ -11,23 +11,19 @@ export const AmbientAudioPlayer: React.FC = () => {
   const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
-    // Check if user previously had music on
-    const saved = localStorage.getItem('mili_ambient_audio');
-    if (saved === 'playing') {
-      // Browsers restrict auto audio until first gesture
-    }
+    const unsubscribe = audioEngine.subscribe((playing) => {
+      setIsPlaying(playing);
+      if (playing) setHasInteracted(true);
+    });
+    return () => unsubscribe();
   }, []);
 
   const togglePlay = () => {
-    if (isPlaying) {
+    if (audioEngine.getIsPlaying()) {
       audioEngine.pause();
-      setIsPlaying(false);
-      localStorage.setItem('mili_ambient_audio', 'paused');
     } else {
       audioEngine.play();
-      setIsPlaying(true);
       setHasInteracted(true);
-      localStorage.setItem('mili_ambient_audio', 'playing');
     }
   };
 
@@ -49,12 +45,12 @@ export const AmbientAudioPlayer: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-20 sm:bottom-6 right-3 sm:right-6 z-40 flex items-center gap-2.5">
+    <div className="hidden sm:flex fixed bottom-6 right-6 z-40 items-center gap-2.5">
       {/* First Time Intro Banner (Hidden once interacted) */}
       {!hasInteracted && !isPlaying && (
         <button
           onClick={togglePlay}
-          className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-card border border-roseGlow-500/40 hover:border-roseGlow-500/70 text-xs font-mono text-slate-200 shadow-glow transition-all hover:scale-105 animate-pulse"
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-card border border-roseGlow-500/40 hover:border-roseGlow-500/70 text-xs font-mono text-slate-200 shadow-glow transition-all hover:scale-105 animate-pulse"
         >
           <Sparkles className="w-3.5 h-3.5 text-roseGlow-400" />
           <span>Play Romantic Music 🎵</span>
@@ -62,13 +58,13 @@ export const AmbientAudioPlayer: React.FC = () => {
       )}
 
       {/* Floating Audio Controller */}
-      <div className={`glass-card px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full flex items-center gap-2 border transition-all duration-300 shadow-2xl ${
+      <div className={`glass-card px-3 py-2 rounded-full flex items-center gap-2 border transition-all duration-300 shadow-2xl ${
         isPlaying ? 'border-roseGlow-500/50 shadow-glow bg-obsidian-950/95' : 'border-white/10 bg-obsidian-950/80'
       }`}>
         <button
           onClick={togglePlay}
           aria-label={isPlaying ? "Pause ambient sound" : "Play ambient sound"}
-          className={`p-2 sm:p-2.5 rounded-full transition-all duration-300 active:scale-90 ${
+          className={`p-2.5 rounded-full transition-all duration-300 active:scale-90 ${
             isPlaying ? "bg-gradient-to-r from-roseGlow-600 to-purple-600 text-white shadow-glow animate-pulse" : "bg-white/10 text-slate-300 hover:text-white hover:bg-white/20"
           }`}
           title={isPlaying ? "Pause Romantic Music" : "Play Romantic Music"}
@@ -78,7 +74,7 @@ export const AmbientAudioPlayer: React.FC = () => {
 
         {isPlaying && (
           <div className="flex items-center gap-2 pr-1 animate-fadeIn">
-            <span className="hidden sm:inline-block text-[10px] font-mono text-roseGlow-300 animate-pulse">
+            <span className="text-[10px] font-mono text-roseGlow-300 animate-pulse">
               Playing 🎵
             </span>
             <button
@@ -95,7 +91,7 @@ export const AmbientAudioPlayer: React.FC = () => {
               step="0.05"
               value={isMuted ? 0 : volume}
               onChange={handleVolumeChange}
-              className="w-14 sm:w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-roseGlow-500"
+              className="w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-roseGlow-500"
               aria-label="Volume slider"
             />
           </div>

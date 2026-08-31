@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Sparkles, Menu, X, Shield, Film, LogIn, LogOut, User } from 'lucide-react';
+import { Heart, Sparkles, Menu, X, Shield, Film, LogIn, LogOut, User, Music, Volume2, VolumeX } from 'lucide-react';
 import { APP_CONFIG } from '@/data/config';
 import { useAuth } from '@/lib/auth-context';
+import { audioEngine } from '@/lib/audio';
 
 interface NavbarProps {
   onReplayIntro?: () => void;
@@ -17,6 +18,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoClicks, setLogoClicks] = useState(0);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const { isAuthenticated, user, session, isAdmin, loading, logout } = useAuth();
 
   useEffect(() => {
@@ -24,8 +26,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    const unsubscribe = audioEngine.subscribe((playing) => {
+      setIsPlayingAudio(playing);
+    });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      unsubscribe();
+    };
   }, []);
+
+  const toggleAudio = () => {
+    if (audioEngine.getIsPlaying()) {
+      audioEngine.pause();
+    } else {
+      audioEngine.play();
+    }
+  };
 
   const handleLogoClick = () => {
     const newCount = logoClicks + 1;
@@ -48,24 +66,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-          isScrolled ? 'glass-nav py-3' : 'bg-transparent py-5'
+          isScrolled ? 'glass-nav py-2.5' : 'bg-transparent py-4'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between">
           {/* Logo & Easter Egg Trigger */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={handleLogoClick}
-              className="group flex items-center gap-3 text-left focus:outline-none"
+              className="group flex items-center gap-2.5 text-left focus:outline-none"
               title="Suksharmi — Digital Universe"
             >
-              <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 flex items-center justify-center shadow-glow group-hover:scale-105 transition-transform border border-white/20 p-0.5 overflow-hidden">
+              <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 flex items-center justify-center shadow-glow group-hover:scale-105 transition-transform border border-white/20 p-0.5 overflow-hidden">
                 <div className="w-full h-full rounded-[14px] bg-[#0c0817] flex items-center justify-center overflow-hidden">
                   <Image
                     src="/logo.png"
                     alt="Suksharmi Logo"
-                    width={44}
-                    height={44}
+                    width={40}
+                    height={40}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     priority
                   />
@@ -75,7 +93,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
                 <span className="text-2xl sm:text-3xl font-stylish tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-rose-100 via-pink-200 to-rose-300 flex items-center gap-1 leading-none drop-shadow-[0_0_12px_rgba(244,63,94,0.4)] group-hover:drop-shadow-[0_0_20px_rgba(244,63,94,0.7)] transition-all">
                   Suksharmi
                 </span>
-                <span className="block text-[9px] font-mono tracking-[0.22em] text-slate-400 group-hover:text-roseGlow-300 transition-colors uppercase">
+                <span className="block text-[8px] sm:text-[9px] font-mono tracking-[0.2em] text-slate-400 group-hover:text-roseGlow-300 transition-colors uppercase">
                   A DIGITAL UNIVERSE
                 </span>
               </div>
@@ -95,8 +113,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
             ))}
           </nav>
 
-          {/* Right Action Icons */}
-          <div className="hidden md:flex items-center gap-2.5">
+          {/* Right Action Icons (Desktop) */}
+          <div className="hidden md:flex items-center gap-2">
+            {/* Music Toggle Button */}
+            <button
+              onClick={toggleAudio}
+              className={`p-2 rounded-full glass-card transition-all ${
+                isPlayingAudio
+                  ? 'border-roseGlow-500/60 text-roseGlow-400 bg-roseGlow-500/20 shadow-glow animate-pulse'
+                  : 'hover:border-white/30 text-slate-300 hover:text-white'
+              }`}
+              title={isPlayingAudio ? 'Pause Romantic Ambient Music' : 'Play Romantic Ambient Music'}
+              aria-label="Toggle Romantic Music"
+            >
+              {isPlayingAudio ? <Music className="w-4 h-4 text-roseGlow-300" /> : <VolumeX className="w-4 h-4" />}
+            </button>
+
             {/* Surprise Button */}
             {onOpenSurprise && (
               <button
@@ -172,13 +204,26 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
             )}
           </div>
 
+          {/* Mobile Action Icons (Header Right) */}
+          <div className="flex md:hidden items-center gap-1.5">
+            {/* Mobile Music Toggle */}
+            <button
+              onClick={toggleAudio}
+              className={`p-2 rounded-full glass-card transition-all ${
+                isPlayingAudio
+                  ? 'border-roseGlow-500/60 text-roseGlow-300 bg-roseGlow-500/20 shadow-glow animate-pulse'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+              title={isPlayingAudio ? 'Pause Music' : 'Play Romantic Music'}
+              aria-label="Toggle Music"
+            >
+              {isPlayingAudio ? <Music className="w-4 h-4 text-roseGlow-400" /> : <VolumeX className="w-4 h-4" />}
+            </button>
 
-          {/* Mobile Hamburger Button */}
-          <div className="flex md:hidden items-center gap-2">
             {onOpenSurprise && (
               <button
                 onClick={onOpenSurprise}
-                className="p-2 rounded-full glass-card text-roseGlow-400"
+                className="p-2 rounded-full glass-card text-roseGlow-400 hover:text-white"
                 aria-label="Special Surprise"
               >
                 <Sparkles className="w-4 h-4" />

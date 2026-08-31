@@ -31,6 +31,19 @@ class RomanticAudioEngine {
     }
   }
 
+  private listeners: ((playing: boolean) => void)[] = [];
+
+  public subscribe(cb: (playing: boolean) => void) {
+    this.listeners.push(cb);
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== cb);
+    };
+  }
+
+  private notify() {
+    this.listeners.forEach((l) => l(this.isPlaying));
+  }
+
   public async play() {
     this.initContext();
 
@@ -42,6 +55,8 @@ class RomanticAudioEngine {
       }
 
       this.isPlaying = true;
+      this.notify();
+
       if (this.gainNode) {
         this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
         this.gainNode.gain.setValueAtTime(0.001, this.ctx.currentTime);
@@ -112,6 +127,7 @@ class RomanticAudioEngine {
 
   public pause() {
     this.isPlaying = false;
+    this.notify();
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
