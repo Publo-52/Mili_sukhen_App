@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 // Routes that are always public (do not require login)
 const PUBLIC_PATHS = [
   '/login',
-  '/api/',
+  '/api/auth/login',
+  '/api/auth/logout',
+  '/api/auth/me',
   '/_next',
   '/images',
   '/favicon',
@@ -13,12 +15,13 @@ const PUBLIC_PATHS = [
   '/robots.txt',
   '/mili.jpg',
   '/mili_sketch.jpg',
+  '/logo.png',
 ];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isPublic = PUBLIC_PATHS.some(p => pathname.startsWith(p));
+  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
   const sessionCookie = request.cookies.get('mili_session')?.value;
 
   // If user is on /login and is already logged in with valid cookie, send them to home
@@ -31,10 +34,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // All other pages require login
+  // All other pages and routes strictly require login
   if (!sessionCookie) {
     const loginUrl = new URL('/login', request.url);
-    if (pathname !== '/') {
+    if (pathname !== '/' && !pathname.startsWith('/api')) {
       loginUrl.searchParams.set('redirect', pathname);
     }
     return NextResponse.redirect(loginUrl);
@@ -44,5 +47,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon|manifest).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.png|manifest.webmanifest).*)'],
 };

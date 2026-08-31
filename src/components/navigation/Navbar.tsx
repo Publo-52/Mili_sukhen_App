@@ -181,19 +181,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* Admin Dashboard link (highlighted if Sukhen is logged in) */}
-            <Link
-              href="/admin"
-              className={`p-2 rounded-full glass-card transition-all ${
-                isAdmin
-                  ? 'border-purple-500/50 text-purple-300 shadow-glow bg-purple-500/10'
-                  : 'hover:border-white/30 text-slate-400 hover:text-slate-200'
-              }`}
-              title="Admin Studio"
-              aria-label="Admin Studio"
-            >
-              <Shield className="w-4 h-4" />
-            </Link>
+            {/* Admin Dashboard link (ONLY visible to Sukhen) */}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="p-2 rounded-full glass-card border border-purple-500/50 text-purple-300 shadow-glow bg-purple-500/10 hover:bg-purple-500/20 transition-all"
+                title="Admin Studio (Sukhen Only)"
+                aria-label="Admin Studio"
+              >
+                <Shield className="w-4 h-4" />
+              </Link>
+            )}
 
             {/* Login / User Status / Logout Button */}
             {!loading && (
@@ -213,11 +211,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                   <button
                     onClick={logout}
-                    className="p-2 rounded-full glass-card hover:border-red-500/40 text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                    title="Logout / Switch Profile"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full glass-card hover:border-red-500/40 text-slate-300 hover:text-red-400 hover:bg-red-500/10 text-xs font-mono transition-all cursor-pointer"
+                    title="Sign Out / Logout"
                     aria-label="Logout"
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="w-3.5 h-3.5 text-red-400" />
+                    <span className="hidden sm:inline">Logout</span>
                   </button>
                 </div>
               ) : (
@@ -359,14 +358,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </button>
                   )}
 
-                  <Link
-                    href="/admin"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 hover:text-white transition-colors"
-                  >
-                    <Shield className="w-3.5 h-3.5 text-purple-400" />
-                    <span>Admin Studio</span>
-                  </Link>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-1.5 p-2 rounded-xl text-purple-300 hover:bg-white/5 hover:text-white transition-colors"
+                    >
+                      <Shield className="w-3.5 h-3.5 text-purple-400" />
+                      <span>Admin Studio</span>
+                    </Link>
+                  )}
                 </div>
               </div>
             </motion.div>

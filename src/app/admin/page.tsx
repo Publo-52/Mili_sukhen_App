@@ -184,6 +184,12 @@ export default function AdminPage() {
   }, [loadSessions]);
 
   useEffect(() => {
+    // If Mili tries to access /admin, immediately redirect her to /
+    if (user && user.role === 'mili') {
+      window.location.replace('/');
+      return;
+    }
+
     const logged = isAdminLoggedIn() || isAdmin || user?.role === 'sukhen';
     if (logged) {
       setIsAuthenticated(true);
