@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Shield,
   KeyRound,
@@ -318,12 +319,21 @@ export default function AdminPage() {
     return (
       <main className="min-h-screen bg-obsidian-950 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md glass-card rounded-3xl p-8 border border-white/10 text-center space-y-6">
-          <div className="w-16 h-16 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/30 flex items-center justify-center mx-auto text-roseGlow-400 shadow-glow">
-            <Shield className="w-8 h-8" />
+          <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 p-0.5 shadow-glow-lg mx-auto border border-white/20 overflow-hidden">
+            <div className="w-full h-full rounded-[22px] bg-[#0c0817] flex items-center justify-center overflow-hidden">
+              <Image
+                src="/logo.png"
+                alt="Suksharmi Logo"
+                width={80}
+                height={80}
+                className="w-full h-full object-cover"
+                priority
+              />
+            </div>
           </div>
 
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold text-white">Sukhen&apos;s Admin Portal</h1>
+            <h1 className="text-2xl font-bold text-white">Suksharmi Admin Studio</h1>
             <p className="text-xs text-slate-400 font-mono">
               Manage creations, messages, and privacy settings
             </p>

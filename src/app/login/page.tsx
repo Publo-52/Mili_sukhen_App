@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Heart,
@@ -176,17 +177,18 @@ function LoginContent() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: 'spring', stiffness: 240, delay: 0.1 }}
-                  className={`inline-flex w-16 h-16 rounded-full bg-gradient-to-tr ${
-                    isSukhenTyping
-                      ? 'from-purple-600 to-indigo-600'
-                      : 'from-roseGlow-600 to-pink-600'
-                  } items-center justify-center text-white shadow-glow mx-auto transition-colors duration-500`}
+                  className="relative w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 p-0.5 shadow-glow-lg mx-auto border border-white/20 overflow-hidden"
                 >
-                  {isSukhenTyping ? (
-                    <Shield className="w-8 h-8 text-white" />
-                  ) : (
-                    <Heart className="w-8 h-8 text-white fill-white" />
-                  )}
+                  <div className="w-full h-full rounded-[22px] bg-[#0c0817] flex items-center justify-center overflow-hidden">
+                    <Image
+                      src="/logo.png"
+                      alt="Suksharmi Logo"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                      priority
+                    />
+                  </div>
                 </motion.div>
 
                 <div>

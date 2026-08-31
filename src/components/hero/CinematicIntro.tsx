@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Heart, ArrowRight } from 'lucide-react';
 import { isIntroSeen, setIntroSeen } from '@/lib/storage';
@@ -70,14 +71,23 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
         </button>
 
         <div className="max-w-2xl relative z-10 space-y-8">
-          {/* Glowing Heart Accent */}
+          {/* Glowing Brand Logo */}
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 1.2, ease: "easeOut" }}
-            className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/30 text-roseGlow-400 shadow-glow mb-2"
+            className="relative w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 p-0.5 shadow-glow-lg mx-auto border border-white/20 overflow-hidden mb-3"
           >
-            <Heart className="w-8 h-8 fill-roseGlow-500/30 animate-pulse text-roseGlow-400" />
+            <div className="w-full h-full rounded-[22px] bg-[#0c0817] flex items-center justify-center overflow-hidden">
+              <Image
+                src="/logo.png"
+                alt="Suksharmi Logo"
+                width={80}
+                height={80}
+                className="w-full h-full object-cover"
+                priority
+              />
+            </div>
           </motion.div>
 
           {/* Stage 1: "For Mili…" */}

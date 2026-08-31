@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Sparkles, Menu, X, Shield, Film, LogIn, LogOut, User } from 'lucide-react';
 import { APP_CONFIG } from '@/data/config';
@@ -59,11 +60,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
               className="group flex items-center gap-3 text-left focus:outline-none"
               title="Suksharmi — Digital Universe"
             >
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform border border-white/20 p-0.5">
-                <div className="w-full h-full rounded-[14px] bg-[#0c0817] flex items-center justify-center">
-                  <span className="text-xs font-black tracking-tighter bg-gradient-to-r from-purple-300 via-rose-300 to-pink-300 bg-clip-text text-transparent">
-                    S<span className="text-[10px] text-rose-400">❤</span>M
-                  </span>
+              <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 flex items-center justify-center shadow-glow group-hover:scale-105 transition-transform border border-white/20 p-0.5 overflow-hidden">
+                <div className="w-full h-full rounded-[14px] bg-[#0c0817] flex items-center justify-center overflow-hidden">
+                  <Image
+                    src="/logo.png"
+                    alt="Suksharmi Logo"
+                    width={44}
+                    height={44}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    priority
+                  />
                 </div>
               </div>
               <div>

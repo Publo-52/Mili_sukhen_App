@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Heart, Sparkles, Film, Shield, ArrowUp } from 'lucide-react';
 import { APP_CONFIG } from '@/data/config';
 
@@ -23,10 +24,18 @@ export const Footer: React.FC<FooterProps> = ({ onReplayIntro, onOpenSurprise })
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[200px] bg-roseGlow-600/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="max-w-4xl mx-auto space-y-8 relative z-10">
-        {/* Heart Logo Icon & Brand */}
-        <div className="flex flex-col items-center justify-center gap-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-roseGlow-500/10 border border-roseGlow-500/30 text-roseGlow-400 shadow-glow">
-            <Heart className="w-6 h-6 fill-roseGlow-500/40 animate-pulse text-roseGlow-400" />
+        {/* Logo & Brand */}
+        <div className="flex flex-col items-center justify-center gap-3">
+          <div className="relative w-16 h-16 rounded-3xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 p-0.5 shadow-glow-lg border border-white/20 overflow-hidden group">
+            <div className="w-full h-full rounded-[22px] bg-[#0c0817] flex items-center justify-center overflow-hidden">
+              <Image
+                src="/logo.png"
+                alt="Suksharmi Logo"
+                width={64}
+                height={64}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
           </div>
           <span className="text-3xl sm:text-4xl font-stylish text-transparent bg-clip-text bg-gradient-to-r from-rose-100 via-pink-200 to-rose-300 drop-shadow-[0_0_15px_rgba(244,63,94,0.4)]">
             Suksharmi
