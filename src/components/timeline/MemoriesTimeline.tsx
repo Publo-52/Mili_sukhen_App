@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Sparkles, Calendar, MapPin, ExternalLink, Heart, Clock } from 'lucide-react';
 import { INITIAL_MEMORIES } from '@/data/memories';
@@ -65,9 +66,11 @@ export const MemoriesTimeline: React.FC = () => {
                     {/* Image Preview if available */}
                     {memory.image && (
                       <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-obsidian-900 border border-white/5">
-                        <img
+                        <Image
                           src={memory.image}
                           alt={memory.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 50vw"
                           className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                         />
                       </div>

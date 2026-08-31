@@ -358,6 +358,27 @@ function generateRoseDaySegments(): { bg: string; segments: TurtlePathSegment[] 
   return { bg: '#DDD9D9', segments: t.segments };
 }
 
+const LOVE_MESSAGES = [
+  "তুমি আমার সবচেয়ে সুন্দর স্বপ্ন 🌙",
+  "তোমার হাসি দেখলে আমার পৃথিবী আলো হয়ে যায় ☀️",
+  "তুমি রাগলেও তুমি world's most cute person 🥺",
+  "I'm sorry... but I love you MORE than sorry! 💕",
+  "তোমাকে ছাড়া একটা দিনও ভাবতে পারি না 🫶",
+  "তোমার রাগ দেখতেও ভালো লাগে, তুমি জানো? 😄",
+  "আমি সবসময় তোমার পাশে আছি, ভালো-মন্দ সব সময়ে 💗",
+  "তুমি শুধু আমার GF না, তুমি আমার best friend ও 🌸",
+  "তোমার সাথে প্রতিটা মুহূর্ত special 💫",
+  "Smile koro please? Tumake khub miss korchi! 🙏💕",
+];
+
+const SORRY_MESSAGES = [
+  "Maaf koro amar sonaar meye 🥺",
+  "Please smile koro na... 🌸",
+  "Tumi rele ami kemon thakbo bolo? 💔",
+  "Sorry sorry sorry... 1000 times! 🙏",
+  "Tomar ragta dekhe moner khub kharap lage 😢",
+];
+
 // ─── Main Component ──────────────────────────────────────────────────────────────
 export const TurtleCanvasViewer: React.FC<TurtleCanvasViewerProps> = ({ creation }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -366,27 +387,6 @@ export const TurtleCanvasViewer: React.FC<TurtleCanvasViewerProps> = ({ creation
   const animRef = useRef<number | null>(null);
   const [sorryMessage, setSorryMessage] = useState('');
   const [burstTrigger, setBurstTrigger] = useState(0);
-
-  const LOVE_MESSAGES = [
-    "তুমি আমার সবচেয়ে সুন্দর স্বপ্ন 🌙",
-    "তোমার হাসি দেখলে আমার পৃথিবী আলো হয়ে যায় ☀️",
-    "তুমি রাগলেও তুমি world's most cute person 🥺",
-    "I'm sorry... but I love you MORE than sorry! 💕",
-    "তোমাকে ছাড়া একটা দিনও ভাবতে পারি না 🫶",
-    "তোমার রাগ দেখতেও ভালো লাগে, তুমি জানো? 😄",
-    "আমি সবসময় তোমার পাশে আছি, ভালো-মন্দ সব সময়ে 💗",
-    "তুমি শুধু আমার GF না, তুমি আমার best friend ও 🌸",
-    "তোমার সাথে প্রতিটা মুহূর্ত special 💫",
-    "Smile koro please? Tumake khub miss korchi! 🙏💕",
-  ];
-
-  const SORRY_MESSAGES = [
-    "Maaf koro amar sonaar meye 🥺",
-    "Please smile koro na... 🌸",
-    "Tumi rele ami kemon thakbo bolo? 💔",
-    "Sorry sorry sorry... 1000 times! 🙏",
-    "Tomar ragta dekhe moner khub kharap lage 😢",
-  ];
 
   const handleBurstHearts = () => {
     setBurstTrigger((prev) => prev + 1);

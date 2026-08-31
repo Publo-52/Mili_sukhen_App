@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare,
@@ -62,7 +62,7 @@ export const WhatsAppMessenger: React.FC = () => {
   );
 
   // Fetch & Poll Messages & Active Calls
-  const fetchMessagesAndCalls = async () => {
+  const fetchMessagesAndCalls = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
       // 1. Messages
@@ -96,14 +96,14 @@ export const WhatsAppMessenger: React.FC = () => {
     } catch (e) {
       console.warn('Poll error:', e);
     }
-  };
+  }, [isAuthenticated, isOpen, user?.role]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
     fetchMessagesAndCalls();
     const interval = setInterval(fetchMessagesAndCalls, 3000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, user, isOpen]);
+  }, [isAuthenticated, fetchMessagesAndCalls]);
 
   // Call Actions
   const handleStartCall = async (type: 'audio' | 'video') => {

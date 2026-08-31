@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { INITIAL_PROJECTS } from '@/data/projects';
 import { formatDate } from '@/lib/utils';
@@ -99,9 +100,12 @@ export default function ProjectDetailsPage({ params }: PageProps) {
 
         {/* Large Media Preview */}
         <div className="relative rounded-3xl overflow-hidden glass-card border border-white/15 aspect-[16/9] shadow-2xl">
-          <img
+          <Image
             src={project.thumbnail}
             alt={project.title}
+            fill
+            priority
+            sizes="(max-width: 1200px) 100vw, 1200px"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950/80 via-transparent to-transparent flex items-end p-6 sm:p-8">
@@ -168,11 +172,13 @@ export default function ProjectDetailsPage({ params }: PageProps) {
               {project.screenshots.map((img, i) => (
                 <div
                   key={i}
-                  className="rounded-2xl overflow-hidden glass-card aspect-[16/10] border border-white/10"
+                  className="relative rounded-2xl overflow-hidden glass-card aspect-[16/10] border border-white/10"
                 >
-                  <img
+                  <Image
                     src={img}
                     alt={`${project.title} screenshot ${i + 1}`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />
                 </div>

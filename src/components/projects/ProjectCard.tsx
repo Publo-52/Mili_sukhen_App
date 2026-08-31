@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ExternalLink, Eye, Heart, Sparkles, Calendar, Layers } from 'lucide-react';
 import { Project } from '@/types';
@@ -44,11 +45,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
       {/* Thumbnail Container */}
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-obsidian-900">
-        <img
+        <Image
           src={project.thumbnail}
           alt={project.title}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-          loading="lazy"
         />
 
         {/* Gradient Overlay */}

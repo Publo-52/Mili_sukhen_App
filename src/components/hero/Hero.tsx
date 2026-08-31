@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { Heart, Sparkles, ArrowDown, BookOpen, Layers } from 'lucide-react';
 import { ROMANTIC_QUOTES } from '@/data/config';
 import { MemoryCounter } from './MemoryCounter';
@@ -40,14 +41,17 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
           className="relative mx-auto w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 bg-gradient-to-tr from-roseGlow-500 via-pink-400 to-purple-500 shadow-glow-lg group cursor-pointer"
         >
           <div className="w-full h-full rounded-full overflow-hidden bg-obsidian-950 border-2 border-obsidian-950 relative">
-            <img
+            <Image
               src="/images/mili_sketch.jpg"
               alt="Mili Sketch Portrait"
+              width={128}
+              height={128}
+              priority
               className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-110"
             />
           </div>
           <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-roseGlow-600 text-white flex items-center justify-center shadow-glow text-xs border border-white/20">
-            💖
+            <Sparkles className="w-4 h-4 text-white" />
           </div>
         </motion.div>
 

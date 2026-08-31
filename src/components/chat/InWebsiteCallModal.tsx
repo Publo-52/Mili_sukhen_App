@@ -229,7 +229,7 @@ export const InWebsiteCallModal: React.FC<InWebsiteCallModalProps> = ({
         localStreamRef.current = null;
       }
     };
-  }, [isConnected, isOutgoingRinging, isIncoming, call?.sdpOffer, call?.sdpAnswer, call?.iceCandidates?.length]);
+  }, [isConnected, isOutgoingRinging, isIncoming, call, currentUserRole]);
 
   // ─── 3. Call Duration Timer ────────────────────────────────────────────────────
   useEffect(() => {
