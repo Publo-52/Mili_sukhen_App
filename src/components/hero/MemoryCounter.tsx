@@ -33,7 +33,7 @@ export const MemoryCounter: React.FC = () => {
     {
       label: "Days of Memories",
       value: mounted ? `${time.days}d ${time.hours}h ${time.minutes}m ${time.seconds}s` : "...",
-      subtext: "Since Sept 15, 2025",
+      subtext: "Since Oct 14, 2025",
       icon: Clock,
       color: "text-roseGlow-400",
       bgGlow: "group-hover:border-roseGlow-500/40",
