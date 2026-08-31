@@ -56,29 +56,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Hydrate instantly from localStorage on client mount
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem('mili_user');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (parsed && parsed.name) {
+          setIsAuthenticated(true);
+          setUser({
+            name: parsed.name,
+            role: parsed.role || 'mili',
+            avatar: parsed.avatar || (parsed.role === 'sukhen' ? 'S' : 'M'),
+          });
+        }
+      }
+    } catch {}
+  }, []);
+
   const refresh = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me', { cache: 'no-store' });
-      const data = await res.json();
-      setIsAuthenticated(data.authenticated);
-      if (data.authenticated && data.session) {
-        setUser(data.user || {
-          name: data.session.userName || 'Mili',
-          role: data.session.userRole || 'mili',
-          avatar: data.session.avatar || '👑',
-        });
-        setSession(data.session);
-        if (data.user?.role === 'sukhen' || data.session.userRole === 'sukhen') {
-          setAdminLoggedIn(true);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authenticated && data.user) {
+          setIsAuthenticated(true);
+          setUser(data.user);
+          setSession(data.session || null);
+          try {
+            localStorage.setItem('mili_user', JSON.stringify(data.user));
+          } catch {}
+          if (data.user?.role === 'sukhen' || data.session?.userRole === 'sukhen') {
+            setAdminLoggedIn(true);
+          }
+          return;
         }
-      } else {
-        setUser(null);
-        setSession(null);
       }
-    } catch {
+
+      // Check local storage fallback
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('mili_user') : null;
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.name) {
+            setIsAuthenticated(true);
+            setUser({
+              name: parsed.name,
+              role: parsed.role || 'mili',
+              avatar: parsed.avatar || (parsed.role === 'sukhen' ? 'S' : 'M'),
+            });
+            return;
+          }
+        } catch {}
+      }
+
       setIsAuthenticated(false);
       setUser(null);
       setSession(null);
+    } catch {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('mili_user') : null;
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.name) {
+            setIsAuthenticated(true);
+            setUser(parsed);
+          }
+        } catch {}
+      }
     } finally {
       setLoading(false);
     }
@@ -88,19 +133,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch {}
-    localStorage.removeItem('mili_session_ref');
+    try {
+      localStorage.removeItem('mili_user');
+      localStorage.removeItem('mili_session_ref');
+      localStorage.removeItem('mili_admin_logged_in');
+    } catch {}
     setAdminLoggedIn(false);
     setIsAuthenticated(false);
     setUser(null);
     setSession(null);
-    window.location.href = '/login';
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('auth-changed'));
+      window.location.href = '/login';
+    }
   }, []);
 
   useEffect(() => {
     refresh();
-    // Refresh session status every 5 minutes
-    const interval = setInterval(refresh, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    const handleAuthChange = () => refresh();
+    window.addEventListener('auth-changed', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+    const interval = setInterval(refresh, 60 * 1000);
+    return () => {
+      window.removeEventListener('auth-changed', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+      clearInterval(interval);
+    };
   }, [refresh]);
 
   const isAdmin = user?.role === 'sukhen';

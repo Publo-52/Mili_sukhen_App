@@ -89,12 +89,16 @@ function LoginContent() {
       if (res.ok && data.success) {
         setLoggedInUser(data.user);
         setStep('success');
-        if (data.sessionId) {
-          localStorage.setItem('mili_session_ref', data.sessionId);
-        }
+        try {
+          localStorage.setItem('mili_user', JSON.stringify(data.user));
+          if (data.sessionId) {
+            localStorage.setItem('mili_session_ref', data.sessionId);
+          }
+          window.dispatchEvent(new Event('auth-changed'));
+        } catch {}
         setTimeout(() => {
-          router.replace(redirectTarget);
-        }, 1800);
+          window.location.href = redirectTarget;
+        }, 1200);
       } else if (res.status === 403 && data.code === 'MAX_DEVICES') {
         setBlockedSessions(data.sessions || []);
         setStep('blocked');

@@ -288,7 +288,7 @@ export const WhatsAppMessenger: React.FC = () => {
     { emoji: '👑', title: 'For My Queen' },
   ];
 
-  if (loading || !isAuthenticated) {
+  if (!isAuthenticated) {
     return null;
   }
 
