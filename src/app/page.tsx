@@ -126,7 +126,7 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
-              className="pt-20 sm:pt-24 pb-4"
+              className="pt-28 sm:pt-32 pb-8"
             >
               <ProjectShowcase />
             </motion.div>
@@ -140,7 +140,7 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
-              className="pt-20 sm:pt-24 pb-4"
+              className="pt-28 sm:pt-32 pb-8"
             >
               <TurtleGallery />
             </motion.div>
@@ -154,7 +154,7 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
-              className="pt-20 sm:pt-24 pb-4"
+              className="pt-28 sm:pt-32 pb-8"
             >
               <MemoriesTimeline />
             </motion.div>
@@ -168,7 +168,7 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.35 }}
-              className="pt-20 sm:pt-24 pb-4"
+              className="pt-28 sm:pt-32 pb-8"
             >
               <LoveNotesVault />
             </motion.div>
