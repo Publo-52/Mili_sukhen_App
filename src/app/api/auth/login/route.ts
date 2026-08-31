@@ -2,8 +2,74 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSession } from '@/lib/sessions';
 import { AUTH_USERS, AUTH_CONFIG } from '@/data/config';
 
+interface RateLimitRecord {
+  attempts: number;
+  lockedUntil: number;
+  lastAttempt: number;
+}
+
+// In-memory rate limiting map for brute force prevention
+const rateLimitMap = new Map<string, RateLimitRecord>();
+
+function checkRateLimit(ip: string): { allowed: boolean; waitSeconds?: number } {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+
+  if (!record) {
+    return { allowed: true };
+  }
+
+  // Check if IP is currently locked out
+  if (record.lockedUntil > now) {
+    const waitSeconds = Math.ceil((record.lockedUntil - now) / 1000);
+    return { allowed: false, waitSeconds };
+  }
+
+  // Reset if window has expired (10 minutes)
+  if (now - record.lastAttempt > 10 * 60 * 1000) {
+    rateLimitMap.delete(ip);
+    return { allowed: true };
+  }
+
+  return { allowed: true };
+}
+
+function recordFailedAttempt(ip: string) {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip) || { attempts: 0, lockedUntil: 0, lastAttempt: now };
+  record.attempts += 1;
+  record.lastAttempt = now;
+
+  // Lock out for 5 minutes after 6 failed attempts
+  if (record.attempts >= 6) {
+    record.lockedUntil = now + 5 * 60 * 1000;
+  }
+
+  rateLimitMap.set(ip, record);
+}
+
+function clearRateLimit(ip: string) {
+  rateLimitMap.delete(ip);
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      '127.0.0.1';
+
+    // Check anti-brute-force rate limit
+    const rateCheck = checkRateLimit(ip);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many failed login attempts. For security, please wait ${rateCheck.waitSeconds} seconds before trying again.`,
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body as { email?: string; password?: string };
 
@@ -61,6 +127,7 @@ export async function POST(request: NextRequest) {
       ) {
         candidateUser = AUTH_USERS.mili;
       } else {
+        recordFailedAttempt(ip);
         return NextResponse.json(
           { error: 'Unrecognized email or username. Please use your registered email address.' },
           { status: 401 }
@@ -75,20 +142,20 @@ export async function POST(request: NextRequest) {
       cleanPass.toLowerCase() === 'forever';
 
     if (!isPasswordValid) {
+      recordFailedAttempt(ip);
       return NextResponse.json(
         { error: `Incorrect password for ${candidateUser.name}. Please try again.` },
         { status: 401 }
       );
     }
 
+    // Clear rate limit on successful authentication
+    clearRateLimit(ip);
+
     const authenticatedUser = candidateUser;
 
     // Get client info
     const userAgent = request.headers.get('user-agent') || 'Unknown Browser';
-    const ip =
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      request.headers.get('x-real-ip') ||
-      '127.0.0.1';
 
     // Check if client already has an active session cookie
     const existingSessionId = request.cookies.get('mili_session')?.value;

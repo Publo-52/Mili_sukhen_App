@@ -163,6 +163,30 @@ function detectCategory(title: string, desc: string, url: string): ProjectCatego
   return 'Websites';
 }
 
+function isSafeUrl(urlString: string): boolean {
+  try {
+    const parsed = new URL(urlString);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    const hostname = parsed.hostname.toLowerCase();
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('172.16.') ||
+      hostname === '169.254.169.254' ||
+      hostname.endsWith('.internal') ||
+      hostname.endsWith('.local')
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = getSessionFromRequest(request);
@@ -187,6 +211,10 @@ export async function POST(request: NextRequest) {
     let validUrl = rawUrl;
     if (!/^https?:\/\//i.test(validUrl)) {
       validUrl = `https://${validUrl}`;
+    }
+
+    if (!isSafeUrl(validUrl)) {
+      return NextResponse.json({ error: 'Invalid or restricted URL host provided.' }, { status: 400 });
     }
 
     let html = '';
