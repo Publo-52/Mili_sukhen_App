@@ -22,11 +22,12 @@ import {
   Monitor,
   Check,
 } from 'lucide-react';
-import { Project, DirectMessage, ProjectCategory, TurtleCreation } from '@/types';
+import { Project, DirectMessage, ProjectCategory, TurtleCreation, LoveNote } from '@/types';
 import { APP_CONFIG, AUTH_CONFIG } from '@/data/config';
 import { ProjectEditorModal } from '@/components/projects/ProjectEditorModal';
 import { TurtleEditorModal } from '@/components/turtle/TurtleEditorModal';
-import { Wand2, Terminal } from 'lucide-react';
+import { LoveNoteEditorModal } from '@/components/love-notes/LoveNoteEditorModal';
+import { Wand2, Terminal, Heart, Feather, BookOpen } from 'lucide-react';
 import {
   getProjects,
   saveProject,
@@ -35,6 +36,9 @@ import {
   getTurtleCreations,
   saveTurtleCreation,
   deleteTurtleCreation,
+  getLoveNotes,
+  saveLoveNote,
+  deleteLoveNote,
   getMessages,
   markMessageAsRead,
   replyToMessage,
@@ -49,7 +53,7 @@ export default function AdminPage() {
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'projects' | 'turtle' | 'sessions'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'turtle' | 'love-notes' | 'sessions'>('projects');
 
   // Messages State
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -64,6 +68,11 @@ export default function AdminPage() {
   const [turtleCreations, setTurtleCreations] = useState<TurtleCreation[]>([]);
   const [isAddingTurtle, setIsAddingTurtle] = useState(false);
   const [editingTurtle, setEditingTurtle] = useState<TurtleCreation | null>(null);
+
+  // Love Notes State
+  const [loveNotes, setLoveNotes] = useState<LoveNote[]>([]);
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [editingNote, setEditingNote] = useState<LoveNote | null>(null);
 
   // Sessions State
   const [deviceSessions, setDeviceSessions] = useState<{
@@ -147,6 +156,9 @@ export default function AdminPage() {
     } catch {
       setTurtleCreations(getTurtleCreations());
     }
+
+    // 4. Load Love Notes
+    setLoveNotes(getLoveNotes());
   };
 
   const loadSessions = useCallback(async () => {
@@ -321,9 +333,31 @@ export default function AdminPage() {
     }
   };
 
+  // Love Note Handlers
+  const handleSaveNoteModal = (note: LoveNote) => {
+    const updated = saveLoveNote(note);
+    setLoveNotes(updated);
+    setIsAddingNote(false);
+    setEditingNote(null);
+  };
+
+  const handleDeleteNote = (id: string) => {
+    if (confirm('Delete this love note from your vault?')) {
+      const updated = deleteLoveNote(id);
+      setLoveNotes(updated);
+    }
+  };
+
+  const handleEditNote = (note: LoveNote) => {
+    setEditingNote(note);
+    setIsAddingNote(true);
+  };
+
   const handleExportBackup = () => {
     const data = {
       projects: getProjects(),
+      turtleCreations: getTurtleCreations(),
+      loveNotes: getLoveNotes(),
       messages: getMessages(),
       exportedAt: new Date().toISOString(),
     };
@@ -468,6 +502,18 @@ export default function AdminPage() {
           >
             <Terminal className="w-3.5 h-3.5" />
             <span>Python Art ({turtleCreations.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('love-notes')}
+            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
+              activeTab === 'love-notes'
+                ? 'bg-roseGlow-600 text-white shadow-glow'
+                : 'glass-card text-slate-400 hover:text-white'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Love Notes ({loveNotes.length})</span>
           </button>
 
           <button
@@ -780,6 +826,85 @@ export default function AdminPage() {
             )}
           </div>
         )}
+        {/* Tab 3: Love Notes Management */}
+        {activeTab === 'love-notes' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-roseGlow-500 fill-roseGlow-500" />
+                  <span>Private Love Notes Vault ({loveNotes.length})</span>
+                </h2>
+                <p className="text-xs text-slate-400 font-mono">
+                  Write unlimited private love letters and heartfelt thoughts for Mili
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setEditingNote(null);
+                    setIsAddingNote(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-roseGlow-600 via-pink-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all"
+                >
+                  <Feather className="w-3.5 h-3.5" />
+                  <span>+ Write New Love Note</span>
+                </button>
+              </div>
+            </div>
+
+            {/* List of Existing Love Notes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {loveNotes.map((note, index) => (
+                <div
+                  key={note.id}
+                  className="glass-card rounded-2xl p-5 border border-roseGlow-500/20 flex flex-col justify-between space-y-4 hover:border-roseGlow-500/50 transition-all"
+                >
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-roseGlow-500/10 text-roseGlow-300 border border-roseGlow-500/30">
+                        #{index + 1} • {note.moodTag || 'deep'}
+                      </span>
+                      {note.isFavorite && (
+                        <Heart className="w-3.5 h-3.5 text-roseGlow-500 fill-roseGlow-500" />
+                      )}
+                    </div>
+
+                    <h3 className="text-base font-serif font-bold text-white leading-snug">
+                      {note.title}
+                    </h3>
+                    <p className="text-xs text-slate-300 font-serif italic line-clamp-2 border-l-2 border-roseGlow-500 pl-2">
+                      “{note.snippet}”
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-mono">
+                      📅 {note.date}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+                    <button
+                      onClick={() => handleEditNote(note)}
+                      className="p-2 rounded-xl glass-card hover:border-white/30 text-slate-300 hover:text-white transition-colors"
+                      title="Edit note"
+                      aria-label="Edit note"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteNote(note.id)}
+                      className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                      title="Delete note"
+                      aria-label="Delete note"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Project Editor Modal */}
@@ -802,6 +927,17 @@ export default function AdminPage() {
           setEditingTurtle(null);
         }}
         onSave={handleSaveTurtleModal}
+      />
+
+      {/* Love Note Editor Modal */}
+      <LoveNoteEditorModal
+        isOpen={isAddingNote}
+        editingNote={editingNote}
+        onClose={() => {
+          setIsAddingNote(false);
+          setEditingNote(null);
+        }}
+        onSave={handleSaveNoteModal}
       />
     </main>
   );

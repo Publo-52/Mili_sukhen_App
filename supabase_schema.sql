@@ -61,15 +61,29 @@ CREATE TABLE IF NOT EXISTS public.turtle_creations (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 5. Love Notes Table (for unlimited love letters & notes created by Sukhen)
+CREATE TABLE IF NOT EXISTS public.love_notes (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    snippet TEXT NOT NULL,
+    full_message TEXT NOT NULL,
+    date TEXT DEFAULT 'A heartfelt reminder',
+    mood_tag TEXT DEFAULT 'deep',
+    is_favorite BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Enable Row Level Security (RLS) and allow public read/write for this app
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.device_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.turtle_creations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.love_notes ENABLE ROW LEVEL SECURITY;
 
 -- Policies for public access (so Next.js API can read and write with anon key)
 CREATE POLICY "Allow all operations on messages" ON public.messages FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on projects" ON public.projects FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on device_sessions" ON public.device_sessions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on turtle_creations" ON public.turtle_creations FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all operations on love_notes" ON public.love_notes FOR ALL USING (true) WITH CHECK (true);
 

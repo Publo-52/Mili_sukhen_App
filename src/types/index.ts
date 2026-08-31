@@ -65,7 +65,7 @@ export interface LoveNote {
   snippet: string;
   fullMessage: string;
   date: string;
-  moodTag: 'gentle' | 'deep' | 'poetic' | 'playful' | 'promise';
+  moodTag: 'gentle' | 'deep' | 'poetic' | 'playful' | 'promise' | 'future' | string;
   isFavorite?: boolean;
 }
 

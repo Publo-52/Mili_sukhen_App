@@ -9,6 +9,7 @@ import { APP_CONFIG } from '@/data/config';
 
 const KEYS = {
   PROJECTS: 'mili_universe_projects',
+  LOVE_NOTES: 'mili_universe_love_notes',
   FAVORITE_PROJECTS: 'mili_fav_projects',
   FAVORITE_NOTES: 'mili_fav_notes',
   FAVORITE_MEMORIES: 'mili_fav_memories',
@@ -103,6 +104,41 @@ export function deleteTurtleCreation(id: string): TurtleCreation[] {
   const updated = current.filter(c => c.id !== id);
   setStorageItem(KEYS.CUSTOM_TURTLE, updated);
   return updated;
+}
+
+// ----------------- Love Notes Storage (Unlimited) -----------------
+export function getLoveNotes(): LoveNote[] {
+  const saved = getStorageItem<LoveNote[] | null>(KEYS.LOVE_NOTES, null);
+  if (!saved || saved.length === 0) {
+    return INITIAL_LOVE_NOTES;
+  }
+  return saved;
+}
+
+export function saveLoveNote(note: LoveNote): LoveNote[] {
+  const current = getLoveNotes();
+  const index = current.findIndex(n => n.id === note.id);
+  let updated: LoveNote[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = note;
+  } else {
+    updated = [note, ...current];
+  }
+  setStorageItem(KEYS.LOVE_NOTES, updated);
+  return updated;
+}
+
+export function deleteLoveNote(id: string): LoveNote[] {
+  const current = getLoveNotes();
+  const updated = current.filter(n => n.id !== id);
+  setStorageItem(KEYS.LOVE_NOTES, updated);
+  return updated;
+}
+
+export function resetLoveNotesToDefault(): LoveNote[] {
+  setStorageItem(KEYS.LOVE_NOTES, INITIAL_LOVE_NOTES);
+  return INITIAL_LOVE_NOTES;
 }
 
 // ----------------- Favorites -----------------
