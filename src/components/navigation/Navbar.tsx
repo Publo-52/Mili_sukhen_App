@@ -5,9 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Sparkles, Menu, X, Shield, Film, LogIn, LogOut, User, Music, Volume2, VolumeX } from 'lucide-react';
-import { APP_CONFIG } from '@/data/config';
 import { useAuth } from '@/lib/auth-context';
-import { audioEngine } from '@/lib/audio';
+import { audioEngine, AudioTrack } from '@/lib/audio';
 
 interface NavbarProps {
   onReplayIntro?: () => void;
@@ -19,6 +18,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoClicks, setLogoClicks] = useState(0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState<AudioTrack>(audioEngine.getCurrentTrack());
   const { isAuthenticated, user, session, isAdmin, loading, logout } = useAuth();
 
   useEffect(() => {
@@ -27,8 +27,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onReplayIntro, onOpenSurprise })
     };
     window.addEventListener('scroll', handleScroll);
 
-    const unsubscribe = audioEngine.subscribe((playing) => {
+    const unsubscribe = audioEngine.subscribe((playing, track) => {
       setIsPlayingAudio(playing);
+      setCurrentTrack(track);
     });
 
     return () => {

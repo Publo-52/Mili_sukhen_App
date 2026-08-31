@@ -1,24 +1,181 @@
-// WebAudio & HTML5 Ambient Soundscape Generator for Romantic Atmosphere
-// 100% compatible across Mobile (Realme, Vivo, Xiaomi, iOS Safari, Android Chrome) and Desktop
+// Romantic Audio Engine supporting high-quality romantic piano streams with WebAudio fallback
+// 100% mobile and desktop compatible
+
+export interface AudioTrack {
+  id: string;
+  title: string;
+  artist: string;
+  url: string;
+  type: 'stream' | 'synth';
+}
+
+export const ROMANTIC_PLAYLIST: AudioTrack[] = [
+  {
+    id: 'clair-de-lune',
+    title: 'Clair de Lune',
+    artist: 'Claude Debussy',
+    url: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Claude_Debussy_-_Suite_bergamasque_-_3._Clair_de_lune.ogg',
+    type: 'stream',
+  },
+  {
+    id: 'gymnopedie-1',
+    title: 'Gymnopédie No. 1',
+    artist: 'Erik Satie',
+    url: 'https://upload.wikimedia.org/wikipedia/commons/3/34/Erik_Satie_-_gymnopedie_no_1.ogg',
+    type: 'stream',
+  },
+  {
+    id: 'chopin-nocturne',
+    title: 'Nocturne in E-flat (Op. 9 No. 2)',
+    artist: 'Frédéric Chopin',
+    url: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Chopin_Nocturne_Op9_No2.ogg',
+    type: 'stream',
+  },
+  {
+    id: 'dreamy-chords',
+    title: 'Celestial Romance',
+    artist: 'Suksharmi Ambient Synth',
+    url: '',
+    type: 'synth',
+  },
+];
 
 class RomanticAudioEngine {
   private ctx: AudioContext | null = null;
   private isPlaying: boolean = false;
   private gainNode: GainNode | null = null;
   private timer: NodeJS.Timeout | null = null;
-  private volume: number = 0.35;
-  private activeOscillators: OscillatorNode[] = [];
+  private volume: number = 0.45;
+  private currentTrackIndex: number = 0;
   private audioElement: HTMLAudioElement | null = null;
+  private listeners: ((playing: boolean, track: AudioTrack) => void)[] = [];
 
-  // Romantic Pentatonic Chords (C Major 9, Fmaj7, Am9, Gsus4)
+  // Romantic Pentatonic Chords Fallback (C Major 9, Fmaj7, Am9, Gsus4)
   private chordProgressions = [
-    [261.63, 329.63, 392.00, 493.88, 587.33], // Cmaj9 (C4, E4, G4, B4, D5)
-    [349.23, 440.00, 523.25, 659.25],         // Fmaj7 (F4, A4, C5, E5)
-    [220.00, 261.63, 329.63, 392.00, 493.88], // Am9 (A3, C4, E4, G4, B4)
-    [196.00, 261.63, 293.66, 392.00],         // Gsus4 (G3, C4, D4, G4)
+    [261.63, 329.63, 392.00, 493.88, 587.33], // Cmaj9
+    [349.23, 440.00, 523.25, 659.25],         // Fmaj7
+    [220.00, 261.63, 329.63, 392.00, 493.88], // Am9
+    [196.00, 261.63, 293.66, 392.00],         // Gsus4
   ];
   private currentChordIndex = 0;
 
+  constructor() {
+    if (typeof window !== 'undefined') {
+      this.initAudioElement();
+    }
+  }
+
+  private initAudioElement() {
+    if (this.audioElement || typeof window === 'undefined') return;
+    this.audioElement = new Audio();
+    this.audioElement.preload = 'auto';
+    this.audioElement.volume = this.volume;
+
+    this.audioElement.addEventListener('ended', () => {
+      this.nextTrack();
+    });
+
+    this.audioElement.addEventListener('error', () => {
+      // If streaming error occurs, fallback seamlessly to synth
+      this.playSynth();
+    });
+  }
+
+  public subscribe(cb: (playing: boolean, track: AudioTrack) => void) {
+    this.listeners.push(cb);
+    cb(this.isPlaying, this.getCurrentTrack());
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== cb);
+    };
+  }
+
+  private notify() {
+    const track = this.getCurrentTrack();
+    this.listeners.forEach((l) => l(this.isPlaying, track));
+  }
+
+  public getCurrentTrack(): AudioTrack {
+    return ROMANTIC_PLAYLIST[this.currentTrackIndex] || ROMANTIC_PLAYLIST[0];
+  }
+
+  public async play(trackIndex?: number) {
+    if (typeof trackIndex === 'number') {
+      this.currentTrackIndex = (trackIndex + ROMANTIC_PLAYLIST.length) % ROMANTIC_PLAYLIST.length;
+    }
+
+    this.initAudioElement();
+    const track = this.getCurrentTrack();
+    this.isPlaying = true;
+    this.notify();
+
+    if (track.type === 'stream' && track.url && this.audioElement) {
+      try {
+        if (this.audioElement.src !== track.url) {
+          this.audioElement.src = track.url;
+        }
+        this.audioElement.volume = this.volume;
+        await this.audioElement.play();
+        this.stopSynth();
+        return;
+      } catch {
+        // Autoplay policy or format fallback
+        this.playSynth();
+      }
+    } else {
+      if (this.audioElement) {
+        this.audioElement.pause();
+      }
+      this.playSynth();
+    }
+  }
+
+  public pause() {
+    this.isPlaying = false;
+    if (this.audioElement) {
+      this.audioElement.pause();
+    }
+    this.stopSynth();
+    this.notify();
+  }
+
+  public nextTrack() {
+    this.currentTrackIndex = (this.currentTrackIndex + 1) % ROMANTIC_PLAYLIST.length;
+    if (this.isPlaying) {
+      this.play();
+    } else {
+      this.notify();
+    }
+  }
+
+  public prevTrack() {
+    this.currentTrackIndex = (this.currentTrackIndex - 1 + ROMANTIC_PLAYLIST.length) % ROMANTIC_PLAYLIST.length;
+    if (this.isPlaying) {
+      this.play();
+    } else {
+      this.notify();
+    }
+  }
+
+  public setVolume(val: number) {
+    this.volume = Math.max(0, Math.min(1, val));
+    if (this.audioElement) {
+      this.audioElement.volume = this.volume;
+    }
+    if (this.gainNode && this.ctx) {
+      this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.gainNode.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+    }
+  }
+
+  public getIsPlaying(): boolean {
+    return this.isPlaying;
+  }
+
+  public getVolume(): number {
+    return this.volume;
+  }
+
+  // --- SYNTHESIZER ENGINE (Romantic Chords) ---
   private initContext() {
     if (!this.ctx && typeof window !== 'undefined') {
       try {
@@ -31,32 +188,14 @@ class RomanticAudioEngine {
     }
   }
 
-  private listeners: ((playing: boolean) => void)[] = [];
-
-  public subscribe(cb: (playing: boolean) => void) {
-    this.listeners.push(cb);
-    return () => {
-      this.listeners = this.listeners.filter((l) => l !== cb);
-    };
-  }
-
-  private notify() {
-    this.listeners.forEach((l) => l(this.isPlaying));
-  }
-
-  public async play() {
+  private async playSynth() {
     this.initContext();
-
     if (this.ctx) {
       if (this.ctx.state === 'suspended') {
         try {
           await this.ctx.resume();
         } catch {}
       }
-
-      this.isPlaying = true;
-      this.notify();
-
       if (this.gainNode) {
         this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
         this.gainNode.gain.setValueAtTime(0.001, this.ctx.currentTime);
@@ -75,13 +214,10 @@ class RomanticAudioEngine {
 
   private playNextChord() {
     if (!this.ctx || !this.gainNode || !this.isPlaying) return;
-
     const chord = this.chordProgressions[this.currentChordIndex];
     this.currentChordIndex = (this.currentChordIndex + 1) % this.chordProgressions.length;
-
     const now = this.ctx.currentTime;
 
-    // Create a gentle filter for warm, dreamy sound
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.setValueAtTime(800, now);
@@ -94,15 +230,10 @@ class RomanticAudioEngine {
       try {
         const osc = this.ctx.createOscillator();
         const oscGain = this.ctx.createGain();
-
-        // Dreamy sine + triangle mix
         osc.type = i % 2 === 0 ? 'sine' : 'triangle';
         osc.frequency.setValueAtTime(freq, now);
-
-        // Subtle detune for lush chorus feeling
         osc.detune.setValueAtTime((Math.random() - 0.5) * 8, now);
 
-        // Envelope: gentle attack, long sustain, soft release
         const attack = 1.2 + (i * 0.2);
         const duration = 4.0;
 
@@ -112,22 +243,13 @@ class RomanticAudioEngine {
 
         osc.connect(oscGain);
         oscGain.connect(filter);
-
         osc.start(now);
         osc.stop(now + duration + 0.1);
-
-        this.activeOscillators.push(osc);
-        setTimeout(() => {
-          const idx = this.activeOscillators.indexOf(osc);
-          if (idx > -1) this.activeOscillators.splice(idx, 1);
-        }, (duration + 0.2) * 1000);
       } catch {}
     });
   }
 
-  public pause() {
-    this.isPlaying = false;
-    this.notify();
+  private stopSynth() {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
@@ -138,22 +260,6 @@ class RomanticAudioEngine {
       this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
       this.gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
     }
-  }
-
-  public setVolume(val: number) {
-    this.volume = Math.max(0, Math.min(1, val));
-    if (this.gainNode && this.ctx) {
-      this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
-      this.gainNode.gain.setValueAtTime(this.volume, this.ctx.currentTime);
-    }
-  }
-
-  public getIsPlaying(): boolean {
-    return this.isPlaying;
-  }
-
-  public getVolume(): number {
-    return this.volume;
   }
 }
 
