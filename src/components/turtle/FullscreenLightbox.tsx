@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Code, Image as ImageIcon, Copy, Check, Sparkles, Heart } from 'lucide-react';
 import { TurtleCreation } from '@/types';
@@ -18,6 +19,11 @@ export const FullscreenLightbox: React.FC<FullscreenLightboxProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'canvas' | 'image' | 'code'>('canvas');
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -27,7 +33,7 @@ export const FullscreenLightbox: React.FC<FullscreenLightboxProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  if (!creation) return null;
+  if (!creation || !mounted) return null;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(creation.pythonScript);
@@ -35,16 +41,16 @@ export const FullscreenLightbox: React.FC<FullscreenLightboxProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
+      <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center p-2.5 sm:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/90 backdrop-blur-xl"
+          className="fixed inset-0 bg-[#06040c]/95 backdrop-blur-2xl z-[99999]"
         />
 
         {/* Modal */}
@@ -53,10 +59,10 @@ export const FullscreenLightbox: React.FC<FullscreenLightboxProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.3 }}
-          className="relative w-full max-w-4xl max-h-[90vh] glass-card rounded-3xl overflow-hidden flex flex-col border border-white/15 shadow-2xl z-10"
+          className="relative w-full max-w-4xl max-h-[85vh] sm:max-h-[90vh] bg-[#0e091b] rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col border border-white/20 shadow-2xl z-[100000] my-auto"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-obsidian-950/90">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/10 bg-[#130d25] shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-roseGlow-500/20 text-roseGlow-400 flex items-center justify-center">
                 <Sparkles className="w-4 h-4" />
@@ -140,6 +146,7 @@ export const FullscreenLightbox: React.FC<FullscreenLightboxProps> = ({
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -44,6 +45,11 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
   const [pastedCode, setPastedCode] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Form State
   const [formData, setFormData] = useState<Partial<TurtleCreation>>({
@@ -84,7 +90,7 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
     setErrorMsg('');
   }, [editingCreation, isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleMagicGenerate = async () => {
     if (!magicPrompt.trim() && !pastedCode.trim()) {
@@ -158,16 +164,16 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
     onClose();
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-        {/* Backdrop */}
+      <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center p-2.5 sm:p-6 overflow-y-auto">
+        {/* Solid Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-xl"
+          className="fixed inset-0 bg-[#06040c]/95 backdrop-blur-2xl z-[99999]"
         />
 
         {/* Modal Card */}
@@ -175,10 +181,10 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl glass-card rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-500/30 shadow-2xl z-10 my-auto flex flex-col max-h-[94dvh] sm:max-h-[88dvh]"
+          className="relative w-full max-w-2xl bg-[#0e091b] rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-500/30 shadow-2xl z-[100000] my-auto flex flex-col max-h-[85vh] sm:max-h-[88vh]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-white/10 bg-obsidian-950/90 shrink-0">
+          <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-white/10 bg-[#130d25] shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-white shadow-glow shrink-0">
                 <Terminal className="w-4 h-4" />
@@ -202,7 +208,7 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-1.5 px-3 sm:px-5 pt-2 pb-2 border-b border-white/5 bg-obsidian-900/60 overflow-x-auto no-scrollbar whitespace-nowrap shrink-0">
+          <div className="flex items-center gap-1.5 px-3 sm:px-5 pt-2 pb-2 border-b border-white/5 bg-[#0a0714] overflow-x-auto no-scrollbar whitespace-nowrap shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab('magic')}
@@ -516,6 +522,7 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
           </form>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
