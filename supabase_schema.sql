@@ -45,12 +45,31 @@ CREATE TABLE IF NOT EXISTS public.device_sessions (
     expires_at TIMESTAMPTZ NOT NULL
 );
 
+-- 4. Python Turtle Creations Table
+CREATE TABLE IF NOT EXISTS public.turtle_creations (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    description TEXT,
+    inspiration TEXT,
+    category TEXT DEFAULT 'Mathematical Geometry',
+    artwork_image TEXT,
+    python_script TEXT NOT NULL,
+    tags TEXT[] DEFAULT ARRAY['Python Turtle', 'Generative Art'],
+    featured BOOLEAN DEFAULT TRUE,
+    canvas_drawing_type TEXT DEFAULT 'mandala',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Enable Row Level Security (RLS) and allow public read/write for this app
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.device_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.turtle_creations ENABLE ROW LEVEL SECURITY;
 
 -- Policies for public access (so Next.js API can read and write with anon key)
 CREATE POLICY "Allow all operations on messages" ON public.messages FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on projects" ON public.projects FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on device_sessions" ON public.device_sessions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all operations on turtle_creations" ON public.turtle_creations FOR ALL USING (true) WITH CHECK (true);
+

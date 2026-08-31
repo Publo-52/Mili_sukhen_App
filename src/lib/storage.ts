@@ -75,6 +75,36 @@ export function resetProjectsToDefault(): Project[] {
   return INITIAL_PROJECTS;
 }
 
+// ----------------- Turtle Creations Storage -----------------
+export function getTurtleCreations(): TurtleCreation[] {
+  const saved = getStorageItem<TurtleCreation[] | null>(KEYS.CUSTOM_TURTLE, null);
+  if (!saved || saved.length === 0) {
+    return INITIAL_TURTLE_CREATIONS;
+  }
+  return saved;
+}
+
+export function saveTurtleCreation(creation: TurtleCreation): TurtleCreation[] {
+  const current = getTurtleCreations();
+  const index = current.findIndex(c => c.id === creation.id);
+  let updated: TurtleCreation[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = creation;
+  } else {
+    updated = [creation, ...current];
+  }
+  setStorageItem(KEYS.CUSTOM_TURTLE, updated);
+  return updated;
+}
+
+export function deleteTurtleCreation(id: string): TurtleCreation[] {
+  const current = getTurtleCreations();
+  const updated = current.filter(c => c.id !== id);
+  setStorageItem(KEYS.CUSTOM_TURTLE, updated);
+  return updated;
+}
+
 // ----------------- Favorites -----------------
 export function getFavoriteProjectIds(): string[] {
   return getStorageItem<string[]>(KEYS.FAVORITE_PROJECTS, []);

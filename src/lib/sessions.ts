@@ -101,9 +101,34 @@ function getActiveSessions(): DeviceSession[] {
 export function createSession(
   userAgent: string,
   ip: string,
-  userInfo: { userName?: string; userRole?: 'mili' | 'sukhen' | 'guest'; avatar?: string } = {}
+  userInfo: { userName?: string; userRole?: 'mili' | 'sukhen' | 'guest'; avatar?: string } = {},
+  existingSessionId?: string
 ): { session: DeviceSession } | { error: string; sessions?: DeviceSession[] } {
-  const active = getActiveSessions();
+  let active = getActiveSessions();
+
+  // If there's an existing session token for this client, and it is currently active, refresh/replace it in place
+  if (existingSessionId) {
+    const existingIndex = active.findIndex(s => s.id === existingSessionId);
+    if (existingIndex !== -1) {
+      const now = new Date();
+      const expires = new Date(now.getTime() + AUTH_CONFIG.sessionExpiryMs);
+      const updatedSession: DeviceSession = {
+        id: generateId(),
+        userName: userInfo.userName || active[existingIndex].userName || 'Mili',
+        userRole: userInfo.userRole || active[existingIndex].userRole || 'mili',
+        avatar: userInfo.avatar || active[existingIndex].avatar || (userInfo.userRole === 'sukhen' ? '✨' : '👑'),
+        deviceName: deriveDeviceName(userAgent),
+        userAgent,
+        ip,
+        createdAt: now.toISOString(),
+        lastSeenAt: now.toISOString(),
+        expiresAt: expires.toISOString(),
+      };
+      active[existingIndex] = updatedSession;
+      writeSessions(active);
+      return { session: updatedSession };
+    }
+  }
 
   if (active.length >= AUTH_CONFIG.maxDevices) {
     return {

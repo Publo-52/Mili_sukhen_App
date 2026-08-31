@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ExternalLink, Eye, Heart, Sparkles, Calendar, Layers } from 'lucide-react';
+import { ExternalLink, Eye, Heart, Sparkles, Calendar, Layers, Edit3, Trash2 } from 'lucide-react';
 import { Project } from '@/types';
 import { formatDate } from '@/lib/utils';
 
@@ -14,6 +14,9 @@ interface ProjectCardProps {
   onToggleFavorite: (id: string) => void;
   onQuickPreview: (project: Project) => void;
   index: number;
+  isAdmin?: boolean;
+  onEdit?: (project: Project) => void;
+  onDelete?: (projectId: string) => void;
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
@@ -22,6 +25,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   onToggleFavorite,
   onQuickPreview,
   index,
+  isAdmin = false,
+  onEdit,
+  onDelete,
 }) => {
   const borderClass = project.themeBorder || "group-hover:border-roseGlow-500/50";
   const titleAccentClass = project.themeTextAccent || "group-hover:text-roseGlow-300";
@@ -56,9 +62,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950 via-obsidian-950/40 to-transparent" />
 
-        {/* Top Badges */}
+        {/* Top Badges & Actions */}
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="px-3 py-1 rounded-full text-[10px] font-medium font-mono uppercase tracking-wider bg-obsidian-950/85 backdrop-blur-md text-white/90 border border-white/15 shadow-sm">
               {project.category}
             </span>
@@ -74,21 +80,57 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             )}
           </div>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              onToggleFavorite(project.id);
-            }}
-            className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 ${
-              isFavorite
-                ? 'bg-roseGlow-600 text-white shadow-glow'
-                : 'bg-obsidian-950/70 text-slate-400 hover:text-white hover:bg-obsidian-950'
-            }`}
-            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          >
-            <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Admin-only quick edit & delete buttons */}
+            {isAdmin && (
+              <div className="flex items-center gap-1 bg-obsidian-950/80 backdrop-blur-md p-1 rounded-full border border-white/15">
+                {onEdit && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onEdit(project);
+                    }}
+                    className="p-1.5 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                    title="Edit Project (Admin)"
+                    aria-label="Edit project"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-roseGlow-400" />
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onDelete(project.id);
+                    }}
+                    className="p-1.5 rounded-full hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                    title="Delete Project (Admin)"
+                    aria-label="Delete project"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onToggleFavorite(project.id);
+              }}
+              className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 ${
+                isFavorite
+                  ? 'bg-roseGlow-600 text-white shadow-glow'
+                  : 'bg-obsidian-950/70 text-slate-400 hover:text-white hover:bg-obsidian-950'
+              }`}
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* Creation Date Badge on Bottom Left of Image */}

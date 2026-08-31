@@ -18,11 +18,16 @@ import {
 import { Navbar } from '@/components/navigation/Navbar';
 import { Footer } from '@/components/footer/Footer';
 
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { Project } from '@/types';
+
 interface PageProps {
   params: {
     slug: string;
   };
 }
+
+export const dynamic = 'force-dynamic';
 
 export function generateStaticParams() {
   return INITIAL_PROJECTS.map((project) => ({
@@ -30,8 +35,39 @@ export function generateStaticParams() {
   }));
 }
 
-export default function ProjectDetailsPage({ params }: PageProps) {
-  const project = INITIAL_PROJECTS.find((p) => p.slug === params.slug);
+export default async function ProjectDetailsPage({ params }: PageProps) {
+  let project: Project | undefined = INITIAL_PROJECTS.find((p) => p.slug === params.slug);
+
+  if (!project && isSupabaseConfigured && supabase) {
+    const { data } = await supabase.from('projects').select('*').eq('slug', params.slug).maybeSingle();
+    if (data) {
+      project = {
+        id: data.id,
+        title: data.title,
+        slug: data.slug,
+        description: data.description,
+        detailedStory: data.detailed_story,
+        category: data.category,
+        url: data.url,
+        githubUrl: data.github_url,
+        thumbnail: data.thumbnail,
+        technologies: Array.isArray(data.technologies)
+          ? data.technologies
+          : data.technologies
+          ? JSON.parse(data.technologies)
+          : ['React', 'Tailwind CSS'],
+        featured: data.featured,
+        order: data.order_index || 1,
+        createdAt: data.created_at,
+        themeGradient: data.theme_gradient,
+        themeGlow: data.theme_glow,
+        themeAccent: data.theme_accent,
+        themeBadge: data.theme_badge,
+        themeBorder: data.theme_border,
+        themeTextAccent: data.theme_text_accent,
+      };
+    }
+  }
 
   if (!project) {
     notFound();

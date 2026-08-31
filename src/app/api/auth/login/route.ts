@@ -79,12 +79,20 @@ export async function POST(request: NextRequest) {
       request.headers.get('x-real-ip') ||
       '127.0.0.1';
 
-    // Try to create a session with user info
-    const result = createSession(userAgent, ip, {
-      userName: authenticatedUser.name,
-      userRole: authenticatedUser.role,
-      avatar: authenticatedUser.avatar,
-    });
+    // Check if client already has an active session cookie
+    const existingSessionId = request.cookies.get('mili_session')?.value;
+
+    // Try to create/refresh session with user info
+    const result = createSession(
+      userAgent,
+      ip,
+      {
+        userName: authenticatedUser.name,
+        userRole: authenticatedUser.role,
+        avatar: authenticatedUser.avatar,
+      },
+      existingSessionId
+    );
 
     if ('error' in result) {
       return NextResponse.json(

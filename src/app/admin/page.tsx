@@ -20,14 +20,21 @@ import {
   RefreshCw,
   Clock,
   Monitor,
+  Check,
 } from 'lucide-react';
-import { Project, DirectMessage, ProjectCategory } from '@/types';
-import { APP_CONFIG } from '@/data/config';
+import { Project, DirectMessage, ProjectCategory, TurtleCreation } from '@/types';
+import { APP_CONFIG, AUTH_CONFIG } from '@/data/config';
+import { ProjectEditorModal } from '@/components/projects/ProjectEditorModal';
+import { TurtleEditorModal } from '@/components/turtle/TurtleEditorModal';
+import { Wand2, Terminal } from 'lucide-react';
 import {
   getProjects,
   saveProject,
   deleteProject,
   resetProjectsToDefault,
+  getTurtleCreations,
+  saveTurtleCreation,
+  deleteTurtleCreation,
   getMessages,
   markMessageAsRead,
   replyToMessage,
@@ -42,7 +49,7 @@ export default function AdminPage() {
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'messages' | 'projects' | 'sessions'>('messages');
+  const [activeTab, setActiveTab] = useState<'messages' | 'projects' | 'turtle' | 'sessions'>('messages');
 
   // Messages State
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -52,6 +59,11 @@ export default function AdminPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+
+  // Turtle Artworks State
+  const [turtleCreations, setTurtleCreations] = useState<TurtleCreation[]>([]);
+  const [isAddingTurtle, setIsAddingTurtle] = useState(false);
+  const [editingTurtle, setEditingTurtle] = useState<TurtleCreation | null>(null);
 
   // Sessions State
   const [deviceSessions, setDeviceSessions] = useState<{
@@ -117,6 +129,23 @@ export default function AdminPage() {
       }
     } catch {
       setProjects(getProjects());
+    }
+
+    // 3. Load Turtle Creations from API / Supabase
+    try {
+      const turtleRes = await fetch('/api/turtle');
+      if (turtleRes.ok) {
+        const turtleData = await turtleRes.json();
+        if (turtleData.creations && turtleData.creations.length > 0) {
+          setTurtleCreations(turtleData.creations);
+        } else {
+          setTurtleCreations(getTurtleCreations());
+        }
+      } else {
+        setTurtleCreations(getTurtleCreations());
+      }
+    } catch {
+      setTurtleCreations(getTurtleCreations());
     }
   };
 
@@ -219,39 +248,8 @@ export default function AdminPage() {
   };
 
   // Project Handlers (Sync with Supabase DB)
-  const handleSaveProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProject.title || !newProject.url) return;
-
-    const slug =
-      newProject.slug ||
-      newProject.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
-
-    const projectToSave: Project = {
-      id: editingProject ? editingProject.id : `proj-${Date.now()}`,
-      title: newProject.title || '',
-      slug,
-      description: newProject.description || '',
-      detailedStory: newProject.detailedStory || '',
-      category: (newProject.category as ProjectCategory) || 'Websites',
-      url: newProject.url || '',
-      githubUrl: newProject.githubUrl || '',
-      thumbnail:
-        newProject.thumbnail ||
-        'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
-      technologies:
-        typeof newProject.technologies === 'string'
-          ? (newProject.technologies as string).split(',').map((t) => t.trim())
-          : newProject.technologies || ['HTML', 'CSS', 'JavaScript'],
-      createdAt: newProject.createdAt || new Date().toISOString().split('T')[0],
-      featured: Boolean(newProject.featured),
-      order: Number(newProject.order) || 1,
-    };
-
-    const updated = saveProject(projectToSave);
+  const handleSaveProjectModal = async (project: Project) => {
+    const updated = saveProject(project);
     setProjects(updated);
     setIsAddingProject(false);
     setEditingProject(null);
@@ -260,25 +258,13 @@ export default function AdminPage() {
     try {
       await fetch('/api/projects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project: projectToSave }),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
+        body: JSON.stringify({ project }),
       });
     } catch {}
-
-    setNewProject({
-      title: '',
-      slug: '',
-      description: '',
-      detailedStory: '',
-      category: 'Websites',
-      url: '',
-      githubUrl: '',
-      thumbnail: '',
-      technologies: ['React', 'Tailwind CSS'],
-      createdAt: new Date().toISOString().split('T')[0],
-      featured: true,
-      order: 1,
-    });
   };
 
   const handleDeleteProject = async (id: string) => {
@@ -288,6 +274,9 @@ export default function AdminPage() {
       try {
         await fetch(`/api/projects?id=${id}`, {
           method: 'DELETE',
+          headers: {
+            'x-admin-token': APP_CONFIG.adminPasscode,
+          },
         });
       } catch {}
     }
@@ -295,10 +284,41 @@ export default function AdminPage() {
 
   const handleEditProject = (proj: Project) => {
     setEditingProject(proj);
-    setNewProject({
-      ...proj,
-    });
     setIsAddingProject(true);
+  };
+
+  // Python Turtle Handlers (Sync with Supabase DB & Storage)
+  const handleSaveTurtleModal = async (creation: TurtleCreation) => {
+    const updated = saveTurtleCreation(creation);
+    setTurtleCreations(updated);
+    setIsAddingTurtle(false);
+    setEditingTurtle(null);
+
+    try {
+      await fetch('/api/turtle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
+        body: JSON.stringify({ creation }),
+      });
+    } catch {}
+  };
+
+  const handleDeleteTurtle = async (id: string) => {
+    if (confirm('Delete this Python Turtle artwork from your collection?')) {
+      const updated = deleteTurtleCreation(id);
+      setTurtleCreations(updated);
+      try {
+        await fetch(`/api/turtle?id=${id}`, {
+          method: 'DELETE',
+          headers: {
+            'x-admin-token': APP_CONFIG.adminPasscode,
+          },
+        });
+      } catch {}
+    }
   };
 
   const handleExportBackup = () => {
@@ -451,6 +471,18 @@ export default function AdminPage() {
           </button>
 
           <button
+            onClick={() => setActiveTab('turtle')}
+            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === 'turtle'
+                ? 'bg-roseGlow-600 text-white shadow-glow'
+                : 'glass-card text-slate-400 hover:text-white'
+            }`}
+          >
+            <Terminal className="w-3.5 h-3.5" />
+            <span>Python Art ({turtleCreations.length})</span>
+          </button>
+
+          <button
             onClick={() => { setActiveTab('sessions'); loadSessions(); }}
             className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 ${
               activeTab === 'sessions'
@@ -504,14 +536,15 @@ export default function AdminPage() {
                         {!msg.read && (
                           <button
                             onClick={() => handleMarkRead(msg.id)}
-                            className="text-xs font-mono text-roseGlow-400 hover:text-white px-2 py-1 rounded-lg bg-roseGlow-500/10"
+                            className="p-1.5 text-slate-400 hover:text-roseGlow-400 transition-colors"
+                            title="Mark as read"
                           >
-                            Mark Read
+                            <Check className="w-4 h-4" />
                           </button>
                         )}
                         <button
                           onClick={() => handleDeleteMsg(msg.id)}
-                          className="p-1 text-slate-400 hover:text-red-400"
+                          className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
                           title="Delete message"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -519,22 +552,22 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <p className="text-sm text-slate-200 font-light leading-relaxed bg-black/20 p-3.5 rounded-xl">
+                    <p className="text-sm text-slate-200 leading-relaxed font-light pl-2 border-l-2 border-roseGlow-500/50">
                       “{msg.message}”
                     </p>
 
                     {msg.reply ? (
-                      <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs space-y-1">
-                        <span className="font-mono text-purple-300 font-bold block">
+                      <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                        <span className="text-[10px] font-mono text-roseGlow-300 block">
                           Your Reply:
                         </span>
-                        <p className="text-slate-300 italic">{msg.reply}</p>
+                        <p className="text-xs text-slate-300 italic">{msg.reply}</p>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 pt-2">
+                      <div className="pt-2 flex items-center gap-2">
                         <input
                           type="text"
-                          placeholder="Type your reply message…"
+                          placeholder="Write a sweet reply…"
                           value={replyTextMap[msg.id] || ''}
                           onChange={(e) =>
                             setReplyTextMap({ ...replyTextMap, [msg.id]: e.target.value })
@@ -570,181 +603,16 @@ export default function AdminPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
-                    setIsAddingProject(!isAddingProject);
                     setEditingProject(null);
+                    setIsAddingProject(true);
                   }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-roseGlow-600 hover:bg-roseGlow-500 text-white text-xs font-mono uppercase tracking-wider shadow-glow transition-all"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{isAddingProject ? 'Cancel' : 'Add New Project'}</span>
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>+ Add Project (Magic URL)</span>
                 </button>
               </div>
             </div>
-
-            {/* Add / Edit Project Form */}
-            {isAddingProject && (
-              <form
-                onSubmit={handleSaveProject}
-                className="glass-card rounded-3xl p-6 sm:p-8 border border-roseGlow-500/30 space-y-4"
-              >
-                <h3 className="text-lg font-bold text-white">
-                  {editingProject ? 'Edit Project' : 'Add New Vercel Project'}
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-mono text-slate-300 block mb-1">
-                      Project Title *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g., Mili Anniversary Galaxy"
-                      value={newProject.title || ''}
-                      onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-mono text-slate-300 block mb-1">
-                      Category *
-                    </label>
-                    <select
-                      value={newProject.category || 'Websites'}
-                      onChange={(e) =>
-                        setNewProject({
-                          ...newProject,
-                          category: e.target.value as ProjectCategory,
-                        })
-                      }
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white bg-obsidian-900 focus:outline-none focus:border-roseGlow-500"
-                    >
-                      <option value="Websites">Websites</option>
-                      <option value="Special Projects">Special Projects</option>
-                      <option value="Creative Projects">Creative Projects</option>
-                      <option value="Interactive Experiences">Interactive Experiences</option>
-                      <option value="Python Turtle">Python Turtle</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-mono text-slate-300 block mb-1">
-                      Deployed Vercel URL *
-                    </label>
-                    <input
-                      type="url"
-                      required
-                      placeholder="https://your-project.vercel.app"
-                      value={newProject.url || ''}
-                      onChange={(e) => setNewProject({ ...newProject, url: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-mono text-slate-300 block mb-1">
-                      GitHub URL (Optional)
-                    </label>
-                    <input
-                      type="url"
-                      placeholder="https://github.com/username/repository"
-                      value={newProject.githubUrl || ''}
-                      onChange={(e) =>
-                        setNewProject({ ...newProject, githubUrl: e.target.value })
-                      }
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-mono text-slate-300 block mb-1">
-                      Thumbnail Image URL
-                    </label>
-                    <input
-                      type="url"
-                      placeholder="https://images.unsplash.com/photo-..."
-                      value={newProject.thumbnail || ''}
-                      onChange={(e) =>
-                        setNewProject({ ...newProject, thumbnail: e.target.value })
-                      }
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-mono text-slate-300 block mb-1">
-                      Technologies (comma separated)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="React, Next.js, TypeScript, Tailwind CSS"
-                      value={
-                        Array.isArray(newProject.technologies)
-                          ? newProject.technologies.join(', ')
-                          : newProject.technologies || ''
-                      }
-                      onChange={(e) =>
-                        setNewProject({
-                          ...newProject,
-                          technologies: e.target.value.split(',').map((t) => t.trim()),
-                        })
-                      }
-                      className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-mono text-slate-300 block mb-1">
-                    Short Description
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Brief summary for the showcase card…"
-                    value={newProject.description || ''}
-                    onChange={(e) =>
-                      setNewProject({ ...newProject, description: e.target.value })
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500 resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-mono text-slate-300 block mb-1">
-                    The Story Behind It (Detailed)
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Inspiration and background story behind this project…"
-                    value={newProject.detailedStory || ''}
-                    onChange={(e) =>
-                      setNewProject({ ...newProject, detailedStory: e.target.value })
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500 resize-none"
-                  />
-                </div>
-
-                <div className="flex items-center justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAddingProject(false);
-                      setEditingProject(null);
-                    }}
-                    className="px-4 py-2 rounded-xl glass-card text-xs font-mono text-slate-400 hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2 rounded-xl bg-roseGlow-600 hover:bg-roseGlow-500 text-white text-xs font-mono uppercase tracking-wider shadow-glow"
-                  >
-                    Save Project
-                  </button>
-                </div>
-              </form>
-            )}
 
             {/* List of Existing Projects */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -806,142 +674,241 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Tab 3: Device Sessions */}
+        {/* Tab 3: Python Turtle Art Management */}
+        {activeTab === 'turtle' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">Python Turtle Artworks</h2>
+                <p className="text-xs text-slate-400 font-mono">
+                  Manage mathematical sketches, algorithms, and turtle animations
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setEditingTurtle(null);
+                    setIsAddingTurtle(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all"
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>+ Add Python Art (Magic Generator)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* List of Python Artworks */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {turtleCreations.map((art) => (
+                <div
+                  key={art.id}
+                  className="glass-card rounded-2xl p-5 border border-white/10 flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-white/5 text-amber-400">
+                        {art.category}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            setEditingTurtle(art);
+                            setIsAddingTurtle(true);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-white"
+                          title="Edit"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTurtle(art.id)}
+                          className="p-1.5 text-slate-400 hover:text-red-400"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <h4 className="text-base font-bold text-white line-clamp-1">
+                      {art.title}
+                    </h4>
+                    <p className="text-xs text-slate-400 line-clamp-2">
+                      {art.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs font-mono text-slate-400">
+                    <span>Canvas: {art.canvasDrawingType || 'mandala'}</span>
+                    <span>{formatDate(art.createdAt)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Device Sessions */}
         {activeTab === 'sessions' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-white">Active Device Sessions</h2>
                 <p className="text-xs text-slate-400 font-mono">
-                  Mili is logged in on {deviceSessions.length} / 3 devices
+                  {deviceSessions.length} of {AUTH_CONFIG.maxDevices} maximum concurrent devices active
                 </p>
               </div>
+
               <div className="flex items-center gap-2">
                 <button
                   onClick={loadSessions}
                   disabled={sessionsLoading}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card text-xs font-mono text-slate-300 hover:text-white disabled:opacity-50 transition-all"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card text-xs font-mono text-slate-300 hover:text-white transition-all disabled:opacity-50"
+                  title="Refresh sessions"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${sessionsLoading ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
                 </button>
+
                 {deviceSessions.length > 0 && (
                   <button
                     onClick={() => handleRevokeSession('', true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs font-mono text-red-400 hover:text-red-300 transition-all"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-mono transition-all"
                   >
                     <WifiOff className="w-3.5 h-3.5" />
-                    <span>Revoke All Sessions</span>
+                    <span>Revoke All Devices</span>
                   </button>
                 )}
               </div>
             </div>
 
+            {/* Sessions Grid */}
             {sessionsLoading ? (
-              <div className="glass-card p-12 rounded-3xl text-center text-slate-400 space-y-3">
-                <RefreshCw className="w-8 h-8 mx-auto text-roseGlow-400 animate-spin" />
-                <p>Loading sessions…</p>
+              <div className="glass-card p-12 rounded-3xl text-center space-y-3">
+                <div className="w-6 h-6 border-2 border-roseGlow-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs font-mono text-slate-400">Loading active sessions…</p>
               </div>
             ) : deviceSessions.length === 0 ? (
-              <div className="glass-card p-12 rounded-3xl text-center text-slate-400 space-y-3">
-                <Smartphone className="w-8 h-8 mx-auto text-slate-600" />
-                <p>No active sessions. Mili is not logged in anywhere.</p>
+              <div className="glass-card p-12 rounded-3xl text-center text-slate-400 space-y-2">
+                <Smartphone className="w-8 h-8 mx-auto text-slate-500" />
+                <p className="text-sm font-medium">No active device sessions found.</p>
+                <p className="text-xs text-slate-500 font-mono">Sessions are created when Mili or Sukhen signs in.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {deviceSessions.map((sess, i) => {
-                  const isExpiringSoon =
-                    new Date(sess.expiresAt).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000;
-                  const relativeLastSeen = (() => {
-                    const diff = Date.now() - new Date(sess.lastSeenAt).getTime();
-                    const m = Math.floor(diff / 60000);
-                    const h = Math.floor(m / 60);
-                    const d = Math.floor(h / 24);
-                    return d > 0 ? `${d}d ago` : h > 0 ? `${h}h ago` : m > 0 ? `${m}m ago` : 'Just now';
-                  })();
-                  const relativeLogin = (() => {
-                    const diff = Date.now() - new Date(sess.createdAt).getTime();
-                    const m = Math.floor(diff / 60000);
-                    const h = Math.floor(m / 60);
-                    const d = Math.floor(h / 24);
-                    return d > 0 ? `${d}d ago` : h > 0 ? `${h}h ago` : m > 0 ? `${m}m ago` : 'Just now';
-                  })();
-
+                {deviceSessions.map((sess) => {
+                  const isExpired = new Date(sess.expiresAt).getTime() < Date.now();
                   return (
                     <div
                       key={sess.id}
-                      className="glass-card rounded-2xl p-5 border border-white/10 space-y-4 relative"
+                      className={`glass-card rounded-2xl p-5 border space-y-4 ${
+                        isExpired ? 'border-red-500/30 opacity-60' : 'border-white/10'
+                      }`}
                     >
-                      {/* Session Number Badge */}
-                      <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-roseGlow-600/20 border border-roseGlow-500/30 flex items-center justify-center text-[10px] font-bold text-roseGlow-400">
-                        {i + 1}
+                      {/* Session Header */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-roseGlow-500/10 border border-roseGlow-500/20 flex items-center justify-center text-roseGlow-400 flex-shrink-0">
+                            {sess.deviceName.toLowerCase().includes('phone') ||
+                            sess.deviceName.toLowerCase().includes('iphone') ||
+                            sess.deviceName.toLowerCase().includes('android') ? (
+                              <Smartphone className="w-5 h-5" />
+                            ) : (
+                              <Monitor className="w-5 h-5" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-white leading-tight">
+                              {sess.deviceName}
+                            </h4>
+                            <p className="text-[11px] font-mono text-slate-400">
+                              IP: {sess.ip || 'Unknown'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-medium ${
+                            isExpired
+                              ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                              : 'bg-green-500/10 text-green-400 border border-green-500/20'
+                          }`}
+                        >
+                          {isExpired ? 'Expired' : 'Active'}
+                        </span>
                       </div>
 
-                      {/* Device Icon + Name */}
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-roseGlow-500/10 border border-roseGlow-500/20 flex items-center justify-center flex-shrink-0">
-                          <Monitor className="w-5 h-5 text-roseGlow-400" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-sm text-white">{sess.deviceName}</p>
-                          <p className="text-[11px] font-mono text-slate-500">
-                            {sess.ip !== '127.0.0.1' ? `IP: ${sess.ip}` : 'Local / Same Network'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Session Times */}
-                      <div className="space-y-1.5 text-xs font-mono">
-                        <div className="flex items-center justify-between text-slate-400">
-                          <span className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                            Last seen
+                      {/* Timestamps */}
+                      <div className="space-y-1 text-[11px] font-mono text-slate-400 bg-white/5 rounded-xl p-3 border border-white/5">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-slate-500" />
+                            <span>First Login:</span>
                           </span>
-                          <span className="text-green-400">{relativeLastSeen}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-slate-400">
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="w-3 h-3" />
-                            Logged in
+                          <span className="text-slate-300">
+                            {new Date(sess.createdAt).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
                           </span>
-                          <span>{relativeLogin}</span>
                         </div>
-                        <div className={`flex items-center justify-between ${isExpiringSoon ? 'text-amber-400' : 'text-slate-500'}`}>
-                          <span>Expires</span>
-                          <span>
-                            {new Date(sess.expiresAt).toLocaleDateString('en-IN', {
-                              day: '2-digit', month: 'short', year: 'numeric'
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1">
+                            <RefreshCw className="w-3 h-3 text-slate-500" />
+                            <span>Last Active:</span>
+                          </span>
+                          <span className="text-slate-300">
+                            {new Date(sess.lastSeenAt).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
                             })}
                           </span>
                         </div>
                       </div>
 
-                      {/* Revoke Button */}
                       <button
                         onClick={() => handleRevokeSession(sess.id)}
-                        className="w-full py-2 rounded-xl bg-red-500/5 hover:bg-red-500/15 border border-red-500/20 hover:border-red-500/40 text-xs font-mono text-red-400/80 hover:text-red-300 transition-all flex items-center justify-center gap-1.5"
+                        className="w-full py-2 rounded-xl bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 text-xs font-mono text-red-400/80 transition-all flex items-center justify-center gap-1.5"
                       >
                         <WifiOff className="w-3.5 h-3.5" />
-                        Revoke This Session
+                        Revoke Session
                       </button>
                     </div>
                   );
                 })}
               </div>
             )}
-
-            {/* Info Banner */}
-            <div className="glass-card rounded-2xl p-4 border border-white/5 flex items-start gap-3 text-xs font-mono text-slate-400">
-              <Smartphone className="w-4 h-4 text-roseGlow-400 flex-shrink-0 mt-0.5" />
-              <p>
-                Mili can log in on up to <span className="text-roseGlow-400 font-bold">3 devices</span> simultaneously.
-                Sessions expire automatically after 30 days of inactivity.
-                Revoking a session logs that device out immediately.
-              </p>
-            </div>
           </div>
         )}
       </div>
+
+      {/* Project Editor Modal */}
+      <ProjectEditorModal
+        isOpen={isAddingProject}
+        editingProject={editingProject}
+        onClose={() => {
+          setIsAddingProject(false);
+          setEditingProject(null);
+        }}
+        onSave={handleSaveProjectModal}
+      />
+
+      {/* Turtle Editor Modal */}
+      <TurtleEditorModal
+        isOpen={isAddingTurtle}
+        editingCreation={editingTurtle}
+        onClose={() => {
+          setIsAddingTurtle(false);
+          setEditingTurtle(null);
+        }}
+        onSave={handleSaveTurtleModal}
+      />
     </main>
   );
 }

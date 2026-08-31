@@ -71,8 +71,8 @@ export const AUTH_USERS = {
 export const AUTH_CONFIG = {
   /** Default fallback password */
   password: "mili@123",
-  /** Maximum simultaneous device logins allowed (default 5) */
-  maxDevices: 5,
+  /** Maximum simultaneous device logins allowed (strictly 3) */
+  maxDevices: 3,
   /** Session expiry — 30 days in milliseconds */
   sessionExpiryMs: 30 * 24 * 60 * 60 * 1000,
 };

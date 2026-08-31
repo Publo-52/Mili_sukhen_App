@@ -5,22 +5,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Heart,
   Eye,
   EyeOff,
   Lock,
   Mail,
-  Sparkles,
   Smartphone,
   AlertTriangle,
   LogIn,
-  Shield,
   ArrowLeft,
-  KeyRound,
-  Info,
-  CheckCircle2,
 } from 'lucide-react';
-import { AUTH_USERS, AUTH_CONFIG } from '@/data/config';
+import { AUTH_CONFIG } from '@/data/config';
 
 interface BlockedSession {
   id: string;
@@ -51,7 +45,6 @@ function LoginContent() {
     title: string;
     greeting: string;
   } | null>(null);
-  const [showAccountsGuide, setShowAccountsGuide] = useState(false);
 
   // Auto-redirect if already logged in
   useEffect(() => {
@@ -111,13 +104,6 @@ function LoginContent() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleQuickFill = (userType: 'mili' | 'sukhen') => {
-    const user = AUTH_USERS[userType];
-    setEmail(user.defaultEmail);
-    setPassword(user.defaultPassword);
-    setError('');
   };
 
   const formatRelativeTime = (isoString: string) => {
@@ -206,87 +192,6 @@ function LoginContent() {
 
               {/* Login Card */}
               <div className="glass-card rounded-3xl p-6 sm:p-8 border border-white/10 shadow-2xl backdrop-blur-2xl space-y-5">
-                {/* 1-Click Quick Fill Chips */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-                    <span>Quick 1-Click Accounts:</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowAccountsGuide(!showAccountsGuide)}
-                      className="text-roseGlow-400 hover:underline flex items-center gap-1"
-                    >
-                      <Info className="w-3 h-3" />
-                      <span>{showAccountsGuide ? 'Hide info' : 'View logins'}</span>
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickFill('mili')}
-                      className="p-2.5 rounded-xl bg-white/5 hover:bg-roseGlow-600/20 border border-white/10 hover:border-roseGlow-500/40 text-left transition-all group flex items-center gap-2.5"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-roseGlow-500/20 text-roseGlow-400 border border-roseGlow-500/30 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                        M
-                      </div>
-                      <div className="truncate">
-                        <p className="text-xs font-bold text-white group-hover:text-roseGlow-300">
-                          Mili
-                        </p>
-                        <p className="text-[10px] text-slate-400 font-mono truncate">
-                          mandalsharmili@06gmail.com
-                        </p>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleQuickFill('sukhen')}
-                      className="p-2.5 rounded-xl bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500/40 text-left transition-all group flex items-center gap-2.5"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                        S
-                      </div>
-                      <div className="truncate">
-                        <p className="text-xs font-bold text-white group-hover:text-purple-300">
-                          Sukhen (Admin)
-                        </p>
-                        <p className="text-[10px] text-slate-400 font-mono truncate">
-                          dassukhen@gmail.com
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Accounts Guide Dropdown */}
-                <AnimatePresence>
-                  {showAccountsGuide && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="p-3 rounded-2xl bg-black/40 border border-white/10 space-y-2 text-xs"
-                    >
-                      <p className="font-mono text-slate-300 font-semibold text-[11px]">
-                        Registered User Credentials:
-                      </p>
-                      <div className="space-y-1.5 font-mono text-[11px] text-slate-400">
-                        <div className="p-2 rounded-xl bg-white/5 border border-white/5">
-                          <span className="text-roseGlow-300 font-bold block">Mili</span>
-                          <span>Email: <code>mandalsharmili@06gmail.com</code> (or <code>mandalsharmili06@gmail.com</code>)</span>
-                          <span className="block">Password: <code>mili@123</code></span>
-                        </div>
-                        <div className="p-2 rounded-xl bg-white/5 border border-white/5">
-                          <span className="text-purple-300 font-bold block">Sukhen (Creator & Admin)</span>
-                          <span>Email: <code>dassukhen@gmail.com</code></span>
-                          <span className="block">Password: <code>das@123</code></span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
                 {/* Login Form */}
                 <form onSubmit={handleLogin} className="space-y-4">
                   {/* Email Field */}

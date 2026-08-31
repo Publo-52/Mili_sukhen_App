@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Sparkles, Heart, Filter, Layers, ArrowUpRight } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Search, Sparkles, Heart, Filter, Layers, ArrowUpRight, Plus, Wand2 } from 'lucide-react';
 import { Project, ProjectCategory } from '@/types';
-import { getProjects, getFavoriteProjectIds, toggleFavoriteProject } from '@/lib/storage';
+import { getProjects, saveProject, deleteProject, getFavoriteProjectIds, toggleFavoriteProject } from '@/lib/storage';
+import { useAuth } from '@/lib/auth-context';
 import { ProjectCard } from './ProjectCard';
 import { ProjectPreviewModal } from './ProjectPreviewModal';
+import { ProjectEditorModal } from './ProjectEditorModal';
 
 const CATEGORIES: (ProjectCategory | 'All' | 'Favorites')[] = [
   'All',
@@ -18,31 +20,71 @@ const CATEGORIES: (ProjectCategory | 'All' | 'Favorites')[] = [
 ];
 
 export const ProjectShowcase: React.FC = () => {
+  const { user, isAdmin } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [previewProject, setPreviewProject] = useState<Project | null>(null);
 
-  useEffect(() => {
-    fetch('/api/projects')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
+  // Admin Project Creator / Editor Modal State
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+
+  const loadProjects = useCallback(async () => {
+    try {
+      const res = await fetch('/api/projects');
+      if (res.ok) {
+        const data = await res.json();
         if (data?.projects && data.projects.length > 0) {
           setProjects(data.projects);
-        } else {
-          setProjects(getProjects());
+          return;
         }
-      })
-      .catch(() => {
-        setProjects(getProjects());
-      });
-    setFavoriteIds(getFavoriteProjectIds());
+      }
+    } catch {}
+    setProjects(getProjects());
   }, []);
+
+  useEffect(() => {
+    loadProjects();
+    setFavoriteIds(getFavoriteProjectIds());
+  }, [loadProjects]);
 
   const handleToggleFavorite = (id: string) => {
     const updated = toggleFavoriteProject(id);
     setFavoriteIds(updated);
+  };
+
+  // Admin Save Project (Persists to local storage & Supabase)
+  const handleSaveProject = async (project: Project) => {
+    const updated = saveProject(project);
+    setProjects(updated);
+
+    try {
+      await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project }),
+      });
+    } catch {}
+
+    await loadProjects();
+  };
+
+  // Admin Delete Project
+  const handleDeleteProject = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this project from the showcase?')) return;
+
+    const updated = deleteProject(id);
+    setProjects(updated);
+
+    try {
+      await fetch(`/api/projects?id=${id}`, {
+        method: 'DELETE',
+      });
+    } catch {}
+
+    await loadProjects();
   };
 
   const filteredProjects = useMemo(() => {
@@ -70,10 +112,27 @@ export const ProjectShowcase: React.FC = () => {
     <section id="projects" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
       {/* Section Header */}
       <div className="text-center space-y-4 mb-12">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/30 text-roseGlow-400 text-xs font-mono tracking-widest uppercase">
-          <Layers className="w-3.5 h-3.5" />
-          <span>Project Showcase</span>
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/30 text-roseGlow-400 text-xs font-mono tracking-widest uppercase">
+            <Layers className="w-3.5 h-3.5" />
+            <span>Project Showcase</span>
+          </div>
+
+          {/* Admin Only Badge / Add Action */}
+          {isAdmin && (
+            <button
+              onClick={() => {
+                setEditingProject(null);
+                setIsEditorOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow hover:scale-105 transition-all"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>+ Add Project (Magic URL)</span>
+            </button>
+          )}
         </div>
+
         <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
           Websites & Digital Creations
         </h2>
@@ -136,6 +195,12 @@ export const ProjectShowcase: React.FC = () => {
               key={project.id}
               project={project}
               index={idx}
+              isAdmin={isAdmin}
+              onEdit={(p) => {
+                setEditingProject(p);
+                setIsEditorOpen(true);
+              }}
+              onDelete={handleDeleteProject}
               isFavorite={favoriteIds.includes(project.id)}
               onToggleFavorite={handleToggleFavorite}
               onQuickPreview={(proj) => setPreviewProject(proj)}
@@ -165,6 +230,19 @@ export const ProjectShowcase: React.FC = () => {
         project={previewProject}
         onClose={() => setPreviewProject(null)}
       />
+
+      {/* Admin Project Creator & Editor Modal (Only available to Sukhen) */}
+      {isAdmin && (
+        <ProjectEditorModal
+          isOpen={isEditorOpen}
+          editingProject={editingProject}
+          onClose={() => {
+            setIsEditorOpen(false);
+            setEditingProject(null);
+          }}
+          onSave={handleSaveProject}
+        />
+      )}
     </section>
   );
 };
