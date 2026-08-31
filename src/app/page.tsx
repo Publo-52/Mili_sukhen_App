@@ -73,7 +73,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain pb-20 md:pb-8">
+    <div className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain">
       {/* Dynamic Stardust & Ambient Particle Layer */}
       <ParticleCanvas />
 
