@@ -1,0 +1,170 @@
+'use client';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, Sparkles, Heart, Filter, Layers, ArrowUpRight } from 'lucide-react';
+import { Project, ProjectCategory } from '@/types';
+import { getProjects, getFavoriteProjectIds, toggleFavoriteProject } from '@/lib/storage';
+import { ProjectCard } from './ProjectCard';
+import { ProjectPreviewModal } from './ProjectPreviewModal';
+
+const CATEGORIES: (ProjectCategory | 'All' | 'Favorites')[] = [
+  'All',
+  'Favorites',
+  'Websites',
+  'Special Projects',
+  'Creative Projects',
+  'Interactive Experiences',
+  'Python Turtle',
+];
+
+export const ProjectShowcase: React.FC = () => {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [previewProject, setPreviewProject] = useState<Project | null>(null);
+
+  useEffect(() => {
+    fetch('/api/projects')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.projects && data.projects.length > 0) {
+          setProjects(data.projects);
+        } else {
+          setProjects(getProjects());
+        }
+      })
+      .catch(() => {
+        setProjects(getProjects());
+      });
+    setFavoriteIds(getFavoriteProjectIds());
+  }, []);
+
+  const handleToggleFavorite = (id: string) => {
+    const updated = toggleFavoriteProject(id);
+    setFavoriteIds(updated);
+  };
+
+  const filteredProjects = useMemo(() => {
+    return projects.filter((proj) => {
+      // Category filter
+      if (selectedCategory === 'Favorites') {
+        if (!favoriteIds.includes(proj.id)) return false;
+      } else if (selectedCategory !== 'All' && proj.category !== selectedCategory) {
+        return false;
+      }
+
+      // Search query filter
+      if (!searchQuery.trim()) return true;
+      const query = searchQuery.toLowerCase();
+      const inTitle = proj.title.toLowerCase().includes(query);
+      const inDesc = proj.description.toLowerCase().includes(query);
+      const inTech = proj.technologies.some((t) => t.toLowerCase().includes(query));
+      const inTags = proj.tags?.some((t) => t.toLowerCase().includes(query)) ?? false;
+
+      return inTitle || inDesc || inTech || inTags;
+    });
+  }, [projects, selectedCategory, searchQuery, favoriteIds]);
+
+  return (
+    <section id="projects" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
+      {/* Section Header */}
+      <div className="text-center space-y-4 mb-12">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/30 text-roseGlow-400 text-xs font-mono tracking-widest uppercase">
+          <Layers className="w-3.5 h-3.5" />
+          <span>Project Showcase</span>
+        </div>
+        <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+          Websites & Digital Creations
+        </h2>
+        <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto font-light">
+          Every site deployed on Vercel and built with love. Click to test, preview, or explore the story behind each design.
+        </p>
+      </div>
+
+      {/* Filter and Search Controls */}
+      <div className="space-y-6 mb-10">
+        {/* Search Bar */}
+        <div className="relative max-w-xl mx-auto">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search projects by name, tech (React, Three.js), or tag…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-11 pr-4 py-3.5 rounded-2xl glass-card text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 focus:ring-1 focus:ring-roseGlow-500 transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex items-center justify-start md:justify-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 inline-flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-roseGlow-600 text-white shadow-glow border border-roseGlow-500'
+                    : 'glass-card text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {cat === 'Favorites' && (
+                  <Heart className={`w-3 h-3 ${isSelected ? 'fill-white text-white' : 'fill-roseGlow-500 text-roseGlow-500'}`} />
+                )}
+                <span>{cat}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Projects Grid */}
+      {filteredProjects.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {filteredProjects.map((project, idx) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              index={idx}
+              isFavorite={favoriteIds.includes(project.id)}
+              onToggleFavorite={handleToggleFavorite}
+              onQuickPreview={(proj) => setPreviewProject(proj)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="glass-card rounded-3xl p-12 text-center max-w-md mx-auto space-y-4">
+          <div className="w-12 h-12 rounded-full bg-white/5 text-slate-400 mx-auto flex items-center justify-center">
+            <Heart className="w-6 h-6" />
+          </div>
+          <p className="text-slate-300 font-medium">No projects found in this category.</p>
+          <button
+            onClick={() => {
+              setSelectedCategory('All');
+              setSearchQuery('');
+            }}
+            className="text-xs text-roseGlow-400 hover:underline"
+          >
+            Reset all filters
+          </button>
+        </div>
+      )}
+
+      {/* Quick Preview Modal */}
+      <ProjectPreviewModal
+        project={previewProject}
+        onClose={() => setPreviewProject(null)}
+      />
+    </section>
+  );
+};
