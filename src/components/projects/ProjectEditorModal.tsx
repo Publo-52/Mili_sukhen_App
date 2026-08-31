@@ -290,24 +290,24 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-          className="relative w-full max-w-3xl glass-card rounded-3xl border border-white/15 shadow-2xl overflow-hidden z-10 my-auto flex flex-col max-h-[92vh]"
+          className="relative w-full max-w-2xl glass-card rounded-2xl sm:rounded-3xl border border-white/15 shadow-2xl overflow-hidden z-10 my-auto flex flex-col max-h-[94dvh] sm:max-h-[88dvh]"
         >
           {/* Header */}
-          <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between bg-obsidian-900/60">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-roseGlow-500 p-0.5 shadow-glow flex items-center justify-center">
+          <div className="p-3.5 sm:p-5 border-b border-white/10 flex items-center justify-between bg-obsidian-900/80 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-purple-600 to-roseGlow-500 p-0.5 shadow-glow flex items-center justify-center shrink-0">
                 <div className="w-full h-full rounded-[14px] bg-[#0c0817] flex items-center justify-center text-roseGlow-400">
-                  <Wand2 className="w-5 h-5" />
+                  <Wand2 className="w-4 h-4" />
                 </div>
               </div>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                   <span>{editingProject ? 'Edit Project' : 'Magic Project Creator'}</span>
-                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-roseGlow-500/20 text-roseGlow-300 border border-roseGlow-500/30">
-                    Admin Only
+                  <span className="text-[9px] font-mono uppercase px-2 py-0.5 rounded-full bg-roseGlow-500/20 text-roseGlow-300 border border-roseGlow-500/30">
+                    Admin
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400 font-mono">
+                <p className="text-[11px] text-slate-400 font-mono hidden sm:block">
                   Paste any Vercel/website URL to auto-extract details & theme
                 </p>
               </div>
@@ -322,11 +322,11 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
           </div>
 
           {/* Tab Navigation */}
-          <div className="px-6 pt-3 border-b border-white/10 flex items-center gap-3 bg-black/20">
+          <div className="px-3 sm:px-5 pt-2 border-b border-white/10 flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap bg-black/20 shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab('details')}
-              className={`pb-2.5 text-xs font-mono uppercase tracking-wider transition-colors border-b-2 flex items-center gap-1.5 ${
+              className={`pb-2 text-xs font-mono uppercase tracking-wider transition-colors border-b-2 flex items-center gap-1.5 flex-shrink-0 ${
                 activeTab === 'details'
                   ? 'border-roseGlow-500 text-roseGlow-400 font-bold'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -339,7 +339,7 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('theme')}
-              className={`pb-2.5 text-xs font-mono uppercase tracking-wider transition-colors border-b-2 flex items-center gap-1.5 ${
+              className={`pb-2 text-xs font-mono uppercase tracking-wider transition-colors border-b-2 flex items-center gap-1.5 flex-shrink-0 ${
                 activeTab === 'theme'
                   ? 'border-roseGlow-500 text-roseGlow-400 font-bold'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -352,21 +352,21 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('preview')}
-              className={`pb-2.5 text-xs font-mono uppercase tracking-wider transition-colors border-b-2 flex items-center gap-1.5 ${
+              className={`pb-2 text-xs font-mono uppercase tracking-wider transition-colors border-b-2 flex items-center gap-1.5 flex-shrink-0 ${
                 activeTab === 'preview'
                   ? 'border-roseGlow-500 text-roseGlow-400 font-bold'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>Live Card Preview</span>
+              <span>Live Preview</span>
             </button>
           </div>
 
           {/* Form Content */}
-          <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+          <form onSubmit={handleSubmit} className="p-3.5 sm:p-5 space-y-4 overflow-y-auto flex-1">
             {extractError && (
-              <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-start gap-2.5 text-xs text-red-300 font-mono">
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2 text-xs text-red-300 font-mono">
                 <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                 <span>{extractError}</span>
               </div>
@@ -374,34 +374,34 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
 
             {/* ── TAB 1: DETAILS & MAGIC EXTRACTOR ───────────────────────── */}
             {activeTab === 'details' && (
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 {/* Magic URL Box */}
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-900/20 via-roseGlow-950/20 to-black/40 border border-roseGlow-500/30 space-y-2.5">
+                <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-purple-900/20 via-roseGlow-950/20 to-black/40 border border-roseGlow-500/30 space-y-2">
                   <label className="text-xs font-mono text-roseGlow-300 flex items-center justify-between">
                     <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider">
                       <Sparkles className="w-3.5 h-3.5 text-roseGlow-400" />
-                      Deployed Project URL (Auto-Theme Engine)
+                      Project URL (Auto-Theme)
                     </span>
-                    <span className="text-[10px] text-slate-400 font-normal">
-                      e.g., https://your-app.vercel.app
+                    <span className="text-[10px] text-slate-400 font-normal hidden sm:inline">
+                      e.g. https://your-app.vercel.app
                     </span>
                   </label>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <input
                       type="url"
                       required
                       placeholder="https://mili-mocha.vercel.app/"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
-                      className="flex-1 px-4 py-3 rounded-xl bg-black/50 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
+                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/10 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500"
                     />
 
                     <button
                       type="button"
                       onClick={handleAutoExtract}
                       disabled={isExtracting || !url.trim()}
-                      className="px-4 py-3 rounded-xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all flex items-center gap-1.5 disabled:opacity-50 flex-shrink-0"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 flex-shrink-0"
                     >
                       {isExtracting ? (
                         <>
@@ -418,10 +418,10 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Title */}
                   <div>
-                    <label className="text-xs font-mono text-slate-300 block mb-1.5">
+                    <label className="text-xs font-mono text-slate-300 block mb-1">
                       Project Title *
                     </label>
                     <input
@@ -716,11 +716,11 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
             )}
 
             {/* Footer Buttons */}
-            <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+            <div className="pt-3 border-t border-white/10 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl glass-card text-xs font-mono text-slate-400 hover:text-white"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl glass-card text-xs font-mono text-slate-400 hover:text-white text-center"
               >
                 Cancel
               </button>
@@ -730,7 +730,7 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setActiveTab(activeTab === 'details' ? 'theme' : 'preview')}
-                    className="px-4 py-2.5 rounded-xl glass-card hover:border-white/30 text-xs font-mono text-slate-200"
+                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl glass-card hover:border-white/30 text-xs font-mono text-slate-200 text-center"
                   >
                     Next ➔
                   </button>
@@ -739,17 +739,17 @@ export const ProjectEditorModal: React.FC<ProjectEditorModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSaving || !title.trim() || !url.trim()}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSaving ? (
                     <>
                       <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Saving Project…</span>
+                      <span>Saving…</span>
                     </>
                   ) : (
                     <>
                       <Save className="w-3.5 h-3.5" />
-                      <span>Save & Publish Project</span>
+                      <span>Save & Publish</span>
                     </>
                   )}
                 </button>

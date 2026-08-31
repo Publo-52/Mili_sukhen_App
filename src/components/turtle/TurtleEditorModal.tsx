@@ -170,25 +170,25 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
           className="fixed inset-0 bg-black/85 backdrop-blur-xl"
         />
 
-        {/* Modal Window */}
+        {/* Modal Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-3xl glass-card rounded-3xl overflow-hidden border border-amber-500/30 shadow-2xl z-10 my-8 flex flex-col max-h-[90vh]"
+          className="relative w-full max-w-2xl glass-card rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-500/30 shadow-2xl z-10 my-auto flex flex-col max-h-[94dvh] sm:max-h-[88dvh]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-obsidian-950/90">
+          <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-white/10 bg-obsidian-950/90 shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-white shadow-glow">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-white shadow-glow shrink-0">
                 <Terminal className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-sm sm:text-base font-bold text-white">
                   {editingCreation ? 'Edit Python Turtle Art' : 'Magic Python Art Creator'}
                 </h3>
-                <p className="text-[11px] font-mono text-slate-400">
-                  Auto-generate code, mathematical canvas animation, and romantic stories for Mili
+                <p className="text-[10px] font-mono text-slate-400 hidden sm:block">
+                  Auto-generate code, mathematical canvas animation, and stories for Mili
                 </p>
               </div>
             </div>
@@ -197,16 +197,16 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
               onClick={onClose}
               className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-1 px-6 pt-3 pb-2 border-b border-white/5 bg-obsidian-900/60 overflow-x-auto">
+          <div className="flex items-center gap-1.5 px-3 sm:px-5 pt-2 pb-2 border-b border-white/5 bg-obsidian-900/60 overflow-x-auto no-scrollbar whitespace-nowrap shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab('magic')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono transition-all flex-shrink-0 ${
                 activeTab === 'magic'
                   ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300 shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -219,7 +219,7 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('manual')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono transition-all flex-shrink-0 ${
                 activeTab === 'manual'
                   ? 'bg-roseGlow-500/20 border border-roseGlow-500/40 text-roseGlow-300 shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -232,7 +232,7 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('code')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono transition-all flex-shrink-0 ${
                 activeTab === 'code'
                   ? 'bg-purple-500/20 border border-purple-500/40 text-purple-300 shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -245,21 +245,21 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('preview')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono transition-all flex-shrink-0 ${
                 activeTab === 'preview'
                   ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>Preview Card</span>
+              <span>Preview</span>
             </button>
           </div>
 
           {/* Form Content */}
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-4">
             {errorMsg && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-mono">
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-mono">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{errorMsg}</span>
               </div>
@@ -485,11 +485,11 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
             )}
 
             {/* Modal Footer Controls */}
-            <div className="flex items-center justify-between pt-4 border-t border-white/10">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between pt-3 border-t border-white/10 gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl glass-card text-xs font-mono text-slate-400 hover:text-white"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl glass-card text-xs font-mono text-slate-400 hover:text-white text-center"
               >
                 Cancel
               </button>
@@ -499,14 +499,14 @@ export const TurtleEditorModal: React.FC<TurtleEditorModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setActiveTab('manual')}
-                    className="px-4 py-2 rounded-xl glass-card text-xs font-mono text-slate-300 hover:text-white"
+                    className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl glass-card text-xs font-mono text-slate-300 hover:text-white text-center"
                   >
-                    Skip to Manual Edit →
+                    Manual Edit →
                   </button>
                 )}
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:opacity-90 text-white text-xs font-mono uppercase tracking-wider font-bold shadow-glow flex items-center gap-1.5"
+                  className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:opacity-90 text-white text-xs font-mono uppercase tracking-wider font-bold shadow-glow flex items-center justify-center gap-1.5"
                 >
                   <Check className="w-4 h-4" />
                   <span>Save Artwork</span>

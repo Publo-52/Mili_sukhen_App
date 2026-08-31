@@ -1,4 +1,5 @@
-// WebAudio Ambient Soundscape Generator for Romantic Atmosphere
+// WebAudio & HTML5 Ambient Soundscape Generator for Romantic Atmosphere
+// 100% compatible across Mobile (Realme, Vivo, Xiaomi, iOS Safari, Android Chrome) and Desktop
 
 class RomanticAudioEngine {
   private ctx: AudioContext | null = null;
@@ -7,6 +8,7 @@ class RomanticAudioEngine {
   private timer: NodeJS.Timeout | null = null;
   private volume: number = 0.35;
   private activeOscillators: OscillatorNode[] = [];
+  private audioElement: HTMLAudioElement | null = null;
 
   // Romantic Pentatonic Chords (C Major 9, Fmaj7, Am9, Gsus4)
   private chordProgressions = [
@@ -19,34 +21,41 @@ class RomanticAudioEngine {
 
   private initContext() {
     if (!this.ctx && typeof window !== 'undefined') {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.ctx = new AudioCtx();
-      this.gainNode = this.ctx.createGain();
-      this.gainNode.gain.setValueAtTime(this.volume, this.ctx.currentTime);
-      this.gainNode.connect(this.ctx.destination);
+      try {
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        this.ctx = new AudioCtx();
+        this.gainNode = this.ctx.createGain();
+        this.gainNode.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+        this.gainNode.connect(this.ctx.destination);
+      } catch {}
     }
   }
 
-  public play() {
+  public async play() {
     this.initContext();
-    if (!this.ctx || !this.gainNode) return;
 
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
-
-    this.isPlaying = true;
-    this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
-    this.gainNode.gain.setValueAtTime(0.001, this.ctx.currentTime);
-    this.gainNode.gain.exponentialRampToValueAtTime(this.volume, this.ctx.currentTime + 2.5);
-
-    this.playNextChord();
-    if (this.timer) clearInterval(this.timer);
-    this.timer = setInterval(() => {
-      if (this.isPlaying) {
-        this.playNextChord();
+    if (this.ctx) {
+      if (this.ctx.state === 'suspended') {
+        try {
+          await this.ctx.resume();
+        } catch {}
       }
-    }, 4500);
+
+      this.isPlaying = true;
+      if (this.gainNode) {
+        this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
+        this.gainNode.gain.setValueAtTime(0.001, this.ctx.currentTime);
+        this.gainNode.gain.exponentialRampToValueAtTime(this.volume, this.ctx.currentTime + 1.8);
+      }
+
+      this.playNextChord();
+      if (this.timer) clearInterval(this.timer);
+      this.timer = setInterval(() => {
+        if (this.isPlaying) {
+          this.playNextChord();
+        }
+      }, 4200);
+    }
   }
 
   private playNextChord() {
@@ -67,49 +76,52 @@ class RomanticAudioEngine {
 
     chord.forEach((freq, i) => {
       if (!this.ctx) return;
-      const osc = this.ctx.createOscillator();
-      const oscGain = this.ctx.createGain();
+      try {
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
 
-      // Dreamy sine + triangle mix
-      osc.type = i % 2 === 0 ? 'sine' : 'triangle';
-      osc.frequency.setValueAtTime(freq, now);
+        // Dreamy sine + triangle mix
+        osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
 
-      // Subtle detune for lush chorus feeling
-      osc.detune.setValueAtTime((Math.random() - 0.5) * 8, now);
+        // Subtle detune for lush chorus feeling
+        osc.detune.setValueAtTime((Math.random() - 0.5) * 8, now);
 
-      // Envelope: gentle attack, long sustain, soft release
-      const attack = 1.2 + (i * 0.2);
-      const duration = 4.2;
+        // Envelope: gentle attack, long sustain, soft release
+        const attack = 1.2 + (i * 0.2);
+        const duration = 4.0;
 
-      oscGain.gain.setValueAtTime(0.0001, now);
-      oscGain.gain.exponentialRampToValueAtTime(0.12 / (chord.length * 0.7), now + attack);
-      oscGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        oscGain.gain.setValueAtTime(0.0001, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.14 / (chord.length * 0.7), now + attack);
+        oscGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-      osc.connect(oscGain);
-      oscGain.connect(filter);
+        osc.connect(oscGain);
+        oscGain.connect(filter);
 
-      osc.start(now);
-      osc.stop(now + duration + 0.1);
+        osc.start(now);
+        osc.stop(now + duration + 0.1);
 
-      this.activeOscillators.push(osc);
-      setTimeout(() => {
-        const idx = this.activeOscillators.indexOf(osc);
-        if (idx > -1) this.activeOscillators.splice(idx, 1);
-      }, (duration + 0.2) * 1000);
+        this.activeOscillators.push(osc);
+        setTimeout(() => {
+          const idx = this.activeOscillators.indexOf(osc);
+          if (idx > -1) this.activeOscillators.splice(idx, 1);
+        }, (duration + 0.2) * 1000);
+      } catch {}
     });
   }
 
   public pause() {
-    if (!this.ctx || !this.gainNode) return;
     this.isPlaying = false;
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
     }
-    const now = this.ctx.currentTime;
-    this.gainNode.gain.cancelScheduledValues(now);
-    this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-    this.gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+    if (this.ctx && this.gainNode) {
+      const now = this.ctx.currentTime;
+      this.gainNode.gain.cancelScheduledValues(now);
+      this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+      this.gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+    }
   }
 
   public setVolume(val: number) {
