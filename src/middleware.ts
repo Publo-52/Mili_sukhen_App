@@ -3,15 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 // Routes that are always public (do not require login)
 const PUBLIC_PATHS = [
   '/login',
-  '/api/auth/login',
-  '/api/auth/logout',
-  '/api/auth/me',
-  '/api/auth/sessions',
+  '/api/',
   '/_next',
+  '/images',
   '/favicon',
   '/icon',
   '/manifest',
   '/robots.txt',
+  '/mili.jpg',
+  '/mili_sketch.jpg',
 ];
 
 export function middleware(request: NextRequest) {
