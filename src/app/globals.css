@@ -22,6 +22,7 @@
 
 button, a, input, select, textarea, [role="button"] {
   touch-action: manipulation;
+  user-select: none;
 }
 
 html {
@@ -54,7 +55,7 @@ body {
 
 /* Custom Cinematic Luxury Scrollbar */
 ::-webkit-scrollbar {
-  width: 7px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -96,31 +97,14 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.35);
-  transform: translateZ(0);
-  will-change: transform, opacity;
-}
-
-.glass-card-hover {
-  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-/* Speed & Rendering Optimizations */
-.content-auto {
-  content-visibility: auto;
-  contain-intrinsic-size: 0 400px;
-}
-
-.gpu-layer {
   transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-  will-change: transform;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .glass-card-hover:hover {
   background: rgba(22, 14, 38, 0.88);
   border-color: rgba(244, 63, 94, 0.45);
-  transform: translateY(-3px) translateZ(0);
+  transform: translateY(-3px) translate3d(0, 0, 0);
   box-shadow: 0 12px 28px -10px rgba(244, 63, 94, 0.25);
 }
 
@@ -129,7 +113,15 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.6);
-  transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
+}
+
+/* Speed & Rendering Optimizations */
+.gpu-layer {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
 }
 
 /* Optimized Lightweight Glowing Elements */
@@ -193,15 +185,23 @@ body {
   animation: shimmer 4s ease-in-out infinite;
 }
 
-/* Modal Open Isolation: Automatically hide fixed headers/navbars when any modal opens */
-body.modal-open header,
-body.modal-open nav {
-  display: none !important;
+/* Ultra Smooth Section Transitions */
+@keyframes sectionEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
+.animate-fade-in {
+  animation: sectionEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Modal Open Isolation */
 body.modal-open {
   overflow: hidden !important;
 }
-
-
-
