@@ -167,7 +167,7 @@ export function toggleFavoriteNote(id: string): string[] {
 // ----------------- Memories / Photo & Video Storage -----------------
 export function getMemories(): MemoryMilestone[] {
   const saved = getStorageItem<MemoryMilestone[] | null>(KEYS.FAVORITE_MEMORIES + '_all', null);
-  if (!saved || saved.length === 0) {
+  if (saved === null) {
     return INITIAL_MEMORIES;
   }
   return saved;

@@ -28,7 +28,7 @@ export async function GET() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data !== null) {
         return NextResponse.json(
           {
             memories: data.map((m) => ({

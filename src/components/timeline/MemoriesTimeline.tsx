@@ -9,6 +9,7 @@ import { MemoryItem } from '@/types';
 import { getMemories, saveMemory, deleteMemory, getFavoriteMemoryIds, toggleFavoriteMemory } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { APP_CONFIG } from '@/data/config';
 
 const MemoryEditorModal = dynamic(() => import('./MemoryEditorModal').then((m) => m.MemoryEditorModal), { ssr: false });
 const MediaViewerModal = dynamic(() => import('./MediaViewerModal').then((m) => m.MediaViewerModal), { ssr: false });
@@ -32,7 +33,7 @@ export const MemoriesTimeline: React.FC = () => {
       const res = await fetch('/api/memories', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data?.memories && data.memories.length > 0) {
+        if (data?.memories && Array.isArray(data.memories)) {
           setMemories(data.memories);
           return;
         }
@@ -111,7 +112,10 @@ export const MemoriesTimeline: React.FC = () => {
     try {
       await fetch('/api/memories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
         body: JSON.stringify({ memory }),
       });
     } catch {}
@@ -129,6 +133,9 @@ export const MemoriesTimeline: React.FC = () => {
     try {
       await fetch(`/api/memories?id=${id}`, {
         method: 'DELETE',
+        headers: {
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
       });
     } catch {}
 
