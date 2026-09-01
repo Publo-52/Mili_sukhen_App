@@ -55,19 +55,65 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
     setUploadError(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('resourceType', type);
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'ss5tzziw';
+      const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'mili_preset';
 
-      const res = await fetch('/api/cloudinary/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      let uploadSuccess = false;
+      let data: any = null;
 
-      const data = await res.json();
+      // 1. Direct Cloudinary Client-Side Upload (Fastest, supports HD photos & videos, bypasses server limits)
+      try {
+        const directFormData = new FormData();
+        directFormData.append('file', file);
+        directFormData.append('upload_preset', preset);
+        directFormData.append('folder', 'mili_universe_memories');
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to upload to Cloudinary');
+        const directRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
+          method: 'POST',
+          body: directFormData,
+        });
+
+        if (directRes.ok) {
+          const directData = await directRes.json();
+          let thumb = directData.secure_url;
+          if (directData.resource_type === 'video') {
+            thumb = directData.secure_url.replace(/\.[^/.]+$/, '.jpg');
+          }
+          data = {
+            url: directData.secure_url,
+            thumbnailUrl: thumb,
+            resourceType: directData.resource_type === 'video' ? 'video' : 'photo',
+          };
+          uploadSuccess = true;
+        } else {
+          const errData = await directRes.json().catch(() => null);
+          console.warn('Direct upload response not ok:', errData);
+        }
+      } catch (directErr) {
+        console.warn('Direct upload error, falling back to server route:', directErr);
+      }
+
+      // 2. Server Route Fallback
+      if (!uploadSuccess) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('resourceType', type);
+
+        const res = await fetch('/api/cloudinary/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          throw new Error('Server returned non-JSON response (' + res.status + ')');
+        }
+
+        if (!res.ok) {
+          throw new Error(data?.error || 'Failed to upload to Cloudinary');
+        }
       }
 
       setUrl(data.url);
@@ -76,7 +122,7 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
       if (!title) setTitle(file.name.replace(/\.[^/.]+$/, ''));
     } catch (err: any) {
       console.error('Upload failed:', err);
-      setUploadError(err?.message || 'Upload failed. You can paste a direct Cloudinary URL below instead.');
+      setUploadError(err?.message || 'Upload failed. Please check network or paste a direct image URL.');
     } finally {
       setIsUploading(false);
     }
