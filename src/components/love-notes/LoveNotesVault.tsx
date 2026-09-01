@@ -53,14 +53,26 @@ const MOOD_FILTERS = [
   { id: 'future', label: '🚀 Future' },
 ];
 
+import { INITIAL_LOVE_NOTES } from '@/data/loveNotes';
+
 export const LoveNotesVault: React.FC = () => {
-  const [allNotes, setAllNotes] = useState<LoveNote[]>([]);
+  const [allNotes, setAllNotes] = useState<LoveNote[]>(() => {
+    if (typeof window !== 'undefined') {
+      return getLoveNotes();
+    }
+    return INITIAL_LOVE_NOTES;
+  });
   const [selectedMood, setSelectedMood] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'featured' | 'grid'>('grid');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      return getFavoriteNoteIds();
+    }
+    return [];
+  });
   const [readingNote, setReadingNote] = useState<LoveNote | null>(null);
   const [editingNote, setEditingNote] = useState<LoveNote | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);

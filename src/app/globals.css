@@ -185,11 +185,11 @@ body {
   animation: shimmer 4s ease-in-out infinite;
 }
 
-/* Ultra Smooth Section Transitions */
+/* Ultra Smooth 0ms Section Transitions */
 @keyframes sectionEnter {
   0% {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(4px);
   }
   100% {
     opacity: 1;
@@ -198,7 +198,15 @@ body {
 }
 
 .animate-fade-in {
-  animation: sectionEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: sectionEnter 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
+/* Zero-Latency Instant Rendering Optimization */
+.instant-section {
+  contain: layout style;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 600px;
 }
 
 /* Modal Open Isolation */
