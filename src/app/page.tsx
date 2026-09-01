@@ -114,54 +114,44 @@ export default function HomePage() {
         onSelectSection={handleSelectSection}
       />
 
-      {/* Main Content Container with Guaranteed Visibility & Instant Switching */}
+      {/* Main Content Container with Pre-rendered 0ms Instant Tab Switching */}
       <main className="relative z-10 min-h-[75vh]">
         {/* 1. Home Sanctuary View */}
-        {isHome && (
-          <div className="pt-18 sm:pt-22 pb-8 animate-fade-in">
-            <Hero
-              onOpenSurprise={() => setShowSurprise(true)}
-              onSelectSection={handleSelectSection}
-            />
-          </div>
-        )}
+        <div className={`pt-18 sm:pt-22 pb-8 ${isHome ? 'block' : 'hidden'}`}>
+          <Hero
+            onOpenSurprise={() => setShowSurprise(true)}
+            onSelectSection={handleSelectSection}
+          />
+        </div>
 
         {/* 2. Projects Showcase View */}
-        {activeSection === 'projects' && (
-          <div className="pt-24 sm:pt-28 pb-16 animate-fade-in">
-            <ProjectShowcase />
-          </div>
-        )}
+        <div className={`pt-24 sm:pt-28 pb-16 ${activeSection === 'projects' ? 'block' : 'hidden'}`}>
+          <ProjectShowcase />
+        </div>
 
         {/* 3. Python Turtle Art Gallery View */}
-        {activeSection === 'turtle' && (
-          <div className="pt-24 sm:pt-28 pb-16 animate-fade-in">
-            <TurtleGallery />
-          </div>
-        )}
+        <div className={`pt-24 sm:pt-28 pb-16 ${activeSection === 'turtle' ? 'block' : 'hidden'}`}>
+          <TurtleGallery />
+        </div>
 
         {/* 4. Memories Timeline View */}
-        {activeSection === 'memories' && (
-          <div className="pt-24 sm:pt-28 pb-16 animate-fade-in">
-            <MemoriesTimeline />
-          </div>
-        )}
+        <div className={`pt-24 sm:pt-28 pb-16 ${activeSection === 'memories' ? 'block' : 'hidden'}`}>
+          <MemoriesTimeline />
+        </div>
 
         {/* 5. Love Notes Vault View */}
-        {activeSection === 'love-notes' && (
-          <div className="pt-24 sm:pt-28 pb-16 animate-fade-in">
-            <LoveNotesVault />
-          </div>
-        )}
+        <div className={`pt-24 sm:pt-28 pb-16 ${activeSection === 'love-notes' ? 'block' : 'hidden'}`}>
+          <LoveNotesVault />
+        </div>
       </main>
 
       {/* Footer: Visible on Home Section */}
-      {isHome && (
+      <div className={isHome ? 'block' : 'hidden'}>
         <Footer
           onReplayIntro={() => setShowIntro(true)}
           onOpenSurprise={() => setShowSurprise(true)}
         />
-      )}
+      </div>
 
       {/* Ambient Audio Player */}
       <AmbientAudioPlayer />
