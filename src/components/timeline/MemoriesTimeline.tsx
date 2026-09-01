@@ -4,17 +4,44 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Image as ImageIcon, Video, Heart, Calendar, MapPin, Plus, Edit3, Trash2, Maximize2, Play, Film, Camera } from 'lucide-react';
+import {
+  Sparkles,
+  Image as ImageIcon,
+  Video,
+  Heart,
+  Calendar,
+  MapPin,
+  Plus,
+  Edit3,
+  Trash2,
+  Maximize2,
+  Play,
+  Film,
+  Camera,
+} from 'lucide-react';
 import { MemoryItem } from '@/types';
-import { getMemories, saveMemory, deleteMemory, getFavoriteMemoryIds, toggleFavoriteMemory } from '@/lib/storage';
+import {
+  getMemories,
+  saveMemory,
+  deleteMemory,
+  getFavoriteMemoryIds,
+  toggleFavoriteMemory,
+} from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
+import { getOptimizedImageUrl } from '@/lib/utils';
 
-const MemoryEditorModal = dynamic(() => import('./MemoryEditorModal').then((m) => m.MemoryEditorModal), { ssr: false });
-const MediaViewerModal = dynamic(() => import('./MediaViewerModal').then((m) => m.MediaViewerModal), { ssr: false });
+const MemoryEditorModal = dynamic(
+  () => import('./MemoryEditorModal').then((m) => m.MemoryEditorModal),
+  { ssr: false }
+);
+const MediaViewerModal = dynamic(
+  () => import('./MediaViewerModal').then((m) => m.MediaViewerModal),
+  { ssr: false }
+);
 
-// Helper to guarantee high-res image poster for Cloudinary videos
+// Helper to guarantee high-res image poster for Cloudinary videos and images
 function getMediaThumbnail(memory: MemoryItem): string {
   const isVideo = memory.type === 'video';
   if (!isVideo && memory.url) return memory.url;
@@ -25,7 +52,6 @@ function getMediaThumbnail(memory: MemoryItem): string {
 
   if (memory.url) {
     if (memory.url.includes('cloudinary.com')) {
-      // Cloudinary video thumbnail poster conversion
       return memory.url.replace(/\.(mp4|mov|webm|avi|mkv|m4v)$/i, '.jpg');
     }
     return memory.url;
@@ -96,15 +122,11 @@ export const MemoriesTimeline: React.FC = () => {
     window.addEventListener('focus', handleFocus);
     window.addEventListener('mili-memories-updated', handleSyncEvent);
 
-    // 3. 8-second safety sync interval
-    const interval = setInterval(loadMemories, 8000);
-
     return () => {
       if (channel && supabase) supabase.removeChannel(channel);
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('mili-memories-updated', handleSyncEvent);
-      clearInterval(interval);
     };
   }, [loadMemories]);
 
@@ -231,7 +253,9 @@ export const MemoriesTimeline: React.FC = () => {
           <div className="space-y-1">
             <h4 className="text-base font-bold text-white">No media in this album yet</h4>
             <p className="text-xs text-slate-400">
-              {isAdmin ? 'Click below to upload photos or videos directly to Cloudinary.' : 'New memories will appear here soon.'}
+              {isAdmin
+                ? 'Click below to upload photos or videos directly to Cloudinary.'
+                : 'New memories will appear here soon.'}
             </p>
           </div>
           {isAdmin && (
@@ -249,133 +273,121 @@ export const MemoriesTimeline: React.FC = () => {
         </div>
       ) : (
         <div className="columns-2 md:columns-2 lg:columns-3 gap-3 sm:gap-4 md:gap-6 [column-fill:_balance]">
-        {filteredMemories.map((memory, index) => {
-          const isFav = favoriteIds.includes(memory.id) || memory.isFavorite;
-          const isVideo = memory.type === 'video';
+          {filteredMemories.map((memory, index) => {
+            const isFav = favoriteIds.includes(memory.id) || memory.isFavorite;
+            const isVideo = memory.type === 'video';
 
-          const MEMORY_ASPECTS = [
-            'aspect-[3/4]',
-            'aspect-[1/1]',
-            'aspect-[9/13]',
-            'aspect-[4/5]',
-            'aspect-[16/11]',
-            'aspect-[3/4]',
-          ];
-          const aspectClass = MEMORY_ASPECTS[index % MEMORY_ASPECTS.length];
+            const MEMORY_ASPECTS = [
+              'aspect-[3/4]',
+              'aspect-[1/1]',
+              'aspect-[9/13]',
+              'aspect-[4/5]',
+              'aspect-[16/11]',
+              'aspect-[3/4]',
+            ];
+            const aspectClass = MEMORY_ASPECTS[index % MEMORY_ASPECTS.length];
+            const displayThumbnail = getOptimizedImageUrl(getMediaThumbnail(memory), {
+              width: 800,
+              quality: 'auto',
+            });
 
-          return (
-            <div key={memory.id} className="break-inside-avoid mb-3 sm:mb-4 md:mb-6">
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: (index % 6) * 0.03 }}
-                className="group relative flex flex-col cursor-pointer select-none"
-                onClick={() => setViewerIndex(index)}
-              >
-                {/* 1. Clean Pinterest Media Container */}
+            return (
+              <div key={memory.id} className="break-inside-avoid mb-3 sm:mb-4 md:mb-6">
                 <div
-                  className={`relative ${aspectClass} w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-obsidian-950 border border-white/5 group-hover:border-roseGlow-500/30 transition-all duration-300 shadow-sm group-hover:shadow-lg`}
+                  className="group relative flex flex-col cursor-pointer select-none"
+                  onClick={() => setViewerIndex(index)}
                 >
-                  {isVideo ? (
-                    <video
-                      src={`${memory.url}#t=0.001`}
-                      poster={getMediaThumbnail(memory)}
-                      preload="metadata"
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 pointer-events-none"
-                    />
-                  ) : (
-                    <img
-                      src={memory.url}
-                      alt=""
+                  {/* High-Performance Media Container with Next.js Image Optimization */}
+                  <div
+                    className={`relative ${aspectClass} w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-obsidian-950 border border-white/5 group-hover:border-roseGlow-500/40 transition-all duration-300 shadow-sm group-hover:shadow-lg`}
+                  >
+                    <Image
+                      src={displayThumbnail}
+                      alt={memory.title}
+                      fill
+                      sizes="(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw"
                       className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                       loading="lazy"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLElement).style.display = 'none';
-                      }}
                     />
-                  )}
 
-                  {/* Video Top-Left Badge */}
-                  {isVideo && (
-                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/80 backdrop-blur-md text-[9px] font-mono text-purple-300 border border-purple-500/40 flex items-center gap-1 shadow-md z-10">
-                      <Video className="w-3 h-3 text-purple-400" />
-                      <span>VIDEO</span>
-                    </div>
-                  )}
-
-                  {/* Video Center Play Button */}
-                  {isVideo && (
-                    <div className="absolute inset-0 bg-black/25 flex items-center justify-center pointer-events-none">
-                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-lg border border-purple-400/50 group-hover:scale-110 group-hover:bg-purple-500 transition-all">
-                        <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-white translate-x-0.5" />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Top Right: Favorite Heart & Admin Edit */}
-                  <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
-                    {isAdmin && (
-                      <div className="flex items-center gap-0.5 bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/15">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingMemory(memory);
-                            setIsEditorOpen(true);
-                          }}
-                          className="p-0.5 rounded-full hover:bg-white/20 text-slate-200 hover:text-white transition-colors"
-                          title="Edit Memory"
-                        >
-                          <Edit3 className="w-3 h-3 text-roseGlow-400" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteMemory(memory.id);
-                          }}
-                          className="p-0.5 rounded-full hover:bg-red-500/30 text-slate-200 hover:text-red-400 transition-colors"
-                          title="Delete Memory"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                    {/* Video Top-Left Badge */}
+                    {isVideo && (
+                      <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/80 backdrop-blur-md text-[9px] font-mono text-purple-300 border border-purple-500/40 flex items-center gap-1 shadow-md z-10">
+                        <Video className="w-3 h-3 text-purple-400" />
+                        <span>VIDEO</span>
                       </div>
                     )}
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleFavorite(memory.id);
-                      }}
-                      className={`p-1.5 rounded-full backdrop-blur-md transition-all duration-200 ${
-                        isFav
-                          ? 'bg-roseGlow-600 text-white shadow-glow'
-                          : 'bg-black/40 text-white/80 hover:text-white hover:bg-black/70'
-                      }`}
-                      aria-label="Favorite"
-                    >
-                      <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-white' : ''}`} />
-                    </button>
+                    {/* Video Center Play Button */}
+                    {isVideo && (
+                      <div className="absolute inset-0 bg-black/25 flex items-center justify-center pointer-events-none">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-lg border border-purple-400/50 group-hover:scale-110 group-hover:bg-purple-500 transition-all">
+                          <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-white translate-x-0.5" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Top Right: Favorite Heart & Admin Edit */}
+                    <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+                      {isAdmin && (
+                        <div className="flex items-center gap-0.5 bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/15">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingMemory(memory);
+                              setIsEditorOpen(true);
+                            }}
+                            className="p-0.5 rounded-full hover:bg-white/20 text-slate-200 hover:text-white transition-colors"
+                            title="Edit Memory"
+                          >
+                            <Edit3 className="w-3 h-3 text-roseGlow-400" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteMemory(memory.id);
+                            }}
+                            className="p-0.5 rounded-full hover:bg-red-500/30 text-slate-200 hover:text-red-400 transition-colors"
+                            title="Delete Memory"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleFavorite(memory.id);
+                        }}
+                        className={`p-1.5 rounded-full backdrop-blur-md transition-all duration-200 ${
+                          isFav
+                            ? 'bg-roseGlow-600 text-white shadow-glow'
+                            : 'bg-black/40 text-white/80 hover:text-white hover:bg-black/70'
+                        }`}
+                        aria-label="Favorite"
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-white' : ''}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Pinterest Bottom Row: Clean Title & Date */}
+                  <div className="pt-1.5 px-0.5 flex items-center justify-between gap-1">
+                    <h3 className="text-[12px] sm:text-[13px] font-medium text-slate-200 group-hover:text-roseGlow-300 transition-colors truncate flex-1 flex items-center gap-1">
+                      {isVideo && <Video className="w-3 h-3 text-purple-400 flex-shrink-0" />}
+                      <span className="truncate">{memory.title}</span>
+                    </h3>
+
+                    <span className="text-[10px] text-slate-400 font-mono flex-shrink-0">
+                      {memory.date}
+                    </span>
                   </div>
                 </div>
-
-                {/* 2. Pinterest Bottom Row: Clean Title & Date */}
-                <div className="pt-1.5 px-0.5 flex items-center justify-between gap-1">
-                  <h3 className="text-[12px] sm:text-[13px] font-medium text-slate-200 group-hover:text-roseGlow-300 transition-colors truncate flex-1 flex items-center gap-1">
-                    {isVideo && <Video className="w-3 h-3 text-purple-400 flex-shrink-0" />}
-                    <span className="truncate">{memory.title}</span>
-                  </h3>
-
-                  <span className="text-[10px] text-slate-400 font-mono flex-shrink-0">
-                    {memory.date}
-                  </span>
-                </div>
-              </motion.div>
-            </div>
-          );
-        })}
-      </div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* Media Viewer Modal */}

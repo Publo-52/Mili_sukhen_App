@@ -114,10 +114,6 @@ export const LoveNotesVault: React.FC = () => {
 
     window.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
-    window.addEventListener('mili-notes-updated', handleSyncEvent);
-
-    const interval = setInterval(loadNotes, 8000);
-
     return () => {
       if (channel && supabase) {
         supabase.removeChannel(channel);
@@ -125,7 +121,6 @@ export const LoveNotesVault: React.FC = () => {
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('mili-notes-updated', handleSyncEvent);
-      clearInterval(interval);
     };
   }, [loadNotes]);
 

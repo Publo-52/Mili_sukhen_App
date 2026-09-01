@@ -84,9 +84,6 @@ export const ProjectShowcase: React.FC = () => {
     window.addEventListener('focus', handleFocus);
     window.addEventListener('mili-projects-updated', handleSyncEvent);
 
-    // 3. Fallback background sync interval (every 8 seconds)
-    const interval = setInterval(loadProjects, 8000);
-
     return () => {
       if (channel && supabase) {
         supabase.removeChannel(channel);
@@ -94,7 +91,6 @@ export const ProjectShowcase: React.FC = () => {
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('mili-projects-updated', handleSyncEvent);
-      clearInterval(interval);
     };
   }, [loadProjects]);
 

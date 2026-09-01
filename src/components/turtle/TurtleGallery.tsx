@@ -3,12 +3,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
 import { Sparkles, Code2, Maximize2, Terminal, Play, Heart, Plus, Wand2, Edit3, Trash2 } from 'lucide-react';
 import { TurtleCreation } from '@/types';
 import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
-import { formatDate } from '@/lib/utils';
+import { formatDate, getOptimizedImageUrl } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 const FullscreenLightbox = dynamic(() => import('./FullscreenLightbox').then((m) => m.FullscreenLightbox), { ssr: false });
@@ -72,9 +71,6 @@ export const TurtleGallery: React.FC = () => {
     window.addEventListener('focus', handleFocus);
     window.addEventListener('mili-turtle-updated', handleSyncEvent);
 
-    // 3. Fallback background sync interval (every 8 seconds)
-    const interval = setInterval(loadCreations, 8000);
-
     return () => {
       if (channel && supabase) {
         supabase.removeChannel(channel);
@@ -82,7 +78,6 @@ export const TurtleGallery: React.FC = () => {
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('mili-turtle-updated', handleSyncEvent);
-      clearInterval(interval);
     };
   }, [loadCreations]);
 
@@ -119,9 +114,9 @@ export const TurtleGallery: React.FC = () => {
   };
 
   return (
-    <section id="python-art" className="pt-1 pb-4 px-3 sm:px-6 lg:px-8 max-w-6xl mx-auto relative">
+    <section id="python-art" className="pt-1 pb-6 px-3 sm:px-6 lg:px-8 max-w-6xl mx-auto relative">
       {/* Section Header */}
-      <div className="text-center space-y-2 mb-4 sm:mb-6">
+      <div className="text-center space-y-2 mb-6 sm:mb-8">
         <div className="flex items-center justify-center gap-2 flex-wrap">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono tracking-wider uppercase">
             <Terminal className="w-3.5 h-3.5" />
@@ -163,27 +158,25 @@ export const TurtleGallery: React.FC = () => {
             'aspect-[4/5]',
           ];
           const aspectClass = TURTLE_ASPECTS[idx % TURTLE_ASPECTS.length];
+          const displayImage = getOptimizedImageUrl(creation.artworkImage, { width: 800, quality: 'auto' });
 
           return (
             <div key={creation.id} className="break-inside-avoid mb-3 sm:mb-4 md:mb-6">
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: (idx % 6) * 0.03 }}
+              <div
                 className="group relative flex flex-col cursor-pointer select-none"
                 onClick={() => setSelectedCreation(creation)}
               >
                 {/* 1. Clean Pinterest Media Container */}
                 <div
-                  className={`relative ${aspectClass} w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-[#07050d] border border-white/5 group-hover:border-amber-500/30 transition-all duration-300 shadow-sm group-hover:shadow-lg`}
+                  className={`relative ${aspectClass} w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-[#07050d] border border-white/5 group-hover:border-amber-500/40 transition-all duration-300 shadow-sm group-hover:shadow-lg`}
                 >
                   <Image
-                    src={creation.artworkImage}
+                    src={displayImage}
                     alt={creation.title}
                     fill
                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw"
                     className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                    loading="lazy"
                   />
 
                   {/* Play Overlay on Hover */}
@@ -223,7 +216,7 @@ export const TurtleGallery: React.FC = () => {
                   )}
                 </div>
 
-                {/* 2. Pinterest Bottom Row: Clean Title & 3-Dots */}
+                {/* 2. Pinterest Bottom Row: Clean Title & Play icon */}
                 <div className="pt-1.5 px-0.5 flex items-center justify-between gap-1">
                   <h3 className="text-[12px] sm:text-[13px] font-medium text-slate-200 group-hover:text-amber-300 transition-colors truncate flex-1">
                     {creation.title}
@@ -241,7 +234,7 @@ export const TurtleGallery: React.FC = () => {
                     <Play className="w-3.5 h-3.5 text-amber-400" />
                   </button>
                 </div>
-              </motion.div>
+              </div>
             </div>
           );
         })}
@@ -268,4 +261,3 @@ export const TurtleGallery: React.FC = () => {
     </section>
   );
 };
-

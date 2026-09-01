@@ -2,9 +2,9 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
 import { MoreHorizontal } from 'lucide-react';
 import { Project } from '@/types';
+import { getOptimizedImageUrl } from '@/lib/utils';
 
 interface ProjectCardProps {
   project: Project;
@@ -34,13 +34,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   const aspectClass = PIN_ASPECTS[index % PIN_ASPECTS.length];
   const titleAccentClass = project.themeTextAccent || "group-hover:text-roseGlow-300";
+  const displayThumbnail = getOptimizedImageUrl(project.thumbnail, { width: 800, quality: 'auto' });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.3, delay: (index % 6) * 0.03 }}
+    <div
       className="group relative flex flex-col cursor-pointer select-none mb-3 sm:mb-4"
       onClick={() => onQuickPreview(project)}
     >
@@ -49,11 +46,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         className={`relative ${aspectClass} w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-obsidian-900 border border-white/5 group-hover:border-white/20 transition-all duration-300 shadow-sm group-hover:shadow-lg`}
       >
         <Image
-          src={project.thumbnail}
+          src={displayThumbnail}
           alt={project.title}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw"
           className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+          loading="lazy"
         />
       </div>
 
@@ -76,6 +74,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           <MoreHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
