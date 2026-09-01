@@ -30,7 +30,7 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
-import { getOptimizedImageUrl } from '@/lib/utils';
+import { getOptimizedImageUrl, isMediaVideo } from '@/lib/utils';
 
 const MemoryEditorModal = dynamic(
   () => import('./MemoryEditorModal').then((m) => m.MemoryEditorModal),
@@ -275,7 +275,7 @@ export const MemoriesTimeline: React.FC = () => {
         <div className="columns-2 md:columns-2 lg:columns-3 gap-3 sm:gap-4 md:gap-6 [column-fill:_balance]">
           {filteredMemories.map((memory, index) => {
             const isFav = favoriteIds.includes(memory.id) || memory.isFavorite;
-            const isVideo = memory.type === 'video';
+            const isVideo = isMediaVideo(memory);
 
             const MEMORY_ASPECTS = [
               'aspect-[3/4]',

@@ -1,9 +1,28 @@
-import React, { useEffect, useState } from 'react';
+'use client';
+
+import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Heart, MapPin, Calendar, Download, Maximize2, Sparkles, Video, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  MapPin,
+  Calendar,
+  Download,
+  Maximize2,
+  Sparkles,
+  Video,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Loader2,
+} from 'lucide-react';
 import { MemoryItem } from '@/types';
+import { isMediaVideo, getOptimizedImageUrl } from '@/lib/utils';
 
 interface MediaViewerModalProps {
   isOpen: boolean;
@@ -26,8 +45,13 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
 }) => {
   const [mounted, setMounted] = useState(false);
   const currentItem = memories[currentIndex];
+  const isVideo = isMediaVideo(currentItem);
+
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -36,11 +60,20 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     } else {
       document.body.style.overflow = '';
     }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
       if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowRight' && memories.length > 1) onNavigate((currentIndex + 1) % memories.length);
-      if (e.key === 'ArrowLeft' && memories.length > 1) onNavigate((currentIndex - 1 + memories.length) % memories.length);
+      if (e.key === 'ArrowRight' && memories.length > 1) {
+        onNavigate((currentIndex + 1) % memories.length);
+      }
+      if (e.key === 'ArrowLeft' && memories.length > 1) {
+        onNavigate((currentIndex - 1 + memories.length) % memories.length);
+      }
+      if (e.key === ' ' && isVideo && videoRef.current) {
+        e.preventDefault();
+        togglePlay();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -48,9 +81,55 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, currentIndex, memories.length, onClose, onNavigate]);
+  }, [isOpen, currentIndex, memories.length, isVideo, onClose, onNavigate]);
+
+  // Handle Video Auto-Play & source switching
+  useEffect(() => {
+    if (isVideo && videoRef.current) {
+      videoRef.current.currentTime = 0;
+      setIsBuffering(true);
+
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            setIsBuffering(false);
+          })
+          .catch((error) => {
+            console.warn('Autoplay restricted by browser, user can click to play:', error);
+            setIsPlaying(false);
+            setIsBuffering(false);
+          });
+      }
+    }
+  }, [currentIndex, isVideo, currentItem?.url]);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = !videoRef.current.muted;
+    setIsMuted(videoRef.current.muted);
+  };
 
   if (!isOpen || !currentItem || !mounted) return null;
+
+  const posterImage = getOptimizedImageUrl(currentItem.thumbnailUrl || currentItem.url, {
+    width: 1200,
+    quality: 'auto',
+  });
 
   return createPortal(
     <AnimatePresence>
@@ -61,12 +140,29 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
             <span className="text-xs font-mono text-slate-400">
               {currentIndex + 1} / {memories.length}
             </span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-roseGlow-300 font-mono">
-              {currentItem.type === 'video' ? '🎬 Video' : '📸 Photo'}
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-roseGlow-300 font-mono flex items-center gap-1">
+              {isVideo ? (
+                <>
+                  <Video className="w-3 h-3 text-purple-400" />
+                  <span>Video Moment</span>
+                </>
+              ) : (
+                <span>📸 Photo</span>
+              )}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
+            {isVideo && (
+              <button
+                onClick={toggleMute}
+                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-200 transition-colors"
+                title={isMuted ? 'Unmute' : 'Mute'}
+              >
+                {isMuted ? <VolumeX className="w-4 h-4 text-amber-400" /> : <Volume2 className="w-4 h-4" />}
+              </button>
+            )}
+
             {onToggleFavorite && (
               <button
                 onClick={() => onToggleFavorite(currentItem.id)}
@@ -103,28 +199,57 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
           <button
             onClick={() => onNavigate((currentIndex - 1 + memories.length) % memories.length)}
             className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-md z-40"
+            aria-label="Previous Media"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
         )}
 
-        {/* Media Container */}
+        {/* Media Player Container */}
         <div className="relative w-full h-full flex flex-col items-center justify-center p-4 sm:p-12 pb-24 sm:pb-28">
           <motion.div
             key={currentItem.id}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.2 }}
-            className="relative max-w-5xl max-h-[70vh] w-full h-full flex items-center justify-center rounded-2xl overflow-hidden"
+            transition={{ duration: 0.25 }}
+            className="relative max-w-5xl max-h-[72vh] w-full h-full flex items-center justify-center rounded-2xl overflow-hidden"
           >
-            {currentItem.type === 'video' ? (
-              <video
-                src={currentItem.url}
-                controls
-                autoPlay
-                className="max-h-full max-w-full rounded-2xl shadow-2xl object-contain"
-              />
+            {isVideo ? (
+              <div className="relative w-full h-full flex items-center justify-center group cursor-pointer" onClick={togglePlay}>
+                <video
+                  ref={videoRef}
+                  src={currentItem.url}
+                  poster={posterImage}
+                  controls
+                  playsInline
+                  autoPlay
+                  preload="auto"
+                  onWaiting={() => setIsBuffering(true)}
+                  onPlaying={() => {
+                    setIsBuffering(false);
+                    setIsPlaying(true);
+                  }}
+                  onPause={() => setIsPlaying(false)}
+                  className="max-h-full max-w-full rounded-2xl shadow-2xl object-contain"
+                />
+
+                {/* Big Center Play/Pause Overlay when paused */}
+                {!isPlaying && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none transition-opacity">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-roseGlow-500/90 text-white flex items-center justify-center shadow-2xl border border-white/20 transform hover:scale-110 transition-transform">
+                      <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-white translate-x-1" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Loading Spinner during buffering */}
+                {isBuffering && (
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
+                    <Loader2 className="w-10 h-10 text-roseGlow-400 animate-spin" />
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="relative w-full h-full flex items-center justify-center">
                 <Image
@@ -145,6 +270,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
           <button
             onClick={() => onNavigate((currentIndex + 1) % memories.length)}
             className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-md z-40"
+            aria-label="Next Media"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
