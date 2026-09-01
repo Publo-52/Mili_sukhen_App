@@ -1,6 +1,5 @@
-'use client';
-
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Heart, MapPin, Calendar, Download, Maximize2, Sparkles, Video, Play, Pause, Volume2, VolumeX } from 'lucide-react';
@@ -25,11 +24,18 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   onToggleFavorite,
   isFavorite = false,
 }) => {
+  const [mounted, setMounted] = useState(false);
   const currentItem = memories[currentIndex];
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
       if (e.key === 'Escape') onClose();
@@ -38,16 +44,19 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen, currentIndex, memories.length, onClose, onNavigate]);
 
-  if (!isOpen || !currentItem) return null;
+  if (!isOpen || !currentItem || !mounted) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl select-none">
+      <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/95 backdrop-blur-2xl select-none">
         {/* Top Controls Bar */}
-        <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 flex items-center justify-between z-50 bg-gradient-to-b from-black/80 to-transparent">
+        <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 flex items-center justify-between z-[1000000] bg-gradient-to-b from-black/90 to-transparent">
           <div className="flex items-center gap-3">
             <span className="text-xs font-mono text-slate-400">
               {currentIndex + 1} / {memories.length}
@@ -171,6 +180,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
           </div>
         </div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

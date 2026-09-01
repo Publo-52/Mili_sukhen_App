@@ -1,6 +1,5 @@
-'use client';
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Image as ImageIcon, Video, Sparkles, MapPin, Calendar, Heart, AlertCircle, Loader2 } from 'lucide-react';
@@ -19,6 +18,7 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
   onSave,
   editingMemory,
 }) => {
+  const [mounted, setMounted] = useState(false);
   const [type, setType] = useState<'photo' | 'video'>(editingMemory?.type || 'photo');
   const [title, setTitle] = useState(editingMemory?.title || '');
   const [url, setUrl] = useState(editingMemory?.url || '');
@@ -33,7 +33,19 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  if (!isOpen || !mounted) return null;
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -97,14 +109,14 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+      <div className="fixed inset-0 z-[999999] bg-[#06040a]/95 backdrop-blur-2xl flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 pt-10 sm:pt-6 pb-24 sm:pb-8 overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-obsidian-900 border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl p-5 sm:p-7 my-8 max-h-[90vh] overflow-y-auto text-slate-200"
+          className="relative w-full max-w-2xl bg-obsidian-950 border border-white/15 rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-7 my-auto max-h-[85vh] overflow-y-auto text-slate-200"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10">
@@ -336,6 +348,7 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
           </form>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
