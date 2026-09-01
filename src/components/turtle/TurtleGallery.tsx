@@ -12,7 +12,7 @@ import {
   Terminal,
 } from 'lucide-react';
 import { TurtleCreation } from '@/types';
-import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation, getDeletedTurtleIds } from '@/lib/storage';
+import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation, getDeletedTurtleIds, markTurtleDeleted } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { getOptimizedImageUrl } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -122,6 +122,7 @@ export const TurtleGallery: React.FC = () => {
   };
 
   const handleDeleteCreation = async (id: string) => {
+    markTurtleDeleted(id);
     const updated = deleteTurtleCreation(id);
     setCreations(updated);
 
@@ -139,7 +140,6 @@ export const TurtleGallery: React.FC = () => {
     } catch {}
 
     window.dispatchEvent(new Event('mili-turtle-updated'));
-    await loadCreations();
   };
 
   const handleOpenEdit = (creation: TurtleCreation) => {

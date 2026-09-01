@@ -27,6 +27,7 @@ import {
   getFavoriteMemoryIds,
   toggleFavoriteMemory,
   getDeletedMemoryIds,
+  markMemoryDeleted,
 } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -172,8 +173,7 @@ export const MemoriesTimeline: React.FC = () => {
   };
 
   const handleDeleteMemory = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this photo/video memory?')) return;
-
+    markMemoryDeleted(id);
     const updated = deleteMemory(id);
     setMemories(updated);
 
@@ -187,7 +187,6 @@ export const MemoriesTimeline: React.FC = () => {
     } catch {}
 
     window.dispatchEvent(new Event('mili-memories-updated'));
-    await loadMemories();
   };
 
   return (

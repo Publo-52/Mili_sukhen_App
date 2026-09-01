@@ -55,8 +55,10 @@ import {
   deleteMemory,
   getMessages,
   markMessageAsRead,
-  replyToMessage,
-  deleteMessage,
+  markProjectDeleted,
+  markTurtleDeleted,
+  markNoteDeleted,
+  markMemoryDeleted,
   isAdminLoggedIn,
   setAdminLoggedIn,
 } from '@/lib/storage';
@@ -281,6 +283,7 @@ export default function AdminPage() {
   };
 
   const handleDeleteProject = async (id: string) => {
+    markProjectDeleted(id);
     const updated = deleteProject(id);
     setProjects(updated);
 
@@ -294,7 +297,6 @@ export default function AdminPage() {
     } catch {}
 
     window.dispatchEvent(new Event('mili-projects-updated'));
-    await loadData();
   };
 
   const handleEditProject = (project: Project) => {
@@ -321,10 +323,10 @@ export default function AdminPage() {
     } catch {}
 
     window.dispatchEvent(new Event('mili-turtle-updated'));
-    await loadData();
   };
 
   const handleDeleteTurtle = async (id: string) => {
+    markTurtleDeleted(id);
     const updated = deleteTurtleCreation(id);
     setTurtleCreations(updated);
 
@@ -338,7 +340,6 @@ export default function AdminPage() {
     } catch {}
 
     window.dispatchEvent(new Event('mili-turtle-updated'));
-    await loadData();
   };
 
   // --- Handlers for Love Notes ---
@@ -360,10 +361,10 @@ export default function AdminPage() {
     } catch {}
 
     window.dispatchEvent(new Event('mili-notes-updated'));
-    await loadData();
   };
 
   const handleDeleteNote = async (id: string) => {
+    markNoteDeleted(id);
     const updated = deleteLoveNote(id);
     setLoveNotes(updated);
 
@@ -377,7 +378,6 @@ export default function AdminPage() {
     } catch {}
 
     window.dispatchEvent(new Event('mili-notes-updated'));
-    await loadData();
   };
 
   const handleEditNote = (note: LoveNote) => {
@@ -404,10 +404,10 @@ export default function AdminPage() {
     } catch {}
 
     window.dispatchEvent(new Event('mili-memories-updated'));
-    await loadData();
   };
 
   const handleDeleteMemory = async (id: string) => {
+    markMemoryDeleted(id);
     const updated = deleteMemory(id);
     setMemories(updated);
 
@@ -421,7 +421,6 @@ export default function AdminPage() {
     } catch {}
 
     window.dispatchEvent(new Event('mili-memories-updated'));
-    await loadData();
   };
 
   const handleEditMemory = (memory: MemoryItem) => {

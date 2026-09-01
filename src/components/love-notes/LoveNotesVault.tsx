@@ -30,6 +30,7 @@ import {
   getFavoriteNoteIds,
   toggleFavoriteNote,
   getDeletedNoteIds,
+  markNoteDeleted,
 } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -228,22 +229,23 @@ export const LoveNotesVault: React.FC = () => {
   };
 
   const handleDeleteNote = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this love note?')) {
-      const updated = deleteLoveNote(id);
-      setAllNotes(updated);
-      if (currentIndex >= updated.length) {
-        setCurrentIndex(Math.max(0, updated.length - 1));
-      }
-
-      try {
-        await fetch(`/api/love-notes?id=${id}`, {
-          method: 'DELETE',
-        });
-      } catch {}
-
-      window.dispatchEvent(new Event('mili-notes-updated'));
-      await loadNotes();
+    markNoteDeleted(id);
+    const updated = deleteLoveNote(id);
+    setAllNotes(updated);
+    if (currentIndex >= updated.length) {
+      setCurrentIndex(Math.max(0, updated.length - 1));
     }
+
+    try {
+      await fetch(`/api/love-notes?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-token': 'das@123',
+        },
+      });
+    } catch {}
+
+    window.dispatchEvent(new Event('mili-notes-updated'));
   };
 
   // Helper to get count per mood

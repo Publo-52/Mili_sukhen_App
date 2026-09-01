@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Search, Sparkles, Heart, Filter, Layers, ArrowUpRight, Plus, Wand2 } from 'lucide-react';
 import { Project, ProjectCategory } from '@/types';
-import { getProjects, saveProject, deleteProject, toggleFavoriteProject, getFavoriteProjectIds, getDeletedProjectIds } from '@/lib/storage';
+import { getProjects, saveProject, deleteProject, toggleFavoriteProject, getFavoriteProjectIds, getDeletedProjectIds, markProjectDeleted } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { ProjectCard } from './ProjectCard';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -129,6 +129,7 @@ export const ProjectShowcase: React.FC = () => {
 
   // Admin Delete Project
   const handleDeleteProject = async (id: string) => {
+    markProjectDeleted(id);
     const updated = deleteProject(id);
     setProjects(updated);
 
@@ -146,7 +147,6 @@ export const ProjectShowcase: React.FC = () => {
     } catch {}
 
     window.dispatchEvent(new Event('mili-projects-updated'));
-    await loadProjects();
   };
 
   const filteredProjects = useMemo(() => {
