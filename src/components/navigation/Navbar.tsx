@@ -286,7 +286,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.25 }}
-              className="fixed inset-x-0 top-[70px] z-40 bg-obsidian-950/98 backdrop-blur-2xl border-b border-white/10 p-5 md:hidden space-y-4 max-h-[calc(100dvh-80px)] overflow-y-auto shadow-2xl"
+              className="fixed inset-x-0 top-[70px] z-40 bg-obsidian-950/98 backdrop-blur-2xl p-5 md:hidden space-y-4 max-h-[calc(100dvh-80px)] overflow-y-auto shadow-2xl"
             >
               <div className="flex flex-col gap-1">
                 {navLinks.map((link) => {
