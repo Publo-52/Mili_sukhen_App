@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { getSessionFromRequest } from '@/lib/sessions';
 import { APP_CONFIG } from '@/data/config';
 import { TurtleCreation } from '@/types';
+import { markTurtleDeletedOnServer, isTurtleDeletedOnServer } from '@/lib/server-deleted-tracker';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -28,24 +29,26 @@ export async function GET() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data !== null) {
+        const filtered = data
+          .filter((t) => !isTurtleDeletedOnServer(t.id))
+          .map((t) => ({
+            id: t.id,
+            title: t.title,
+            slug: t.slug,
+            description: t.description,
+            artworkImage: t.artwork_image,
+            pythonScript: t.python_script,
+            createdAt: t.created_at,
+            category: t.category,
+            inspiration: t.inspiration,
+            tags: Array.isArray(t.tags) ? t.tags : (t.tags ? JSON.parse(t.tags) : []),
+            featured: Boolean(t.featured),
+            canvasDrawingType: t.canvas_drawing_type,
+          }));
+
         return NextResponse.json(
-          {
-            creations: data.map((t) => ({
-              id: t.id,
-              title: t.title,
-              slug: t.slug,
-              description: t.description,
-              artworkImage: t.artwork_image,
-              pythonScript: t.python_script,
-              createdAt: t.created_at,
-              category: t.category,
-              inspiration: t.inspiration,
-              tags: Array.isArray(t.tags) ? t.tags : (t.tags ? JSON.parse(t.tags) : []),
-              featured: Boolean(t.featured),
-              canvasDrawingType: t.canvas_drawing_type,
-            })),
-          },
+          { creations: filtered },
           {
             headers: {
               'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -59,8 +62,10 @@ export async function GET() {
     }
   }
 
+  const baselineFiltered = INITIAL_TURTLE_CREATIONS.filter((t) => !isTurtleDeletedOnServer(t.id));
+
   return NextResponse.json(
-    { creations: INITIAL_TURTLE_CREATIONS },
+    { creations: baselineFiltered },
     {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -74,7 +79,7 @@ export async function POST(request: Request) {
   try {
     if (!isAuthorizedAdmin(request)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only Admins (Sukhen & Mili) can add or edit Python Art.' },
+        { error: 'Unauthorized. Only Admins can create or modify Python art.' },
         { status: 403 }
       );
     }
@@ -84,41 +89,40 @@ export async function POST(request: Request) {
 
     if (!creation || !creation.title || !creation.pythonScript) {
       return NextResponse.json(
-        { error: 'Title and Python Script are required.' },
+        { error: 'Missing required fields (title, pythonScript)' },
         { status: 400 }
       );
     }
 
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.from('turtle_creations').upsert([
-          {
-            id: creation.id,
-            title: creation.title,
-            slug: creation.slug,
-            description: creation.description,
-            artwork_image: creation.artworkImage,
-            python_script: creation.pythonScript,
-            category: creation.category,
-            inspiration: creation.inspiration,
-            tags: creation.tags,
-            featured: creation.featured,
-            canvas_drawing_type: creation.canvasDrawingType,
-            created_at: creation.createdAt || new Date().toISOString(),
-          },
-        ]);
+      const { error } = await supabase.from('turtle_creations').upsert([
+        {
+          id: creation.id,
+          title: creation.title,
+          slug: creation.slug,
+          description: creation.description,
+          artwork_image: creation.artworkImage,
+          python_script: creation.pythonScript,
+          created_at: creation.createdAt || new Date().toISOString().split('T')[0],
+          category: creation.category || 'Mathematical',
+          inspiration: creation.inspiration || '',
+          tags: creation.tags || [],
+          featured: Boolean(creation.featured),
+          canvas_drawing_type: creation.canvasDrawingType || 'mandala',
+        },
+      ]);
 
-        if (error) {
-          console.warn('Supabase upsert warning for turtle art:', error.message);
-        }
-      } catch (err: any) {
-        console.warn('Supabase error for turtle art:', err?.message);
+      if (error) {
+        console.warn('Supabase upsert turtle warning:', error.message);
       }
     }
 
     return NextResponse.json({ success: true, creation });
   } catch {
-    return NextResponse.json({ error: 'Failed to save Python Art creation' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to save Python Turtle creation' },
+      { status: 500 }
+    );
   }
 }
 
@@ -126,7 +130,7 @@ export async function DELETE(request: Request) {
   try {
     if (!isAuthorizedAdmin(request)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only Admins (Sukhen & Mili) can delete Python Art.' },
+        { error: 'Unauthorized. Only Admins can delete Python art.' },
         { status: 403 }
       );
     }
@@ -135,22 +139,24 @@ export async function DELETE(request: Request) {
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'Artwork ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Creation ID is required' }, { status: 400 });
     }
 
+    // Permanently register deletion on server
+    markTurtleDeletedOnServer(id);
+
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.from('turtle_creations').delete().eq('id', id);
-        if (error) {
-          console.warn('Supabase delete warning for turtle art:', error.message);
-        }
-      } catch (err: any) {
-        console.warn('Supabase delete error for turtle art:', err?.message);
+      const { error } = await supabase.from('turtle_creations').delete().eq('id', id);
+      if (error) {
+        console.warn('Supabase delete turtle warning:', error.message);
       }
     }
 
-    return NextResponse.json({ success: true, message: 'Artwork deleted successfully.' });
+    return NextResponse.json({ success: true, id, message: 'Python artwork permanently deleted.' });
   } catch {
-    return NextResponse.json({ error: 'Failed to delete Python Art' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete Python Turtle creation' },
+      { status: 500 }
+    );
   }
 }

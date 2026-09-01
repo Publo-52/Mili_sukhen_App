@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { getSessionFromRequest } from '@/lib/sessions';
 import { APP_CONFIG } from '@/data/config';
 import { MemoryItem } from '@/types';
+import { markMemoryDeletedOnServer, isMemoryDeletedOnServer } from '@/lib/server-deleted-tracker';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -29,22 +30,24 @@ export async function GET() {
         .order('created_at', { ascending: false });
 
       if (!error && data !== null) {
+        const filtered = data
+          .filter((m) => !isMemoryDeletedOnServer(m.id))
+          .map((m) => ({
+            id: m.id,
+            title: m.title,
+            type: m.type || 'photo',
+            url: m.url,
+            thumbnailUrl: m.thumbnail_url || m.url,
+            date: m.date || 'A special moment',
+            location: m.location || '',
+            description: m.description || '',
+            isFavorite: Boolean(m.is_favorite),
+            aspectRatio: m.aspect_ratio || 'landscape',
+            createdAt: m.created_at,
+          }));
+
         return NextResponse.json(
-          {
-            memories: data.map((m) => ({
-              id: m.id,
-              title: m.title,
-              type: m.type || 'photo',
-              url: m.url,
-              thumbnailUrl: m.thumbnail_url || m.url,
-              date: m.date || 'A special moment',
-              location: m.location || '',
-              description: m.description || '',
-              isFavorite: Boolean(m.is_favorite),
-              aspectRatio: m.aspect_ratio || 'landscape',
-              createdAt: m.created_at,
-            })),
-          },
+          { memories: filtered },
           {
             headers: {
               'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -58,8 +61,10 @@ export async function GET() {
     }
   }
 
+  const baselineFiltered = INITIAL_MEMORIES.filter((m) => !isMemoryDeletedOnServer(m.id));
+
   return NextResponse.json(
-    { memories: INITIAL_MEMORIES },
+    { memories: baselineFiltered },
     {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -73,7 +78,7 @@ export async function POST(request: Request) {
   try {
     if (!isAuthorizedAdmin(request)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only Admins (Sukhen & Mili) can add or edit photos & videos.' },
+        { error: 'Unauthorized. Only Admins can upload memories.' },
         { status: 403 }
       );
     }
@@ -83,50 +88,39 @@ export async function POST(request: Request) {
 
     if (!memory || !memory.title || !memory.url) {
       return NextResponse.json(
-        { error: 'Memory Title and Media URL are required.' },
+        { error: 'Missing required memory fields (title, url)' },
         { status: 400 }
       );
     }
 
-    const memoryId = memory.id || `mem_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const record: MemoryItem = {
-      ...memory,
-      id: memoryId,
-      type: memory.type || 'photo',
-      thumbnailUrl: memory.thumbnailUrl || memory.url,
-      date: memory.date || 'Special Moments',
-      createdAt: memory.createdAt || new Date().toISOString(),
-    };
-
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.from('memories').upsert([
-          {
-            id: record.id,
-            title: record.title,
-            type: record.type,
-            url: record.url,
-            thumbnail_url: record.thumbnailUrl,
-            date: record.date,
-            location: record.location,
-            description: record.description,
-            is_favorite: Boolean(record.isFavorite),
-            aspect_ratio: record.aspectRatio || 'landscape',
-            created_at: record.createdAt,
-          },
-        ]);
+      const { error } = await supabase.from('memories').upsert([
+        {
+          id: memory.id,
+          title: memory.title,
+          type: memory.type || 'photo',
+          url: memory.url,
+          thumbnail_url: memory.thumbnailUrl || memory.url,
+          date: memory.date || 'A special moment',
+          location: memory.location || '',
+          description: memory.description || '',
+          is_favorite: Boolean(memory.isFavorite),
+          aspect_ratio: memory.aspectRatio || 'landscape',
+          created_at: memory.createdAt || new Date().toISOString(),
+        },
+      ]);
 
-        if (error) {
-          console.warn('Supabase upsert warning for memory:', error.message);
-        }
-      } catch (err: any) {
-        console.warn('Supabase error for memory:', err?.message);
+      if (error) {
+        console.warn('Supabase upsert memory warning:', error.message);
       }
     }
 
-    return NextResponse.json({ success: true, memory: record });
+    return NextResponse.json({ success: true, memory });
   } catch {
-    return NextResponse.json({ error: 'Failed to save memory item' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to save memory' },
+      { status: 500 }
+    );
   }
 }
 
@@ -134,7 +128,7 @@ export async function DELETE(request: Request) {
   try {
     if (!isAuthorizedAdmin(request)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only Admins (Sukhen & Mili) can delete memories.' },
+        { error: 'Unauthorized. Only Admins can delete memories.' },
         { status: 403 }
       );
     }
@@ -146,19 +140,21 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Memory ID is required' }, { status: 400 });
     }
 
+    // Permanently register deletion on server
+    markMemoryDeletedOnServer(id);
+
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.from('memories').delete().eq('id', id);
-        if (error) {
-          console.warn('Supabase delete warning for memory:', error.message);
-        }
-      } catch (err: any) {
-        console.warn('Supabase delete error for memory:', err?.message);
+      const { error } = await supabase.from('memories').delete().eq('id', id);
+      if (error) {
+        console.warn('Supabase delete memory warning:', error.message);
       }
     }
 
-    return NextResponse.json({ success: true, message: 'Memory deleted successfully.' });
+    return NextResponse.json({ success: true, id, message: 'Memory permanently deleted.' });
   } catch {
-    return NextResponse.json({ error: 'Failed to delete memory' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete memory' },
+      { status: 500 }
+    );
   }
 }

@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { getSessionFromRequest } from '@/lib/sessions';
 import { APP_CONFIG } from '@/data/config';
 import { LoveNote } from '@/types';
+import { markNoteDeletedOnServer, isNoteDeletedOnServer } from '@/lib/server-deleted-tracker';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -28,19 +29,21 @@ export async function GET() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data !== null) {
+        const filtered = data
+          .filter((n) => !isNoteDeletedOnServer(n.id))
+          .map((n) => ({
+            id: n.id,
+            title: n.title,
+            snippet: n.snippet,
+            fullMessage: n.full_message,
+            date: n.date,
+            moodTag: n.mood_tag || 'deep',
+            isFavorite: Boolean(n.is_favorite),
+          }));
+
         return NextResponse.json(
-          {
-            notes: data.map((n) => ({
-              id: n.id,
-              title: n.title,
-              snippet: n.snippet,
-              fullMessage: n.full_message,
-              date: n.date,
-              moodTag: n.mood_tag || 'deep',
-              isFavorite: Boolean(n.is_favorite),
-            })),
-          },
+          { notes: filtered },
           {
             headers: {
               'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -54,8 +57,10 @@ export async function GET() {
     }
   }
 
+  const baselineFiltered = INITIAL_LOVE_NOTES.filter((n) => !isNoteDeletedOnServer(n.id));
+
   return NextResponse.json(
-    { notes: INITIAL_LOVE_NOTES },
+    { notes: baselineFiltered },
     {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -69,7 +74,7 @@ export async function POST(request: Request) {
   try {
     if (!isAuthorizedAdmin(request)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only Admins (Sukhen & Mili) can add or edit love notes.' },
+        { error: 'Unauthorized. Only Admins can add or edit love notes.' },
         { status: 403 }
       );
     }
@@ -117,7 +122,7 @@ export async function DELETE(request: Request) {
   try {
     if (!isAuthorizedAdmin(request)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only Admins (Sukhen & Mili) can delete love notes.' },
+        { error: 'Unauthorized. Only Admins can delete love notes.' },
         { status: 403 }
       );
     }
@@ -128,6 +133,9 @@ export async function DELETE(request: Request) {
     if (!id) {
       return NextResponse.json({ error: 'Note ID is required' }, { status: 400 });
     }
+
+    // Permanently register deletion on server
+    markNoteDeletedOnServer(id);
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -140,7 +148,7 @@ export async function DELETE(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, message: 'Love note deleted successfully.' });
+    return NextResponse.json({ success: true, id, message: 'Love note permanently deleted.' });
   } catch {
     return NextResponse.json({ error: 'Failed to delete love note' }, { status: 500 });
   }

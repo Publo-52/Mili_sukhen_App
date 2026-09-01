@@ -3,21 +3,23 @@ import { INITIAL_PROJECTS } from '@/data/projects';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { getSessionFromRequest } from '@/lib/sessions';
 import { APP_CONFIG } from '@/data/config';
+import { markProjectDeletedOnServer, isProjectDeletedOnServer } from '@/lib/server-deleted-tracker';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('order_index', { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('order_index', { ascending: true });
 
-    if (!error && data && data.length > 0) {
-      return NextResponse.json(
-        {
-          projects: data.map((p) => ({
+      if (!error && data !== null) {
+        const filtered = data
+          .filter((p) => !isProjectDeletedOnServer(p.id))
+          .map((p) => ({
             id: p.id,
             title: p.title,
             slug: p.slug,
@@ -37,20 +39,27 @@ export async function GET() {
             themeBadge: p.theme_badge,
             themeBorder: p.theme_border,
             themeTextAccent: p.theme_text_accent,
-          })),
-        },
-        {
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-            Pragma: 'no-cache',
-          },
-        }
-      );
+          }));
+
+        return NextResponse.json(
+          { projects: filtered },
+          {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+              Pragma: 'no-cache',
+            },
+          }
+        );
+      }
+    } catch {
+      // ignore
     }
   }
 
+  const baselineFiltered = INITIAL_PROJECTS.filter((p) => !isProjectDeletedOnServer(p.id));
+
   return NextResponse.json(
-    { projects: INITIAL_PROJECTS },
+    { projects: baselineFiltered },
     {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -75,7 +84,7 @@ function isAuthorizedAdmin(request: Request): boolean {
 export async function POST(request: Request) {
   try {
     if (!isAuthorizedAdmin(request)) {
-      return NextResponse.json({ error: 'Unauthorized. Only Admins (Sukhen & Mili) can add or edit projects.' }, { status: 403 });
+      return NextResponse.json({ error: 'Unauthorized. Only Admins can add or edit projects.' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -103,7 +112,7 @@ export async function POST(request: Request) {
           theme_gradient: project.themeGradient || null,
           theme_accent: project.themeAccent || null,
           theme_badge: project.themeBadge || null,
-          theme_border: project.themeBorder || null,
+          themeBorder: project.themeBorder || null,
           theme_text_accent: project.themeTextAccent || null,
           created_at: project.createdAt || new Date().toISOString(),
         },
@@ -123,7 +132,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     if (!isAuthorizedAdmin(request)) {
-      return NextResponse.json({ error: 'Unauthorized. Only Admins (Sukhen & Mili) can delete projects.' }, { status: 403 });
+      return NextResponse.json({ error: 'Unauthorized. Only Admins can delete projects.' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -133,6 +142,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
+    // Permanently register deletion on server
+    markProjectDeletedOnServer(id);
+
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.from('projects').delete().eq('id', id);
       if (error) {
@@ -140,9 +152,8 @@ export async function DELETE(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, message: 'Project deleted from database' });
+    return NextResponse.json({ success: true, id, message: 'Project permanently deleted.' });
   } catch {
     return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 });
   }
 }
-
