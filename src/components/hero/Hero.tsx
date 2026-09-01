@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ArrowDown, BookOpen, Layers } from 'lucide-react';
 import { ROMANTIC_QUOTES } from '@/data/config';
 import { MemoryCounter } from './MemoryCounter';
@@ -12,14 +13,32 @@ interface HeroProps {
   onSelectSection?: (section: SectionType) => void;
 }
 
+const HERO_AVATAR_IMAGES = [
+  { src: '/images/hero/mili_hero_1.png', alt: 'Mili in Saree' },
+  { src: '/images/hero/mili_hero_2.png', alt: 'Mili with Plush' },
+  { src: '/images/hero/mili_hero_3.jpg', alt: 'Sukhen & Mili' },
+  { src: '/images/hero/mili_hero_4.png', alt: 'Mili at Beach' },
+  { src: '/images/hero/mili_hero_5.jpg', alt: 'Sukhen & Mili Love' },
+];
+
 export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
+  const [avatarIndex, setAvatarIndex] = useState(0);
 
+  // Quote rotating interval (6 seconds)
   useEffect(() => {
     const interval = setInterval(() => {
       setQuoteIndex((prev) => (prev + 1) % ROMANTIC_QUOTES.length);
     }, 6000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Avatar looping interval (strictly 3 seconds)
+  useEffect(() => {
+    const avatarTimer = setInterval(() => {
+      setAvatarIndex((prev) => (prev + 1) % HERO_AVATAR_IMAGES.length);
+    }, 3000);
+    return () => clearInterval(avatarTimer);
   }, []);
 
   return (
@@ -33,19 +52,34 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
 
       {/* Main Content */}
       <div className="relative z-10 max-w-3xl mx-auto space-y-5 sm:space-y-6 w-full max-w-full">
-        {/* Mili Starlight Portrait Avatar */}
-        <div className="relative mx-auto w-24 h-24 sm:w-32 sm:h-32 rounded-full p-1 bg-gradient-to-tr from-roseGlow-500 via-pink-400 to-purple-500 shadow-glow-lg group cursor-pointer animate-fade-in">
+        {/* Mili Starlight Portrait Avatar with 3s Smooth Looping Transitions */}
+        <div
+          onClick={() => setAvatarIndex((prev) => (prev + 1) % HERO_AVATAR_IMAGES.length)}
+          className="relative mx-auto w-24 h-24 sm:w-32 sm:h-32 rounded-full p-1 bg-gradient-to-tr from-roseGlow-500 via-pink-400 to-purple-500 shadow-glow-lg group cursor-pointer animate-fade-in"
+          title="Click to cycle photo"
+        >
           <div className="w-full h-full rounded-full overflow-hidden bg-obsidian-950 border-2 border-obsidian-950 relative">
-            <Image
-              src="/images/mili_sketch.jpg"
-              alt="Mili Sketch Portrait"
-              width={128}
-              height={128}
-              priority
-              className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-110"
-            />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={avatarIndex}
+                initial={{ opacity: 0, scale: 1.08 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.94 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full h-full relative"
+              >
+                <Image
+                  src={HERO_AVATAR_IMAGES[avatarIndex].src}
+                  alt={HERO_AVATAR_IMAGES[avatarIndex].alt}
+                  fill
+                  sizes="(max-width: 640px) 96px, 128px"
+                  priority
+                  className="object-cover object-center transition-transform duration-700 group-hover:scale-110"
+                />
+              </motion.div>
+            </AnimatePresence>
           </div>
-          <div className="absolute -bottom-1 -right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-roseGlow-600 text-white flex items-center justify-center shadow-glow text-xs border border-white/20">
+          <div className="absolute -bottom-1 -right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-roseGlow-600 text-white flex items-center justify-center shadow-glow text-xs border border-white/20 z-10">
             <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
           </div>
         </div>
