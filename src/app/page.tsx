@@ -34,13 +34,65 @@ const EasterEggListener = dynamic(
   { ssr: false }
 );
 
+import { useRouter } from 'next/navigation';
+
+// Eager Parallel Cache Warm-up function (pre-loads all sections & assets upfront)
+const warmUpAllDatasetsAndAssets = () => {
+  if (typeof window === 'undefined') return;
+
+  // 1. Parallel API Cache Preload (warm up localStorage & memory)
+  const endpoints = ['/api/projects', '/api/turtle', '/api/love-notes', '/api/memories'];
+  endpoints.forEach((url) => {
+    fetch(url, { cache: 'no-store' })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          if (url === '/api/projects' && data.projects) {
+            localStorage.setItem('mili_universe_projects', JSON.stringify(data.projects));
+          } else if (url === '/api/turtle' && data.creations) {
+            localStorage.setItem('mili_custom_turtle', JSON.stringify(data.creations));
+          } else if (url === '/api/love-notes' && data.notes) {
+            localStorage.setItem('mili_universe_love_notes', JSON.stringify(data.notes));
+          } else if (url === '/api/memories' && data.memories) {
+            localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
+          }
+        }
+      })
+      .catch(() => {});
+  });
+
+  // 2. Preload Hero and key media into browser memory cache
+  const keyImages = [
+    '/images/hero/mili_hero_1.png',
+    '/images/hero/mili_hero_2.png',
+    '/images/hero/mili_hero_3.jpg',
+    '/images/hero/mili_hero_4.png',
+    '/images/hero/mili_hero_5.jpg',
+    '/logo.png',
+  ];
+  keyImages.forEach((src) => {
+    const img = new window.Image();
+    img.src = src;
+  });
+};
+
 export default function HomePage() {
+  const router = useRouter();
   const [showIntro, setShowIntro] = useState(false);
   const [showSurprise, setShowSurprise] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionType>('home');
 
-  // Sync with URL Hash on load
+  // Eager background preload & Sync with URL Hash on load
   useEffect(() => {
+    // 1. Fire full-site eager warm-up immediately
+    warmUpAllDatasetsAndAssets();
+
+    // 2. Prefetch Next.js routes upfront
+    try {
+      router.prefetch('/admin');
+      router.prefetch('/login');
+    } catch {}
+
     const handleHash = () => {
       const hash = window.location.hash.replace('#', '').toLowerCase();
       if (hash === 'projects') setActiveSection('projects');
@@ -56,7 +108,7 @@ export default function HomePage() {
     return () => {
       window.removeEventListener('hashchange', handleHash);
     };
-  }, []);
+  }, [router]);
 
   const handleSelectSection = (section: SectionType) => {
     const validSection: SectionType =
