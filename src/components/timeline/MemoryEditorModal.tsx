@@ -361,20 +361,30 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
                 /* Empty Dropzone Card */
                 <label
                   htmlFor="vault-file-picker"
-                  className="cursor-pointer group flex flex-col items-center justify-center p-6 rounded-2xl bg-white/5 hover:bg-white/[0.08] border border-dashed border-white/20 hover:border-roseGlow-500/50 transition-all text-center"
+                  className="cursor-pointer group flex flex-col items-center justify-center py-7 px-4 rounded-2xl bg-gradient-to-b from-white/[0.05] to-white/[0.02] hover:from-roseGlow-500/10 hover:to-purple-600/10 border border-dashed border-white/20 hover:border-roseGlow-500/50 transition-all duration-300 text-center relative overflow-hidden"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-roseGlow-500/20 to-purple-600/20 border border-white/10 group-hover:scale-110 group-hover:border-roseGlow-500/40 transition-all flex items-center justify-center text-roseGlow-300 mb-2.5 shadow-sm">
-                    <Upload className="w-5 h-5" />
+                  {/* Subtle ambient hover glow */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-roseGlow-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+                  {/* Upload Icon Button */}
+                  <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-roseGlow-500/20 via-pink-500/15 to-purple-600/20 border border-roseGlow-500/30 group-hover:border-roseGlow-400/60 group-hover:scale-105 group-hover:shadow-glow transition-all duration-300 flex items-center justify-center text-roseGlow-300 mb-3 shadow-sm">
+                    <Upload className="w-6 h-6 text-roseGlow-400 group-hover:text-white transition-colors" />
                   </div>
-                  <span className="text-sm font-semibold text-white group-hover:text-roseGlow-200 transition-colors">
+
+                  {/* Primary Call to Action */}
+                  <span className="text-sm sm:text-base font-semibold text-white group-hover:text-roseGlow-200 transition-colors tracking-tight">
                     Tap to select {type === 'video' ? 'video' : 'photo'} from device
                   </span>
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 pt-1 font-mono">
-                    <span className="text-emerald-400 flex items-center gap-0.5">
-                      <Zap className="w-3 h-3" /> Auto-optimizing
+
+                  {/* Clean Formatted Badges / Microcopy */}
+                  <div className="flex flex-col items-center gap-1.5 pt-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] sm:text-[11px] font-mono">
+                      <Zap className="w-3 h-3 text-emerald-400" />
+                      <span>Smart Fast Compression</span>
                     </span>
-                    <span>•</span>
-                    <span>JPG, PNG, WEBP, MP4, MOV</span>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      Supports JPG, PNG, WEBP, MP4, MOV
+                    </span>
                   </div>
                 </label>
               )}
