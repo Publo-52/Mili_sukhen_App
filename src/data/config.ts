@@ -30,11 +30,6 @@ export const AUTH_USERS = {
     formattedPhone: "+91 97329 34032",
     emails: [
       "mandalsharmili06@gmail.com",
-      "mandalsharmili@06gmail.com",
-      "mandalsharmili@gmail.com",
-      "mili@gmail.com",
-      "mili@mili.love",
-      "mili@love",
       "mili",
       "sharmili",
       "9732934032",
@@ -42,7 +37,7 @@ export const AUTH_USERS = {
       "+91 97329 34032"
     ],
     defaultEmail: "mandalsharmili06@gmail.com",
-    passwords: ["mili@123", "mili123", "mili", "143", "forever", "love", "sharmili", "sharmili123", "mili@love", "admin", "das@123"],
+    passwords: ["mili@123", "mili123", "mili", "143", "forever", "love", "sharmili", "sharmili123", "admin", "das@123"],
     defaultPassword: "mili@123",
     avatar: "M",
     greeting: "Welcome back, Mili! Your Sanctuary & Admin Studio are ready.",
@@ -58,9 +53,6 @@ export const AUTH_USERS = {
     formattedPhone: "+91 98326 95291",
     emails: [
       "dassukhen@gmail.com",
-      "sukhen@mili.love",
-      "admin@mili.love",
-      "sukhen@gmail.com",
       "sukhen",
       "admin",
       "dassukhen",
