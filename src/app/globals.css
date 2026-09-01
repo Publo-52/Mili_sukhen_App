@@ -95,7 +95,20 @@ body {
 }
 
 .glass-card-hover {
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Speed & Rendering Optimizations */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 400px;
+}
+
+.gpu-layer {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
 }
 
 .glass-card-hover:hover {
