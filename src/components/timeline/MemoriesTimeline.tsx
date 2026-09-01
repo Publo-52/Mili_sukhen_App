@@ -14,6 +14,26 @@ import { APP_CONFIG } from '@/data/config';
 const MemoryEditorModal = dynamic(() => import('./MemoryEditorModal').then((m) => m.MemoryEditorModal), { ssr: false });
 const MediaViewerModal = dynamic(() => import('./MediaViewerModal').then((m) => m.MediaViewerModal), { ssr: false });
 
+// Helper to guarantee high-res image poster for Cloudinary videos
+function getMediaThumbnail(memory: MemoryItem): string {
+  const isVideo = memory.type === 'video';
+  if (!isVideo && memory.url) return memory.url;
+
+  if (memory.thumbnailUrl && !memory.thumbnailUrl.match(/\.(mp4|mov|webm|avi|mkv|m4v)$/i)) {
+    return memory.thumbnailUrl;
+  }
+
+  if (memory.url) {
+    if (memory.url.includes('cloudinary.com')) {
+      // Cloudinary video thumbnail poster conversion
+      return memory.url.replace(/\.(mp4|mov|webm|avi|mkv|m4v)$/i, '.jpg');
+    }
+    return memory.url;
+  }
+
+  return 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop';
+}
+
 type FilterType = 'all' | 'photo' | 'video' | 'favorites';
 
 export const MemoriesTimeline: React.FC = () => {
@@ -258,18 +278,26 @@ export const MemoriesTimeline: React.FC = () => {
                   className={`relative ${aspectClass} w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-obsidian-950 border border-white/5 group-hover:border-roseGlow-500/30 transition-all duration-300 shadow-sm group-hover:shadow-lg`}
                 >
                   <Image
-                    src={memory.thumbnailUrl || memory.url}
+                    src={getMediaThumbnail(memory)}
                     alt={memory.title}
                     fill
                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw"
                     className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                   />
 
-                  {/* Video Play Overlay */}
+                  {/* Video Top-Left Badge */}
                   {isVideo && (
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
-                      <div className="w-10 h-10 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <Play className="w-4 h-4 fill-white translate-x-0.5" />
+                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/80 backdrop-blur-md text-[9px] font-mono text-purple-300 border border-purple-500/40 flex items-center gap-1 shadow-md z-10">
+                      <Video className="w-3 h-3 text-purple-400" />
+                      <span>VIDEO</span>
+                    </div>
+                  )}
+
+                  {/* Video Center Play Button */}
+                  {isVideo && (
+                    <div className="absolute inset-0 bg-black/25 flex items-center justify-center pointer-events-none">
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-lg border border-purple-400/50 group-hover:scale-110 group-hover:bg-purple-500 transition-all">
+                        <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-white translate-x-0.5" />
                       </div>
                     </div>
                   )}
@@ -321,8 +349,9 @@ export const MemoriesTimeline: React.FC = () => {
 
                 {/* 2. Pinterest Bottom Row: Clean Title & Date */}
                 <div className="pt-1.5 px-0.5 flex items-center justify-between gap-1">
-                  <h3 className="text-[12px] sm:text-[13px] font-medium text-slate-200 group-hover:text-roseGlow-300 transition-colors truncate flex-1">
-                    {memory.title}
+                  <h3 className="text-[12px] sm:text-[13px] font-medium text-slate-200 group-hover:text-roseGlow-300 transition-colors truncate flex-1 flex items-center gap-1">
+                    {isVideo && <Video className="w-3 h-3 text-purple-400 flex-shrink-0" />}
+                    <span className="truncate">{memory.title}</span>
                   </h3>
 
                   <span className="text-[10px] text-slate-400 font-mono flex-shrink-0">
