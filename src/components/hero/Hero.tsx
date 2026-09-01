@@ -33,11 +33,11 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
     return () => clearInterval(interval);
   }, []);
 
-  // Avatar looping interval (strictly 3 seconds)
+  // Avatar looping interval (strictly 5 seconds with ultra-smooth easing)
   useEffect(() => {
     const avatarTimer = setInterval(() => {
       setAvatarIndex((prev) => (prev + 1) % HERO_AVATAR_IMAGES.length);
-    }, 3000);
+    }, 5000);
     return () => clearInterval(avatarTimer);
   }, []);
 
@@ -52,7 +52,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
 
       {/* Main Content */}
       <div className="relative z-10 max-w-3xl mx-auto space-y-5 sm:space-y-6 w-full max-w-full">
-        {/* Mili Starlight Portrait Avatar with 3s Smooth Looping Transitions */}
+        {/* Mili Starlight Portrait Avatar with 5s Smooth Looping Transitions */}
         <div
           onClick={() => setAvatarIndex((prev) => (prev + 1) % HERO_AVATAR_IMAGES.length)}
           className="relative mx-auto w-24 h-24 sm:w-32 sm:h-32 rounded-full p-1 bg-gradient-to-tr from-roseGlow-500 via-pink-400 to-purple-500 shadow-glow-lg group cursor-pointer animate-fade-in"
@@ -62,10 +62,10 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
             <AnimatePresence mode="wait">
               <motion.div
                 key={avatarIndex}
-                initial={{ opacity: 0, scale: 1.08 }}
+                initial={{ opacity: 0, scale: 1.05 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.94 }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 className="w-full h-full relative"
               >
                 <Image
