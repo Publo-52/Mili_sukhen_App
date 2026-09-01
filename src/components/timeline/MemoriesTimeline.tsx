@@ -228,128 +228,112 @@ export const MemoriesTimeline: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {filteredMemories.map((memory, index) => {
-            const isFav = favoriteIds.includes(memory.id) || memory.isFavorite;
-            const isVideo = memory.type === 'video';
+        <div className="columns-2 md:columns-2 lg:columns-3 gap-3 sm:gap-4 md:gap-6 [column-fill:_balance]">
+        {filteredMemories.map((memory, index) => {
+          const isFav = favoriteIds.includes(memory.id) || memory.isFavorite;
+          const isVideo = memory.type === 'video';
 
-            return (
+          const MEMORY_ASPECTS = [
+            'aspect-[3/4]',
+            'aspect-[1/1]',
+            'aspect-[9/13]',
+            'aspect-[4/5]',
+            'aspect-[16/11]',
+            'aspect-[3/4]',
+          ];
+          const aspectClass = MEMORY_ASPECTS[index % MEMORY_ASPECTS.length];
+
+          return (
+            <div key={memory.id} className="break-inside-avoid mb-3 sm:mb-4 md:mb-6">
               <motion.div
-                key={memory.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="group glass-card glass-card-hover rounded-2xl overflow-hidden border border-white/10 relative flex flex-col justify-between"
+                transition={{ duration: 0.3, delay: (index % 6) * 0.03 }}
+                className="group relative flex flex-col cursor-pointer select-none"
+                onClick={() => setViewerIndex(index)}
               >
-                {/* Media Thumbnail Container */}
+                {/* 1. Clean Pinterest Media Container */}
                 <div
-                  onClick={() => setViewerIndex(index)}
-                  className="relative aspect-[4/3] w-full bg-obsidian-950 overflow-hidden cursor-pointer"
+                  className={`relative ${aspectClass} w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-obsidian-950 border border-white/5 group-hover:border-roseGlow-500/30 transition-all duration-300 shadow-sm group-hover:shadow-lg`}
                 >
-                  {isVideo ? (
-                    <div className="relative w-full h-full">
-                      <Image
-                        src={memory.thumbnailUrl || memory.url}
-                        alt={memory.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      {/* Play Button Overlay */}
-                      <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 flex items-center justify-center transition-colors">
-                        <div className="w-12 h-12 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                          <Play className="w-5 h-5 fill-white translate-x-0.5" />
-                        </div>
+                  <Image
+                    src={memory.thumbnailUrl || memory.url}
+                    alt={memory.title}
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw"
+                    className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                  />
+
+                  {/* Video Play Overlay */}
+                  {isVideo && (
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
+                      <div className="w-10 h-10 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <Play className="w-4 h-4 fill-white translate-x-0.5" />
                       </div>
-                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-mono text-purple-300 border border-purple-500/30 flex items-center gap-1">
-                        <Video className="w-3 h-3" />
-                        <span>Video</span>
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="relative w-full h-full">
-                      <Image
-                        src={memory.url}
-                        alt={memory.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-mono text-roseGlow-300 border border-roseGlow-500/30 flex items-center gap-1">
-                        <ImageIcon className="w-3 h-3" />
-                        <span>Photo</span>
-                      </span>
                     </div>
                   )}
 
-                  {/* Favorite Heart Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleFavorite(memory.id);
-                    }}
-                    className="absolute top-3 right-3 p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:text-roseGlow-400 transition-colors"
-                  >
-                    <Heart className={`w-4 h-4 ${isFav ? 'fill-roseGlow-500 text-roseGlow-500' : ''}`} />
-                  </button>
-                </div>
-
-                {/* Card Content Info */}
-                <div className="p-4 sm:p-5 space-y-2.5 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1">
-                    <h3
-                      onClick={() => setViewerIndex(index)}
-                      className="text-base font-bold text-white hover:text-roseGlow-300 cursor-pointer transition-colors line-clamp-1"
-                    >
-                      {memory.title}
-                    </h3>
-                    {memory.description && (
-                      <p className="text-xs text-slate-300 font-light line-clamp-2 leading-relaxed">
-                        {memory.description}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Date, Location & Admin Controls */}
-                  <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
-                    <div className="flex items-center gap-2 truncate max-w-[70%]">
-                      {memory.date && (
-                        <div className="flex items-center gap-1 truncate">
-                          <Calendar className="w-3 h-3 text-roseGlow-400 flex-shrink-0" />
-                          <span className="truncate">{memory.date}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Admin Actions */}
+                  {/* Top Right: Favorite Heart & Admin Edit */}
+                  <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
                     {isAdmin && (
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <div className="flex items-center gap-0.5 bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/15">
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setEditingMemory(memory);
                             setIsEditorOpen(true);
                           }}
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                          className="p-0.5 rounded-full hover:bg-white/20 text-slate-200 hover:text-white transition-colors"
                           title="Edit Memory"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
+                          <Edit3 className="w-3 h-3 text-roseGlow-400" />
                         </button>
                         <button
-                          onClick={() => handleDeleteMemory(memory.id)}
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMemory(memory.id);
+                          }}
+                          className="p-0.5 rounded-full hover:bg-red-500/30 text-slate-200 hover:text-red-400 transition-colors"
                           title="Delete Memory"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFavorite(memory.id);
+                      }}
+                      className={`p-1.5 rounded-full backdrop-blur-md transition-all duration-200 ${
+                        isFav
+                          ? 'bg-roseGlow-600 text-white shadow-glow'
+                          : 'bg-black/40 text-white/80 hover:text-white hover:bg-black/70'
+                      }`}
+                      aria-label="Favorite"
+                    >
+                      <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-white' : ''}`} />
+                    </button>
                   </div>
                 </div>
+
+                {/* 2. Pinterest Bottom Row: Clean Title & Date */}
+                <div className="pt-1.5 px-0.5 flex items-center justify-between gap-1">
+                  <h3 className="text-[12px] sm:text-[13px] font-medium text-slate-200 group-hover:text-roseGlow-300 transition-colors truncate flex-1">
+                    {memory.title}
+                  </h3>
+
+                  <span className="text-[10px] text-slate-400 font-mono flex-shrink-0">
+                    {memory.date}
+                  </span>
+                </div>
               </motion.div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
+      </div>
       )}
 
       {/* Media Viewer Modal */}

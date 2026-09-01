@@ -151,102 +151,100 @@ export const TurtleGallery: React.FC = () => {
         </p>
       </div>
 
-      {/* Grid of Turtle Artworks */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        {creations.map((creation, idx) => (
-          <motion.div
-            key={creation.id}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: idx * 0.08 }}
-            className="group glass-card glass-card-hover rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col border border-white/10 relative"
-          >
-            {/* Visual Thumbnail */}
-            <div className="relative aspect-square w-full overflow-hidden bg-[#07050d]">
-              <Image
-                src={creation.artworkImage}
-                alt={creation.title}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950 via-obsidian-950/20 to-transparent" />
+      {/* Pinterest-style Staggered Masonry Columns */}
+      <div className="columns-2 md:columns-2 lg:columns-3 gap-3 sm:gap-4 md:gap-6 [column-fill:_balance]">
+        {creations.map((creation, idx) => {
+          const TURTLE_ASPECTS = [
+            'aspect-[1/1]',
+            'aspect-[3/4]',
+            'aspect-[4/5]',
+            'aspect-[1/1]',
+            'aspect-[9/13]',
+            'aspect-[4/5]',
+          ];
+          const aspectClass = TURTLE_ASPECTS[idx % TURTLE_ASPECTS.length];
 
-              {/* Badge & Top Actions */}
-              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10">
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md border border-amber-500/30 text-amber-300 text-[10px] font-mono">
-                  <Code2 className="w-3 h-3" />
-                  <span>Python Turtle</span>
+          return (
+            <div key={creation.id} className="break-inside-avoid mb-3 sm:mb-4 md:mb-6">
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3, delay: (idx % 6) * 0.03 }}
+                className="group relative flex flex-col cursor-pointer select-none"
+                onClick={() => setSelectedCreation(creation)}
+              >
+                {/* 1. Clean Pinterest Media Container */}
+                <div
+                  className={`relative ${aspectClass} w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-[#07050d] border border-white/5 group-hover:border-amber-500/30 transition-all duration-300 shadow-sm group-hover:shadow-lg`}
+                >
+                  <Image
+                    src={creation.artworkImage}
+                    alt={creation.title}
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw"
+                    className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                  />
+
+                  {/* Play Overlay on Hover */}
+                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                    <div className="w-10 h-10 rounded-full bg-amber-500/90 text-white flex items-center justify-center shadow-lg">
+                      <Play className="w-4 h-4 fill-white translate-x-0.5" />
+                    </div>
+                  </div>
+
+                  {/* Admin Controls */}
+                  {isAdmin && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+                      <div className="flex items-center gap-0.5 bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/15">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingCreation(creation);
+                            setIsEditorOpen(true);
+                          }}
+                          className="p-0.5 rounded-full hover:bg-white/20 text-slate-200 hover:text-white transition-colors"
+                          title="Edit Python Art"
+                        >
+                          <Edit3 className="w-3 h-3 text-amber-400" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCreation(creation.id);
+                          }}
+                          className="p-0.5 rounded-full hover:bg-red-500/30 text-slate-200 hover:text-red-400 transition-colors"
+                          title="Delete Python Art"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Admin Only Quick Edit & Delete */}
-                {isAdmin && (
-                  <div className="flex items-center gap-1 bg-obsidian-950/80 backdrop-blur-md p-1 rounded-full border border-white/15">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingCreation(creation);
-                        setIsEditorOpen(true);
-                      }}
-                      className="p-1 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-                      title="Edit Python Art (Admin)"
-                      aria-label="Edit artwork"
-                    >
-                      <Edit3 className="w-3 h-3 text-amber-400" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteCreation(creation.id);
-                      }}
-                      className="p-1 rounded-full hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
-                      title="Delete Python Art (Admin)"
-                      aria-label="Delete artwork"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-              </div>
+                {/* 2. Pinterest Bottom Row: Clean Title & 3-Dots */}
+                <div className="pt-1.5 px-0.5 flex items-center justify-between gap-1">
+                  <h3 className="text-[12px] sm:text-[13px] font-medium text-slate-200 group-hover:text-amber-300 transition-colors truncate flex-1">
+                    {creation.title}
+                  </h3>
 
-              {/* Interactive Hover Trigger */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
-                <button
-                  onClick={() => setSelectedCreation(creation)}
-                  className="px-3.5 py-1.5 rounded-full bg-roseGlow-600 text-white font-medium text-xs shadow-glow flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-all"
-                >
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>Animate & Code</span>
-                </button>
-              </div>
-
-              <div className="absolute bottom-2.5 left-2.5 text-[10px] font-mono text-slate-400">
-                {formatDate(creation.createdAt)}
-              </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedCreation(creation);
+                    }}
+                    className="p-1 rounded-full text-slate-400 hover:text-white transition-colors flex-shrink-0"
+                    title="Play & view code"
+                    aria-label="Play & view code"
+                  >
+                    <Play className="w-3.5 h-3.5 text-amber-400" />
+                  </button>
+                </div>
+              </motion.div>
             </div>
-
-            {/* Content */}
-            <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5">
-              <div>
-                <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-roseGlow-300 transition-colors line-clamp-1">
-                  {creation.title}
-                </h3>
-                <p className="text-[11px] sm:text-xs text-slate-300 font-light line-clamp-2 mt-0.5 leading-relaxed">
-                  {creation.description}
-                </p>
-              </div>
-
-              <button
-                onClick={() => setSelectedCreation(creation)}
-                className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 rounded-xl glass-card hover:border-white/30 text-xs font-mono text-slate-300 hover:text-white transition-colors"
-              >
-                <Maximize2 className="w-3 h-3 text-roseGlow-400" />
-                <span>Fullscreen Replay</span>
-              </button>
-            </div>
-          </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Lightbox / Canvas Viewer */}
