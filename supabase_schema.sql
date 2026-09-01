@@ -101,7 +101,15 @@ ALTER TABLE public.turtle_creations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.love_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.memories ENABLE ROW LEVEL SECURITY;
 
--- Policies for public access (so Next.js API can read and write with anon key)
+-- Drop existing policies if they exist (to prevent duplicate errors)
+DROP POLICY IF EXISTS "Allow all operations on messages" ON public.messages;
+DROP POLICY IF EXISTS "Allow all operations on projects" ON public.projects;
+DROP POLICY IF EXISTS "Allow all operations on device_sessions" ON public.device_sessions;
+DROP POLICY IF EXISTS "Allow all operations on turtle_creations" ON public.turtle_creations;
+DROP POLICY IF EXISTS "Allow all operations on love_notes" ON public.love_notes;
+DROP POLICY IF EXISTS "Allow all operations on memories" ON public.memories;
+
+-- Create Policies for public access (so Next.js API can read and write with anon key)
 CREATE POLICY "Allow all operations on messages" ON public.messages FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on projects" ON public.projects FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on device_sessions" ON public.device_sessions FOR ALL USING (true) WITH CHECK (true);
