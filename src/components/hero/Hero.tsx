@@ -44,7 +44,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
   return (
     <section
       id="hero"
-      className="relative flex flex-col justify-center items-center pt-16 sm:pt-20 pb-4 px-3 sm:px-6 lg:px-8 text-center overflow-hidden w-full max-w-full"
+      className="relative flex flex-col justify-center items-center pt-24 sm:pt-28 md:pt-32 pb-4 px-3 sm:px-6 lg:px-8 text-center overflow-hidden w-full max-w-full"
     >
       {/* Soft Romantic Glow Centerpieces */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[550px] h-[320px] sm:h-[550px] bg-roseGlow-600/12 rounded-full blur-[100px] sm:blur-[150px] pointer-events-none" />
