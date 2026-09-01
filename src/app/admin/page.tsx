@@ -639,10 +639,10 @@ export default function AdminPage() {
                   setEditingProject(null);
                   setIsAddingProject(true);
                 }}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all active:scale-95 cursor-pointer w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-semibold tracking-wide shadow-glow transition-all active:scale-95 cursor-pointer w-full sm:w-auto shrink-0"
               >
-                <Wand2 className="w-3.5 h-3.5" />
-                <span>+ Add Project</span>
+                <Plus className="w-4 h-4" />
+                <span>Add Project</span>
               </button>
             </div>
 
