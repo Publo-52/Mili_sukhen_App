@@ -5,7 +5,6 @@ import { INITIAL_PROJECTS } from '@/data/projects';
 import { INITIAL_LOVE_NOTES } from '@/data/loveNotes';
 import { INITIAL_MEMORIES } from '@/data/memories';
 import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
-import { APP_CONFIG } from '@/data/config';
 
 const KEYS = {
   PROJECTS: 'mili_universe_projects',
@@ -44,7 +43,7 @@ function setStorageItem<T>(key: string, value: T): void {
 // ----------------- Projects Storage -----------------
 export function getProjects(): Project[] {
   const saved = getStorageItem<Project[] | null>(KEYS.PROJECTS, null);
-  if (!saved || saved.length === 0) {
+  if (saved === null) {
     return INITIAL_PROJECTS;
   }
   return saved;
@@ -52,7 +51,7 @@ export function getProjects(): Project[] {
 
 export function saveProject(project: Project): Project[] {
   const current = getProjects();
-  const index = current.findIndex(p => p.id === project.id);
+  const index = current.findIndex((p) => p.id === project.id);
   let updated: Project[];
   if (index >= 0) {
     updated = [...current];
@@ -66,7 +65,7 @@ export function saveProject(project: Project): Project[] {
 
 export function deleteProject(id: string): Project[] {
   const current = getProjects();
-  const updated = current.filter(p => p.id !== id);
+  const updated = current.filter((p) => p.id !== id);
   setStorageItem(KEYS.PROJECTS, updated);
   return updated;
 }
@@ -79,7 +78,7 @@ export function resetProjectsToDefault(): Project[] {
 // ----------------- Turtle Creations Storage -----------------
 export function getTurtleCreations(): TurtleCreation[] {
   const saved = getStorageItem<TurtleCreation[] | null>(KEYS.CUSTOM_TURTLE, null);
-  if (!saved || saved.length === 0) {
+  if (saved === null) {
     return INITIAL_TURTLE_CREATIONS;
   }
   return saved;
@@ -87,7 +86,7 @@ export function getTurtleCreations(): TurtleCreation[] {
 
 export function saveTurtleCreation(creation: TurtleCreation): TurtleCreation[] {
   const current = getTurtleCreations();
-  const index = current.findIndex(c => c.id === creation.id);
+  const index = current.findIndex((c) => c.id === creation.id);
   let updated: TurtleCreation[];
   if (index >= 0) {
     updated = [...current];
@@ -101,7 +100,7 @@ export function saveTurtleCreation(creation: TurtleCreation): TurtleCreation[] {
 
 export function deleteTurtleCreation(id: string): TurtleCreation[] {
   const current = getTurtleCreations();
-  const updated = current.filter(c => c.id !== id);
+  const updated = current.filter((c) => c.id !== id);
   setStorageItem(KEYS.CUSTOM_TURTLE, updated);
   return updated;
 }
@@ -109,7 +108,7 @@ export function deleteTurtleCreation(id: string): TurtleCreation[] {
 // ----------------- Love Notes Storage (Unlimited) -----------------
 export function getLoveNotes(): LoveNote[] {
   const saved = getStorageItem<LoveNote[] | null>(KEYS.LOVE_NOTES, null);
-  if (!saved || saved.length === 0) {
+  if (saved === null) {
     return INITIAL_LOVE_NOTES;
   }
   return saved;
@@ -117,7 +116,7 @@ export function getLoveNotes(): LoveNote[] {
 
 export function saveLoveNote(note: LoveNote): LoveNote[] {
   const current = getLoveNotes();
-  const index = current.findIndex(n => n.id === note.id);
+  const index = current.findIndex((n) => n.id === note.id);
   let updated: LoveNote[];
   if (index >= 0) {
     updated = [...current];
@@ -131,7 +130,7 @@ export function saveLoveNote(note: LoveNote): LoveNote[] {
 
 export function deleteLoveNote(id: string): LoveNote[] {
   const current = getLoveNotes();
-  const updated = current.filter(n => n.id !== id);
+  const updated = current.filter((n) => n.id !== id);
   setStorageItem(KEYS.LOVE_NOTES, updated);
   return updated;
 }
@@ -148,7 +147,7 @@ export function getFavoriteProjectIds(): string[] {
 
 export function toggleFavoriteProject(id: string): string[] {
   const current = getFavoriteProjectIds();
-  const updated = current.includes(id) ? current.filter(item => item !== id) : [...current, id];
+  const updated = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
   setStorageItem(KEYS.FAVORITE_PROJECTS, updated);
   return updated;
 }
@@ -159,7 +158,7 @@ export function getFavoriteNoteIds(): string[] {
 
 export function toggleFavoriteNote(id: string): string[] {
   const current = getFavoriteNoteIds();
-  const updated = current.includes(id) ? current.filter(item => item !== id) : [...current, id];
+  const updated = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
   setStorageItem(KEYS.FAVORITE_NOTES, updated);
   return updated;
 }
@@ -175,7 +174,7 @@ export function getMemories(): MemoryMilestone[] {
 
 export function saveMemory(memory: MemoryMilestone): MemoryMilestone[] {
   const current = getMemories();
-  const index = current.findIndex(m => m.id === memory.id);
+  const index = current.findIndex((m) => m.id === memory.id);
   let updated: MemoryMilestone[];
   if (index >= 0) {
     updated = [...current];
@@ -189,7 +188,7 @@ export function saveMemory(memory: MemoryMilestone): MemoryMilestone[] {
 
 export function deleteMemory(id: string): MemoryMilestone[] {
   const current = getMemories();
-  const updated = current.filter(m => m.id !== id);
+  const updated = current.filter((m) => m.id !== id);
   setStorageItem(KEYS.FAVORITE_MEMORIES + '_all', updated);
   return updated;
 }
@@ -205,7 +204,7 @@ export function getFavoriteMemoryIds(): string[] {
 
 export function toggleFavoriteMemory(id: string): string[] {
   const current = getFavoriteMemoryIds();
-  const updated = current.includes(id) ? current.filter(item => item !== id) : [...current, id];
+  const updated = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
   setStorageItem(KEYS.FAVORITE_MEMORIES, updated);
   return updated;
 }
@@ -213,19 +212,19 @@ export function toggleFavoriteMemory(id: string): string[] {
 // ----------------- Messages -----------------
 const SAMPLE_MESSAGES: DirectMessage[] = [
   {
-    id: "msg-1",
-    sender: "Mili",
-    message: "Thank you for the sweet surprise today! You made my whole week ❤️",
-    mood: "❤️",
+    id: 'msg-1',
+    sender: 'Mili',
+    message: 'Thank you for the sweet surprise today! You made my whole week ❤️',
+    mood: '❤️',
     createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
     read: true,
-    reply: "Always for you my love! You deserve the universe.",
+    reply: 'Always for you my love! You deserve the universe.',
   },
   {
-    id: "msg-2",
-    sender: "Mili",
-    message: "I loved the vinyl music player so much!! Listening to our songs right now 🎶🥹",
-    mood: "🥹",
+    id: 'msg-2',
+    sender: 'Mili',
+    message: 'I loved the vinyl music player so much!! Listening to our songs right now 🎶🥹',
+    mood: '🥹',
     createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
     read: false,
   },
@@ -250,21 +249,21 @@ export function addMessage(message: Omit<DirectMessage, 'id' | 'createdAt' | 're
 
 export function markMessageAsRead(id: string): DirectMessage[] {
   const current = getMessages();
-  const updated = current.map(m => (m.id === id ? { ...m, read: true } : m));
+  const updated = current.map((m) => (m.id === id ? { ...m, read: true } : m));
   setStorageItem(KEYS.DIRECT_MESSAGES, updated);
   return updated;
 }
 
 export function replyToMessage(id: string, replyText: string): DirectMessage[] {
   const current = getMessages();
-  const updated = current.map(m => (m.id === id ? { ...m, reply: replyText, read: true } : m));
+  const updated = current.map((m) => (m.id === id ? { ...m, reply: replyText, read: true } : m));
   setStorageItem(KEYS.DIRECT_MESSAGES, updated);
   return updated;
 }
 
 export function deleteMessage(id: string): DirectMessage[] {
   const current = getMessages();
-  const updated = current.filter(m => m.id !== id);
+  const updated = current.filter((m) => m.id !== id);
   setStorageItem(KEYS.DIRECT_MESSAGES, updated);
   return updated;
 }
@@ -289,7 +288,6 @@ export function setAdminLoggedIn(status: boolean): void {
 
 // ----------------- Contact Unlock -----------------
 export function isContactUnlocked(): boolean {
-  if (APP_CONFIG.contactVisibility === 'PUBLIC') return true;
   return getStorageItem<boolean>(KEYS.CONTACT_UNLOCKED, false);
 }
 
