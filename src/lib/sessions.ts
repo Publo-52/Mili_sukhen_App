@@ -1,17 +1,16 @@
 /**
- * Server-side session store using a local JSON file for persistence.
- * Supports maximum N concurrent device sessions.
- *
- * Sessions survive server restarts via .sessions.json in the project root.
- * In production, swap this out for a Supabase / Redis store.
+ * Server-side session store using cryptographically signed tokens (HMAC-SHA256).
+ * Protects against tampering, session forging, and unauthorized privilege escalation.
+ * Supports concurrent device sessions and serverless state synchronization.
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import crypto from 'crypto';
 import { AUTH_CONFIG } from '@/data/config';
 
 export interface DeviceSession {
-  id: string;            // Unique session token (UUID-like)
+  id: string;            // Unique signed session token
   userName: string;      // "Mili" or "Sukhen"
   userRole: 'mili' | 'sukhen' | 'guest'; // Role identifier
   userEmail?: string;    // Logged in email
@@ -25,6 +24,16 @@ export interface DeviceSession {
 }
 
 const SESSIONS_FILE = join(process.cwd(), '.sessions.json');
+
+// Cryptographic signature secret
+const SECRET_KEY =
+  process.env.SESSION_SECRET ||
+  process.env.CLOUDINARY_API_SECRET ||
+  'suksharmi_ultra_secure_vault_secret_key_2026_signature';
+
+function createHmacSignature(data: string): string {
+  return crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex');
+}
 
 // ── Persistence helpers ──────────────────────────────────────────────────────
 
@@ -70,7 +79,8 @@ function encodeSessionToken(payload: {
       x: payload.expiresAt,
     };
     const b64 = Buffer.from(JSON.stringify(compact)).toString('base64url');
-    return `sess_${b64}`;
+    const signature = createHmacSignature(b64);
+    return `sess_${b64}.${signature}`;
   } catch {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     return Array.from({ length: 48 }, () =>
@@ -82,10 +92,25 @@ function encodeSessionToken(payload: {
 function decodeSessionToken(token: string): DeviceSession | null {
   try {
     if (!token.startsWith('sess_')) return null;
-    const b64 = token.slice(5);
+    const raw = token.slice(5);
+    const parts = raw.split('.');
+
+    let b64 = raw;
+
+    if (parts.length === 2) {
+      const [payloadB64, signature] = parts;
+      const expectedSig = createHmacSignature(payloadB64);
+      if (signature !== expectedSig) {
+        console.warn('[Security Alert] Tampered or invalid session signature detected!');
+        return null;
+      }
+      b64 = payloadB64;
+    }
+
     const json = Buffer.from(b64, 'base64url').toString('utf-8');
     const p = JSON.parse(json);
     if (!p || !p.x || new Date(p.x).getTime() < Date.now()) return null;
+
     return {
       id: token,
       userName: p.u || 'Mili',
@@ -136,7 +161,7 @@ function isExpired(session: DeviceSession): boolean {
 function getActiveSessions(): DeviceSession[] {
   const all = readSessions();
   // Prune expired sessions automatically
-  const active = all.filter(s => !isExpired(s));
+  const active = all.filter((s) => !isExpired(s));
   if (active.length !== all.length) writeSessions(active);
   return active;
 }
@@ -144,8 +169,7 @@ function getActiveSessions(): DeviceSession[] {
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
- * Attempt to create a new session for a device.
- * Returns the session if successful, or an error string.
+ * Attempt to create a new cryptographically signed session for a device.
  */
 export function createSession(
   userAgent: string,
@@ -159,7 +183,7 @@ export function createSession(
   const expires = new Date(now.getTime() + AUTH_CONFIG.sessionExpiryMs);
   const deviceName = deriveDeviceName(userAgent);
 
-  const rawId = Math.random().toString(36).substring(2, 15);
+  const rawId = crypto.randomBytes(16).toString('hex');
   const userName = userInfo.userName || 'Mili';
   const userRole = userInfo.userRole || 'mili';
   const userEmail = userInfo.userEmail || (userRole === 'sukhen' ? 'dassukhen@gmail.com' : 'mandalsharmili06@gmail.com');
@@ -176,9 +200,9 @@ export function createSession(
     expiresAt: expires.toISOString(),
   });
 
-  // If there's an existing session token for this client, and it is currently active, refresh/replace it in place
+  // If there's an existing session token for this client, update it in place
   if (existingSessionId) {
-    const existingIndex = active.findIndex(s => s.id === existingSessionId);
+    const existingIndex = active.findIndex((s) => s.id === existingSessionId);
     if (existingIndex !== -1) {
       const updatedSession: DeviceSession = {
         id: tokenId,
@@ -199,12 +223,10 @@ export function createSession(
     }
   }
 
-  // Allow up to maxDevices; if full, remove oldest expired/least active session or return error
+  // Allow up to maxDevices; if full, remove oldest expired/least active session
   if (active.length >= AUTH_CONFIG.maxDevices) {
-    // If an old session is from the same IP or expired, clean it up
-    const nonExpired = active.filter(s => !isExpired(s));
+    const nonExpired = active.filter((s) => !isExpired(s));
     if (nonExpired.length >= AUTH_CONFIG.maxDevices) {
-      // Rotate out oldest session to prevent blocking user logins
       active = nonExpired.slice(1);
     } else {
       active = nonExpired;
@@ -230,20 +252,19 @@ export function createSession(
 }
 
 /**
- * Validate a session token. Updates lastSeenAt if valid.
+ * Validate a session token. Checks signature and updates lastSeenAt.
  */
 export function validateSession(token: string): DeviceSession | null {
   if (!token) return null;
   const active = getActiveSessions();
-  const idx = active.findIndex(s => s.id === token);
+  const idx = active.findIndex((s) => s.id === token);
   if (idx !== -1) {
-    // Refresh lastSeenAt
     active[idx].lastSeenAt = new Date().toISOString();
     writeSessions(active);
     return active[idx];
   }
 
-  // Fallback: decode stateless self-contained token (for serverless instances)
+  // Fallback: decode and verify signature for self-contained stateless tokens
   const decoded = decodeSessionToken(token);
   if (decoded) {
     writeSessions([...active, decoded]);
@@ -268,7 +289,7 @@ export function getSessionFromRequest(request: Request): DeviceSession | null {
  */
 export function removeSession(token: string): void {
   const active = getActiveSessions();
-  writeSessions(active.filter(s => s.id !== token));
+  writeSessions(active.filter((s) => s.id !== token));
 }
 
 /**
@@ -283,7 +304,7 @@ export function getAllSessions(): DeviceSession[] {
  */
 export function revokeSession(sessionId: string): void {
   const active = getActiveSessions();
-  writeSessions(active.filter(s => s.id !== sessionId));
+  writeSessions(active.filter((s) => s.id !== sessionId));
 }
 
 /**

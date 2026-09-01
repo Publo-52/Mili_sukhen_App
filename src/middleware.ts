@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Routes that are always public (do not require login)
+// Routes that are always public (do not require session cookie)
 const PUBLIC_PATHS = [
   '/login',
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/me',
+  '/api/auth/sessions',
   '/_next',
   '/images',
   '/favicon',
@@ -34,10 +35,19 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // All other pages and routes strictly require login
+  // If unauthenticated:
   if (!sessionCookie) {
+    // For API endpoints, return a strict JSON 401 Unauthorized
+    if (pathname.startsWith('/api')) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Please sign in to access this resource.' },
+        { status: 401 }
+      );
+    }
+
+    // For web pages, redirect to login page with target redirect param
     const loginUrl = new URL('/login', request.url);
-    if (pathname !== '/' && !pathname.startsWith('/api')) {
+    if (pathname !== '/') {
       loginUrl.searchParams.set('redirect', pathname);
     }
     return NextResponse.redirect(loginUrl);
