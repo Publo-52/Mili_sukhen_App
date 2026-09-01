@@ -21,6 +21,17 @@ import {
   Clock,
   Monitor,
   Check,
+  Wand2,
+  Terminal,
+  Heart,
+  Feather,
+  BookOpen,
+  Film,
+  Camera,
+  Image as ImageIcon,
+  Video,
+  ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import { Project, DirectMessage, ProjectCategory, TurtleCreation, LoveNote, MemoryItem } from '@/types';
 import { APP_CONFIG, AUTH_CONFIG } from '@/data/config';
@@ -28,7 +39,6 @@ import { ProjectEditorModal } from '@/components/projects/ProjectEditorModal';
 import { TurtleEditorModal } from '@/components/turtle/TurtleEditorModal';
 import { LoveNoteEditorModal } from '@/components/love-notes/LoveNoteEditorModal';
 import { MemoryEditorModal } from '@/components/timeline/MemoryEditorModal';
-import { Wand2, Terminal, Heart, Feather, BookOpen, Film, Camera, Image as ImageIcon, Video } from 'lucide-react';
 import {
   getProjects,
   saveProject,
@@ -100,22 +110,6 @@ export default function AdminPage() {
     expiresAt: string;
   }[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
-
-  // New Project Form Data
-  const [newProject, setNewProject] = useState<Partial<Project>>({
-    title: '',
-    slug: '',
-    description: '',
-    detailedStory: '',
-    category: 'Websites',
-    url: '',
-    githubUrl: '',
-    thumbnail: '',
-    technologies: ['React', 'Tailwind CSS'],
-    createdAt: new Date().toISOString().split('T')[0],
-    featured: true,
-    order: 1,
-  });
 
   const loadSessions = useCallback(async () => {
     setSessionsLoading(true);
@@ -204,7 +198,7 @@ export default function AdminPage() {
       setLoveNotes(getLoveNotes());
     }
 
-    // 5. Load Photo & Video Memories from API / Supabase
+    // 5. Load Memories from API / Supabase
     try {
       const memRes = await fetch('/api/memories', { cache: 'no-store' });
       if (memRes.ok) {
@@ -220,146 +214,57 @@ export default function AdminPage() {
     } catch {
       setMemories(getMemories());
     }
-
-    // 6. Load Active Device Sessions
-    loadSessions();
-  }, [loadSessions]);
+  }, []);
 
   useEffect(() => {
-    const logged =
-      isAdminLoggedIn() ||
-      isAdmin ||
-      user?.role === 'sukhen' ||
-      user?.role === 'mili';
-
-    if (logged) {
+    if (isAdminLoggedIn()) {
       setIsAuthenticated(true);
-      setAdminLoggedIn(true);
       loadData();
-
-      // Supabase Realtime for Admin Dashboard
-      let channel: any = null;
-      if (isSupabaseConfigured && supabase) {
-        try {
-          channel = supabase
-            .channel('admin-realtime-sync')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => loadData())
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'turtle_creations' }, () => loadData())
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'love_notes' }, () => loadData())
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'memories' }, () => loadData())
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => loadData())
-            .subscribe();
-        } catch (err) {
-          console.warn('Admin realtime error:', err);
-        }
-      }
-
-      return () => {
-        if (channel && supabase) {
-          supabase.removeChannel(channel);
-        }
-      };
     }
-  }, [isAdmin, user, loadData]);
-
-  const handleRevokeSession = async (sessionId: string, revokeAll = false) => {
-    const label = revokeAll ? 'ALL active sessions' : 'this device session';
-    if (!confirm(`Are you sure you want to revoke ${label}? That device will need to log in again.`)) return;
-    try {
-      await fetch('/api/auth/sessions', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-token': APP_CONFIG.adminPasscode,
-        },
-        body: JSON.stringify(revokeAll ? { revokeAll: true } : { sessionId }),
-      });
-      await loadSessions();
-    } catch {
-      alert('Failed to revoke session.');
-    }
-  };
-
+  }, [loadData]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanPass = passcode.trim().toLowerCase();
-    if (
-      passcode.trim() === APP_CONFIG.adminPasscode ||
-      cleanPass === 'das@123' ||
-      cleanPass === 'das123' ||
-      cleanPass === 'sukhen' ||
-      cleanPass === 'mili@123' ||
-      cleanPass === 'mili123' ||
-      cleanPass === 'mili' ||
-      cleanPass === 'sharmili' ||
-      cleanPass === '143' ||
-      cleanPass === 'forever' ||
-      cleanPass === 'admin'
-    ) {
+    if (passcode === APP_CONFIG.adminPasscode || passcode === 'mili@123' || passcode === 'das@123') {
       setIsAuthenticated(true);
       setAdminLoggedIn(true);
       setLoginError(false);
       loadData();
     } else {
       setLoginError(true);
-      setTimeout(() => setLoginError(false), 2000);
     }
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
     setAdminLoggedIn(false);
+    setIsAuthenticated(false);
   };
 
-  // Message Handlers (Sync with Supabase DB)
-  const handleMarkRead = async (id: string) => {
-    const updated = markMessageAsRead(id);
-    setMessages(updated);
+  const handleRevokeSession = async (sessionId: string, revokeAll: boolean = false) => {
     try {
-      await fetch('/api/messages', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, read: true }),
+      const res = await fetch('/api/auth/sessions', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
+        body: JSON.stringify({ sessionId, revokeAll }),
       });
-    } catch {}
-  };
-
-  const handleSendReply = async (id: string) => {
-    const reply = replyTextMap[id];
-    if (!reply || !reply.trim()) return;
-    const updated = replyToMessage(id, reply.trim());
-    setMessages(updated);
-    setReplyTextMap((prev) => ({ ...prev, [id]: '' }));
-    try {
-      await fetch('/api/messages', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, reply: reply.trim() }),
-      });
-    } catch {}
-  };
-
-  const handleDeleteMsg = async (id: string) => {
-    if (confirm('Are you sure you want to delete this message from the database?')) {
-      const updated = deleteMessage(id);
-      setMessages(updated);
-      try {
-        await fetch(`/api/messages?id=${id}`, {
-          method: 'DELETE',
-        });
-      } catch {}
+      if (res.ok) {
+        await loadSessions();
+      }
+    } catch {
+      // ignore
     }
   };
 
-  // Project Handlers (Sync with Supabase DB)
+  // --- Handlers for Project Editor Modal ---
   const handleSaveProjectModal = async (project: Project) => {
     const updated = saveProject(project);
     setProjects(updated);
     setIsAddingProject(false);
     setEditingProject(null);
 
-    // Persist to Supabase Database
     try {
       await fetch('/api/projects', {
         method: 'POST',
@@ -370,29 +275,34 @@ export default function AdminPage() {
         body: JSON.stringify({ project }),
       });
     } catch {}
+
+    window.dispatchEvent(new Event('mili-projects-updated'));
+    await loadData();
   };
 
   const handleDeleteProject = async (id: string) => {
-    if (confirm('Delete this project from your showcase database?')) {
-      const updated = deleteProject(id);
-      setProjects(updated);
-      try {
-        await fetch(`/api/projects?id=${id}`, {
-          method: 'DELETE',
-          headers: {
-            'x-admin-token': APP_CONFIG.adminPasscode,
-          },
-        });
-      } catch {}
-    }
+    const updated = deleteProject(id);
+    setProjects(updated);
+
+    try {
+      await fetch(`/api/projects?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
+      });
+    } catch {}
+
+    window.dispatchEvent(new Event('mili-projects-updated'));
+    await loadData();
   };
 
-  const handleEditProject = (proj: Project) => {
-    setEditingProject(proj);
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
     setIsAddingProject(true);
   };
 
-  // Python Turtle Handlers (Sync with Supabase DB & Storage)
+  // --- Handlers for Turtle Editor Modal ---
   const handleSaveTurtleModal = async (creation: TurtleCreation) => {
     const updated = saveTurtleCreation(creation);
     setTurtleCreations(updated);
@@ -409,24 +319,29 @@ export default function AdminPage() {
         body: JSON.stringify({ creation }),
       });
     } catch {}
+
+    window.dispatchEvent(new Event('mili-turtle-updated'));
+    await loadData();
   };
 
   const handleDeleteTurtle = async (id: string) => {
-    if (confirm('Delete this Python Turtle artwork from your collection?')) {
-      const updated = deleteTurtleCreation(id);
-      setTurtleCreations(updated);
-      try {
-        await fetch(`/api/turtle?id=${id}`, {
-          method: 'DELETE',
-          headers: {
-            'x-admin-token': APP_CONFIG.adminPasscode,
-          },
-        });
-      } catch {}
-    }
+    const updated = deleteTurtleCreation(id);
+    setTurtleCreations(updated);
+
+    try {
+      await fetch(`/api/turtle?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
+      });
+    } catch {}
+
+    window.dispatchEvent(new Event('mili-turtle-updated'));
+    await loadData();
   };
 
-  // Love Note Handlers
+  // --- Handlers for Love Notes ---
   const handleSaveNoteModal = async (note: LoveNote) => {
     const updated = saveLoveNote(note);
     setLoveNotes(updated);
@@ -445,24 +360,24 @@ export default function AdminPage() {
     } catch {}
 
     window.dispatchEvent(new Event('mili-notes-updated'));
+    await loadData();
   };
 
   const handleDeleteNote = async (id: string) => {
-    if (confirm('Delete this love note from your vault?')) {
-      const updated = deleteLoveNote(id);
-      setLoveNotes(updated);
+    const updated = deleteLoveNote(id);
+    setLoveNotes(updated);
 
-      try {
-        await fetch(`/api/love-notes?id=${id}`, {
-          method: 'DELETE',
-          headers: {
-            'x-admin-token': APP_CONFIG.adminPasscode,
-          },
-        });
-      } catch {}
+    try {
+      await fetch(`/api/love-notes?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
+      });
+    } catch {}
 
-      window.dispatchEvent(new Event('mili-notes-updated'));
-    }
+    window.dispatchEvent(new Event('mili-notes-updated'));
+    await loadData();
   };
 
   const handleEditNote = (note: LoveNote) => {
@@ -470,7 +385,7 @@ export default function AdminPage() {
     setIsAddingNote(true);
   };
 
-  // Memory / Photo & Video Handlers
+  // --- Handlers for Memories ---
   const handleSaveMemoryModal = async (memory: MemoryItem) => {
     const updated = saveMemory(memory);
     setMemories(updated);
@@ -489,24 +404,24 @@ export default function AdminPage() {
     } catch {}
 
     window.dispatchEvent(new Event('mili-memories-updated'));
+    await loadData();
   };
 
   const handleDeleteMemory = async (id: string) => {
-    if (confirm('Delete this photo/video memory from vault?')) {
-      const updated = deleteMemory(id);
-      setMemories(updated);
+    const updated = deleteMemory(id);
+    setMemories(updated);
 
-      try {
-        await fetch(`/api/memories?id=${id}`, {
-          method: 'DELETE',
-          headers: {
-            'x-admin-token': APP_CONFIG.adminPasscode,
-          },
-        });
-      } catch {}
+    try {
+      await fetch(`/api/memories?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
+      });
+    } catch {}
 
-      window.dispatchEvent(new Event('mili-memories-updated'));
-    }
+    window.dispatchEvent(new Event('mili-memories-updated'));
+    await loadData();
   };
 
   const handleEditMemory = (memory: MemoryItem) => {
@@ -527,7 +442,7 @@ export default function AdminPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `mili-universe-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `suksharmi-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
   };
 
@@ -551,7 +466,7 @@ export default function AdminPage() {
           <div className="space-y-1">
             <h1 className="text-2xl font-bold text-white">Suksharmi Admin Studio</h1>
             <p className="text-xs text-slate-400 font-mono">
-              Manage creations, messages, and privacy settings
+              Manage creations, memories, and security settings
             </p>
           </div>
 
@@ -575,7 +490,7 @@ export default function AdminPage() {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-2xl bg-roseGlow-600 hover:bg-roseGlow-500 text-white font-medium text-sm shadow-glow transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-2xl bg-roseGlow-600 hover:bg-roseGlow-500 text-white font-medium text-sm shadow-glow transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Unlock className="w-4 h-4" />
               <span>Enter Admin Dashboard</span>
@@ -587,7 +502,7 @@ export default function AdminPage() {
             className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white font-mono"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Return to Mili&apos;s Universe</span>
+            <span>Return to Suksharmi Sanctuary</span>
           </Link>
         </div>
       </main>
@@ -596,32 +511,33 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-obsidian-950 text-slate-100 pb-20">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-obsidian-900/60 backdrop-blur-xl sticky top-0 z-30 px-4 sm:px-8 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* Sleek Modern Top Bar */}
+      <header className="border-b border-white/10 bg-[#0d091a]/90 backdrop-blur-xl sticky top-0 z-30 px-3 sm:px-8 py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <Link
               href="/"
-              className="p-2 rounded-xl glass-card hover:border-white/30 text-slate-300 hover:text-white transition-colors"
+              className="p-2 rounded-xl glass-card hover:border-white/30 text-slate-300 hover:text-white transition-colors shrink-0"
+              title="Return to Home"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div>
-              <h1 className="text-lg font-bold text-white flex items-center gap-2">
-                <Shield className="w-4 h-4 text-roseGlow-400" />
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-lg font-bold text-white flex items-center gap-1.5 truncate">
+                <Shield className="w-4 h-4 text-roseGlow-400 shrink-0" />
                 <span>Admin Studio</span>
               </h1>
-              <p className="text-[11px] text-slate-400 font-mono">
-                Logged in as {user?.name || 'Admin'}
+              <p className="text-[10px] sm:text-[11px] text-slate-400 font-mono truncate">
+                Logged in as <span className="text-roseGlow-300 font-semibold">{user?.name || 'Sukhen'}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleExportBackup}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card text-xs font-mono text-slate-300 hover:text-white"
-              title="Download backup JSON"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card text-xs font-mono text-slate-300 hover:text-white cursor-pointer"
+              title="Download full backup JSON"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Backup</span>
@@ -629,37 +545,37 @@ export default function AdminPage() {
 
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-red-500/20 hover:text-red-300 text-xs text-slate-300 font-mono transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-red-500/20 hover:text-red-300 text-xs text-slate-300 font-mono transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Logout</span>
+              <span className="hidden xs:inline">Logout</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Admin Dashboard */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-8 space-y-8">
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-white/10 pb-4 overflow-x-auto no-scrollbar whitespace-nowrap">
+      <div className="max-w-7xl mx-auto px-3 sm:px-8 pt-4 sm:pt-6 space-y-6">
+        {/* Apple-style Segmented Category Pill Switcher */}
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/[0.04] border border-white/10 overflow-x-auto no-scrollbar whitespace-nowrap">
           <button
             onClick={() => setActiveTab('projects')}
-            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-mono font-medium transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
               activeTab === 'projects'
-                ? 'bg-roseGlow-600 text-white shadow-glow'
-                : 'glass-card text-slate-400 hover:text-white'
+                ? 'bg-roseGlow-600 text-white shadow-glow font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Manage Projects ({projects.length})</span>
+            <span>Projects ({projects.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('turtle')}
-            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-mono font-medium transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
               activeTab === 'turtle'
-                ? 'bg-roseGlow-600 text-white shadow-glow'
-                : 'glass-card text-slate-400 hover:text-white'
+                ? 'bg-amber-600 text-white shadow-glow-gold font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <Terminal className="w-3.5 h-3.5" />
@@ -668,10 +584,10 @@ export default function AdminPage() {
 
           <button
             onClick={() => setActiveTab('love-notes')}
-            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-mono font-medium transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
               activeTab === 'love-notes'
-                ? 'bg-roseGlow-600 text-white shadow-glow'
-                : 'glass-card text-slate-400 hover:text-white'
+                ? 'bg-pink-600 text-white shadow-glow font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
@@ -680,107 +596,114 @@ export default function AdminPage() {
 
           <button
             onClick={() => setActiveTab('memories')}
-            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-mono font-medium transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
               activeTab === 'memories'
-                ? 'bg-roseGlow-600 text-white shadow-glow'
-                : 'glass-card text-slate-400 hover:text-white'
+                ? 'bg-purple-600 text-white shadow-glow-violet font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <Camera className="w-3.5 h-3.5" />
-            <span>Photos & Videos ({memories.length})</span>
+            <span>Memories ({memories.length})</span>
           </button>
 
           <button
             onClick={() => { setActiveTab('sessions'); loadSessions(); }}
-            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-mono font-medium transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
               activeTab === 'sessions'
-                ? 'bg-roseGlow-600 text-white shadow-glow'
-                : 'glass-card text-slate-400 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-glow font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>Device Sessions ({deviceSessions.length})</span>
+            <span>Devices ({deviceSessions.length})</span>
           </button>
         </div>
 
-        {/* Tab 2: Projects Management */}
+        {/* Tab 1: Projects Management */}
         {activeTab === 'projects' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="space-y-4">
+            {/* Section Header */}
+            <div className="p-4 sm:p-5 rounded-2xl glass-card border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold text-white">Project Catalog</h2>
-                <p className="text-xs text-slate-400 font-mono">
-                  Add existing deployed Vercel projects or custom creations
+                <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2">
+                  <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-roseGlow-400" />
+                  <span>Project Catalog</span>
+                </h2>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  Manage deployed creations, Vercel web apps, and live games
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    setEditingProject(null);
-                    setIsAddingProject(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all"
-                >
-                  <Wand2 className="w-3.5 h-3.5" />
-                  <span>+ Add Project (Magic URL)</span>
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  setEditingProject(null);
+                  setIsAddingProject(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all active:scale-95 cursor-pointer w-full sm:w-auto"
+              >
+                <Wand2 className="w-3.5 h-3.5" />
+                <span>+ Add Project</span>
+              </button>
             </div>
 
             {/* List of Existing Projects */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {projects.map((proj) => (
                 <div
                   key={proj.id}
-                  className="glass-card rounded-2xl p-5 border border-white/10 flex flex-col justify-between space-y-4"
+                  className="glass-card rounded-2xl p-4 sm:p-5 border border-white/10 flex flex-col justify-between space-y-3 hover:border-roseGlow-500/40 transition-all shadow-sm"
                 >
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-white/5 text-roseGlow-400">
+                    {/* Category & Action Pills */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-roseGlow-500/15 text-roseGlow-300 border border-roseGlow-500/30">
                         {proj.category}
                       </span>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleEditProject(proj)}
-                          className="p-1.5 text-slate-400 hover:text-white"
-                          title="Edit"
+                          className="px-2 py-1 rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/30 text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Edit project"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
+                          <Edit3 className="w-3 h-3" />
+                          <span>Edit</span>
                         </button>
                         <button
                           onClick={() => handleDeleteProject(proj.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-400"
-                          title="Delete"
+                          className="px-2 py-1 rounded-lg bg-red-500/15 text-red-300 hover:bg-red-500/30 text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Delete project"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     </div>
 
-                    <h4 className="text-base font-bold text-white line-clamp-1">
+                    {/* Title */}
+                    <h4 className="text-sm sm:text-base font-bold text-white line-clamp-2 leading-snug">
                       {proj.title}
                     </h4>
-                    <p className="text-xs text-slate-400 line-clamp-2">
+
+                    {/* Description */}
+                    <p className="text-xs text-slate-300 line-clamp-2 font-light leading-relaxed">
                       {proj.description}
                     </p>
                   </div>
 
-                  <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs font-mono">
+                  {/* URL & Live Link */}
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs font-mono gap-2">
+                    <span className="text-slate-400 truncate max-w-[200px] text-[11px]">
+                      {proj.url}
+                    </span>
                     <a
                       href={proj.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-roseGlow-400 hover:underline truncate max-w-[200px]"
+                      className="inline-flex items-center gap-1 text-roseGlow-400 hover:text-roseGlow-300 font-medium shrink-0"
                     >
-                      {proj.url}
+                      <span>View</span>
+                      <ExternalLink className="w-3 h-3" />
                     </a>
-                    <Link
-                      href={`/projects/${proj.slug}`}
-                      className="text-slate-400 hover:text-white"
-                    >
-                      View
-                    </Link>
                   </div>
                 </div>
               ))}
@@ -788,41 +711,42 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Tab 3: Python Turtle Art Management */}
+        {/* Tab 2: Python Turtle Art Management */}
         {activeTab === 'turtle' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="space-y-4">
+            <div className="p-4 sm:p-5 rounded-2xl glass-card border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold text-white">Python Turtle Artworks</h2>
-                <p className="text-xs text-slate-400 font-mono">
+                <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2">
+                  <Terminal className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+                  <span>Python Turtle Artworks</span>
+                </h2>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
                   Manage mathematical sketches, algorithms, and turtle animations
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    setEditingTurtle(null);
-                    setIsAddingTurtle(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all"
-                >
-                  <Wand2 className="w-3.5 h-3.5" />
-                  <span>+ Add Python Art (Magic Generator)</span>
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  setEditingTurtle(null);
+                  setIsAddingTurtle(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all active:scale-95 cursor-pointer w-full sm:w-auto"
+              >
+                <Wand2 className="w-3.5 h-3.5" />
+                <span>+ Add Python Art</span>
+              </button>
             </div>
 
             {/* List of Python Artworks */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {turtleCreations.map((art) => (
                 <div
                   key={art.id}
-                  className="glass-card rounded-2xl p-5 border border-white/10 flex flex-col justify-between space-y-4"
+                  className="glass-card rounded-2xl p-4 sm:p-5 border border-white/10 flex flex-col justify-between space-y-3 hover:border-amber-500/40 transition-all shadow-sm"
                 >
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-white/5 text-amber-400">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
                         {art.category}
                       </span>
                       <div className="flex items-center gap-1">
@@ -831,31 +755,33 @@ export default function AdminPage() {
                             setEditingTurtle(art);
                             setIsAddingTurtle(true);
                           }}
-                          className="p-1.5 text-slate-400 hover:text-white"
-                          title="Edit"
+                          className="px-2 py-1 rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/30 text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Edit art"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
+                          <Edit3 className="w-3 h-3" />
+                          <span>Edit</span>
                         </button>
                         <button
                           onClick={() => handleDeleteTurtle(art.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-400"
-                          title="Delete"
+                          className="px-2 py-1 rounded-lg bg-red-500/15 text-red-300 hover:bg-red-500/30 text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Delete art"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     </div>
 
-                    <h4 className="text-base font-bold text-white line-clamp-1">
+                    <h4 className="text-sm sm:text-base font-bold text-white line-clamp-2 leading-snug">
                       {art.title}
                     </h4>
-                    <p className="text-xs text-slate-400 line-clamp-2">
+                    <p className="text-xs text-slate-300 line-clamp-2 font-light leading-relaxed">
                       {art.description}
                     </p>
                   </div>
 
-                  <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs font-mono text-slate-400">
-                    <span>Canvas: {art.canvasDrawingType || 'mandala'}</span>
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                    <span>Drawing: {art.canvasDrawingType || 'mandala'}</span>
                     <span>{formatDate(art.createdAt)}</span>
                   </div>
                 </div>
@@ -864,22 +790,195 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Tab 4: Device Sessions */}
-        {activeTab === 'sessions' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        {/* Tab 3: Love Notes Management */}
+        {activeTab === 'love-notes' && (
+          <div className="space-y-4">
+            <div className="p-4 sm:p-5 rounded-2xl glass-card border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold text-white">Active Device Sessions</h2>
-                <p className="text-xs text-slate-400 font-mono">
+                <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2">
+                  <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-roseGlow-500 fill-roseGlow-500" />
+                  <span>Private Love Notes Vault ({loveNotes.length})</span>
+                </h2>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  Write unlimited private love letters and heartfelt thoughts for Mili
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setEditingNote(null);
+                  setIsAddingNote(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-roseGlow-600 via-pink-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all active:scale-95 cursor-pointer w-full sm:w-auto"
+              >
+                <Feather className="w-3.5 h-3.5" />
+                <span>+ Write New Note</span>
+              </button>
+            </div>
+
+            {/* List of Existing Love Notes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {loveNotes.map((note, index) => (
+                <div
+                  key={note.id}
+                  className="glass-card rounded-2xl p-4 sm:p-5 border border-roseGlow-500/20 flex flex-col justify-between space-y-3 hover:border-roseGlow-500/50 transition-all shadow-sm"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-roseGlow-500/10 text-roseGlow-300 border border-roseGlow-500/30">
+                        #{index + 1} • {note.moodTag || 'deep'}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleEditNote(note)}
+                          className="px-2 py-1 rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/30 text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Edit note"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteNote(note.id)}
+                          className="px-2 py-1 rounded-lg bg-red-500/15 text-red-300 hover:bg-red-500/30 text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Delete note"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <h3 className="text-sm sm:text-base font-serif font-bold text-white leading-snug">
+                      {note.title}
+                    </h3>
+                    <p className="text-xs text-slate-300 font-serif italic line-clamp-2 border-l-2 border-roseGlow-500 pl-2">
+                      “{note.snippet}”
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/5 text-[11px] text-slate-400 font-mono">
+                    📅 {note.date}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Photo & Video Memories Management */}
+        {activeTab === 'memories' && (
+          <div className="space-y-4">
+            <div className="p-4 sm:p-5 rounded-2xl glass-card border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2">
+                  <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
+                  <span>Memories & Timeline Vault ({memories.length})</span>
+                </h2>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  Upload, manage, and stream high-definition photos & videos
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setEditingMemory(null);
+                  setIsAddingMemory(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-roseGlow-600 hover:from-purple-500 hover:to-roseGlow-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all active:scale-95 cursor-pointer w-full sm:w-auto"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Upload Memory</span>
+              </button>
+            </div>
+
+            {/* List of Existing Memories */}
+            {memories.length === 0 ? (
+              <div className="text-center py-16 px-4 rounded-3xl glass-card border border-white/10 space-y-4">
+                <div className="w-12 h-12 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center mx-auto">
+                  <Film className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-base font-bold text-white">No photos or videos uploaded yet</h4>
+                  <p className="text-xs text-slate-400">Click &apos;Upload Memory&apos; above to add your first media memory.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {memories.map((memory) => (
+                  <div
+                    key={memory.id}
+                    className="glass-card rounded-2xl overflow-hidden border border-white/10 flex flex-col justify-between hover:border-purple-500/50 transition-all shadow-sm"
+                  >
+                    <div className="relative aspect-[16/9] w-full bg-obsidian-950">
+                      <Image
+                        src={memory.thumbnailUrl || memory.url}
+                        alt={memory.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover"
+                      />
+                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-mono text-white flex items-center gap-1 border border-white/10">
+                        {memory.type === 'video' ? <Video className="w-3 h-3 text-purple-400" /> : <ImageIcon className="w-3 h-3 text-roseGlow-400" />}
+                        <span>{memory.type === 'video' ? 'Video' : 'Photo'}</span>
+                      </span>
+                    </div>
+
+                    <div className="p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-bold text-white line-clamp-1 flex-1">{memory.title}</h3>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => handleEditMemory(memory)}
+                            className="px-2 py-1 rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/30 text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Edit media"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMemory(memory.id)}
+                            className="px-2 py-1 rounded-lg bg-red-500/15 text-red-300 hover:bg-red-500/30 text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Delete media"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {memory.description && (
+                        <p className="text-xs text-slate-300 line-clamp-2 font-light">{memory.description}</p>
+                      )}
+                      <p className="text-[10px] text-slate-400 font-mono">
+                        📅 {memory.date} {memory.location ? `• 📍 ${memory.location}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 5: Device Sessions */}
+        {activeTab === 'sessions' && (
+          <div className="space-y-4">
+            <div className="p-4 sm:p-5 rounded-2xl glass-card border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+                  <span>Active Device Sessions</span>
+                </h2>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
                   {deviceSessions.length} of {AUTH_CONFIG.maxDevices} maximum concurrent devices active
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={loadSessions}
                   disabled={sessionsLoading}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card text-xs font-mono text-slate-300 hover:text-white transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card text-xs font-mono text-slate-300 hover:text-white transition-all disabled:opacity-50 cursor-pointer"
                   title="Refresh sessions"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${sessionsLoading ? 'animate-spin' : ''}`} />
@@ -889,10 +988,10 @@ export default function AdminPage() {
                 {deviceSessions.length > 0 && (
                   <button
                     onClick={() => handleRevokeSession('', true)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-mono transition-all"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/30 text-red-300 border border-red-500/30 text-xs font-mono transition-all cursor-pointer"
                   >
                     <WifiOff className="w-3.5 h-3.5" />
-                    <span>Revoke All Devices</span>
+                    <span>Revoke All</span>
                   </button>
                 )}
               </div>
@@ -911,19 +1010,19 @@ export default function AdminPage() {
                 <p className="text-xs text-slate-500 font-mono">Sessions are created when Mili or Sukhen signs in.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {deviceSessions.map((sess) => {
                   const isExpired = new Date(sess.expiresAt).getTime() < Date.now();
                   const isSukhen = sess.userRole === 'sukhen';
                   return (
                     <div
                       key={sess.id}
-                      className={`glass-card rounded-2xl p-5 border space-y-4 ${
+                      className={`glass-card rounded-2xl p-4 sm:p-5 border space-y-3 ${
                         isExpired ? 'border-red-500/30 opacity-60' : 'border-white/10'
                       }`}
                     >
                       {/* User Profile & Role Info */}
-                      <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                      <div className="flex items-center justify-between pb-2.5 border-b border-white/5">
                         <div className="flex items-center gap-2.5">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
                             isSukhen ? 'bg-purple-600/30 text-purple-300 border border-purple-500/30' : 'bg-roseGlow-600/30 text-roseGlow-300 border border-roseGlow-500/30'
@@ -959,8 +1058,8 @@ export default function AdminPage() {
                       </div>
 
                       {/* Device & IP Details */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 flex-shrink-0">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 flex-shrink-0">
                           {sess.deviceName.toLowerCase().includes('phone') ||
                           sess.deviceName.toLowerCase().includes('iphone') ||
                           sess.deviceName.toLowerCase().includes('android') ? (
@@ -969,23 +1068,20 @@ export default function AdminPage() {
                             <Monitor className="w-4 h-4 text-purple-400" />
                           )}
                         </div>
-                        <div>
-                          <h4 className="text-xs font-semibold text-slate-200 leading-tight">
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-semibold text-slate-200 leading-tight truncate">
                             {sess.deviceName}
                           </h4>
-                          <p className="text-[11px] font-mono text-slate-400">
+                          <p className="text-[10px] font-mono text-slate-400">
                             IP: {sess.ip || '127.0.0.1'}
                           </p>
                         </div>
                       </div>
 
                       {/* Timestamps */}
-                      <div className="space-y-1 text-[11px] font-mono text-slate-400 bg-white/5 rounded-xl p-3 border border-white/5">
+                      <div className="space-y-1 text-[10px] font-mono text-slate-400 bg-white/5 rounded-xl p-2.5 border border-white/5">
                         <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-slate-500" />
-                            <span>First Login:</span>
-                          </span>
+                          <span>First Login:</span>
                           <span className="text-slate-300">
                             {new Date(sess.createdAt).toLocaleDateString(undefined, {
                               month: 'short',
@@ -996,10 +1092,7 @@ export default function AdminPage() {
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-1">
-                            <RefreshCw className="w-3 h-3 text-slate-500" />
-                            <span>Last Active:</span>
-                          </span>
+                          <span>Last Active:</span>
                           <span className="text-slate-300">
                             {new Date(sess.lastSeenAt).toLocaleDateString(undefined, {
                               month: 'short',
@@ -1013,186 +1106,14 @@ export default function AdminPage() {
 
                       <button
                         onClick={() => handleRevokeSession(sess.id)}
-                        className="w-full py-2 rounded-xl bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 text-xs font-mono text-red-400/80 transition-all flex items-center justify-center gap-1.5"
+                        className="w-full py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-xs font-mono text-red-300 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <WifiOff className="w-3.5 h-3.5" />
-                        Revoke Session
+                        <span>Revoke Session</span>
                       </button>
                     </div>
                   );
                 })}
-              </div>
-            )}
-          </div>
-        )}
-        {/* Tab 3: Love Notes Management */}
-        {activeTab === 'love-notes' && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-roseGlow-500 fill-roseGlow-500" />
-                  <span>Private Love Notes Vault ({loveNotes.length})</span>
-                </h2>
-                <p className="text-xs text-slate-400 font-mono">
-                  Write unlimited private love letters and heartfelt thoughts for Mili
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    setEditingNote(null);
-                    setIsAddingNote(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-roseGlow-600 via-pink-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all"
-                >
-                  <Feather className="w-3.5 h-3.5" />
-                  <span>+ Write New Love Note</span>
-                </button>
-              </div>
-            </div>
-
-            {/* List of Existing Love Notes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {loveNotes.map((note, index) => (
-                <div
-                  key={note.id}
-                  className="glass-card rounded-2xl p-5 border border-roseGlow-500/20 flex flex-col justify-between space-y-4 hover:border-roseGlow-500/50 transition-all"
-                >
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-roseGlow-500/10 text-roseGlow-300 border border-roseGlow-500/30">
-                        #{index + 1} • {note.moodTag || 'deep'}
-                      </span>
-                      {note.isFavorite && (
-                        <Heart className="w-3.5 h-3.5 text-roseGlow-500 fill-roseGlow-500" />
-                      )}
-                    </div>
-
-                    <h3 className="text-base font-serif font-bold text-white leading-snug">
-                      {note.title}
-                    </h3>
-                    <p className="text-xs text-slate-300 font-serif italic line-clamp-2 border-l-2 border-roseGlow-500 pl-2">
-                      “{note.snippet}”
-                    </p>
-                    <p className="text-[10px] text-slate-400 font-mono">
-                      📅 {note.date}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
-                    <button
-                      onClick={() => handleEditNote(note)}
-                      className="p-2 rounded-xl glass-card hover:border-white/30 text-slate-300 hover:text-white transition-colors"
-                      title="Edit note"
-                      aria-label="Edit note"
-                    >
-                      <Edit3 className="w-3.5 h-3.5 text-amber-400" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteNote(note.id)}
-                      className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
-                      title="Delete note"
-                      aria-label="Delete note"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 4: Photo & Video Memories Management */}
-        {activeTab === 'memories' && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Camera className="w-5 h-5 text-purple-400" />
-                  <span>Cloudinary Photo & Video Vault ({memories.length})</span>
-                </h2>
-                <p className="text-xs text-slate-400 font-mono">
-                  Upload, manage, and stream high-definition photos & videos for Mili
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    setEditingMemory(null);
-                    setIsAddingMemory(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-roseGlow-600 hover:from-purple-500 hover:to-roseGlow-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ Upload Photo / Video</span>
-                </button>
-              </div>
-            </div>
-
-            {/* List of Existing Memories */}
-            {memories.length === 0 ? (
-              <div className="text-center py-16 px-4 rounded-3xl glass-card border border-white/10 space-y-4">
-                <div className="w-12 h-12 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center mx-auto">
-                  <Film className="w-6 h-6" />
-                </div>
-                <div className="space-y-1">
-                  <h4 className="text-base font-bold text-white">No photos or videos uploaded yet</h4>
-                  <p className="text-xs text-slate-400">Click &apos;Upload Photo / Video&apos; above to add your first media memory.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {memories.map((memory, index) => (
-                  <div
-                    key={memory.id}
-                    className="glass-card rounded-2xl overflow-hidden border border-white/10 flex flex-col justify-between hover:border-purple-500/50 transition-all"
-                  >
-                    <div className="relative aspect-[16/9] w-full bg-obsidian-950">
-                      <Image
-                        src={memory.thumbnailUrl || memory.url}
-                        alt={memory.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover"
-                      />
-                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-mono text-white flex items-center gap-1 border border-white/10">
-                        {memory.type === 'video' ? <Video className="w-3 h-3 text-purple-400" /> : <ImageIcon className="w-3 h-3 text-roseGlow-400" />}
-                        <span>{memory.type === 'video' ? 'Video' : 'Photo'}</span>
-                      </span>
-                    </div>
-
-                    <div className="p-4 space-y-2">
-                      <h3 className="text-sm font-bold text-white line-clamp-1">{memory.title}</h3>
-                      {memory.description && (
-                        <p className="text-xs text-slate-400 line-clamp-2">{memory.description}</p>
-                      )}
-                      <p className="text-[10px] text-slate-500 font-mono">
-                        📅 {memory.date} {memory.location ? `• 📍 ${memory.location}` : ''}
-                      </p>
-
-                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
-                        <button
-                          onClick={() => handleEditMemory(memory)}
-                          className="p-1.5 rounded-lg glass-card hover:border-white/30 text-slate-300 hover:text-white transition-colors"
-                          title="Edit media"
-                        >
-                          <Edit3 className="w-3.5 h-3.5 text-amber-400" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteMemory(memory.id)}
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
-                          title="Delete media"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
               </div>
             )}
           </div>
