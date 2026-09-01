@@ -4,17 +4,41 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import Link from 'next/link';
-import { X, ExternalLink, Sparkles, Calendar, BookOpen, Layers, Heart, Share2, Check } from 'lucide-react';
+import {
+  X,
+  ExternalLink,
+  Sparkles,
+  Calendar,
+  Layers,
+  Heart,
+  Share2,
+  Check,
+  Edit3,
+  Trash2,
+  Code2,
+} from 'lucide-react';
 import { Project } from '@/types';
 import { formatDate } from '@/lib/utils';
 
 interface ProjectPreviewModalProps {
   project: Project | null;
   onClose: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (id: string) => void;
+  isAdmin?: boolean;
+  onEdit?: (project: Project) => void;
+  onDelete?: (id: string) => void;
 }
 
-export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ project, onClose }) => {
+export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
+  project,
+  onClose,
+  isFavorite = false,
+  onToggleFavorite,
+  isAdmin = false,
+  onEdit,
+  onDelete,
+}) => {
   const [mounted, setMounted] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -29,6 +53,15 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ projec
       document.body.classList.remove('modal-open');
     };
   }, [project]);
+
+  // Escape key to dismiss
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const handleShare = async () => {
     if (!project) return;
@@ -70,7 +103,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ projec
           </div>
 
           {/* Sticky Header Bar */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-b border-white/10 bg-obsidian-950/80 backdrop-blur-md">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-white/10 bg-obsidian-950/80 backdrop-blur-md">
             <div className="flex items-center gap-2 min-w-0 pr-2">
               <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-roseGlow-500/15 text-roseGlow-300 border border-roseGlow-500/30">
                 {project.category}
@@ -84,9 +117,51 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ projec
             </div>
 
             <div className="flex items-center gap-1.5">
+              {/* Favorite Toggle Button */}
+              {onToggleFavorite && (
+                <button
+                  onClick={() => onToggleFavorite(project.id)}
+                  className={`p-2 rounded-full transition-all active:scale-90 cursor-pointer ${
+                    isFavorite
+                      ? 'bg-roseGlow-600/20 text-roseGlow-400 border border-roseGlow-500/40'
+                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  }`}
+                  title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                  aria-label="Favorite"
+                >
+                  <Heart className={`w-4 h-4 ${isFavorite ? 'fill-roseGlow-500 text-roseGlow-500' : ''}`} />
+                </button>
+              )}
+
+              {/* Admin Actions */}
+              {isAdmin && (
+                <>
+                  {onEdit && (
+                    <button
+                      onClick={() => onEdit(project)}
+                      className="px-2.5 py-1 rounded-full bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                      title="Edit Project"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span className="hidden xs:inline">Edit</span>
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      onClick={() => onDelete(project.id)}
+                      className="px-2.5 py-1 rounded-full bg-red-500/15 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-xs font-mono flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                      title="Delete Project"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span className="hidden xs:inline">Delete</span>
+                    </button>
+                  )}
+                </>
+              )}
+
               <button
                 onClick={handleShare}
-                className="p-2 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                className="p-2 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 title="Share or copy link"
                 aria-label="Share"
               >
@@ -95,7 +170,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ projec
 
               <button
                 onClick={onClose}
-                className="p-2 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                className="p-2 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
@@ -122,12 +197,12 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ projec
                 <span>{formatDate(project.createdAt)}</span>
               </div>
 
-              {/* Floating Quick Open Pill on top right of image */}
+              {/* Floating Quick Open Pill */}
               <a
                 href={project.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white text-xs font-semibold shadow-lg transition-transform hover:scale-105 backdrop-blur-md"
+                className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white text-xs font-semibold shadow-lg transition-transform hover:scale-105 backdrop-blur-md cursor-pointer"
                 style={{
                   backgroundColor: project.themeAccent || '#e11d48',
                   boxShadow: project.themeGlow ? `0 0 15px ${project.themeGlow}` : undefined,
@@ -158,15 +233,14 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ projec
 
             {/* Tech Stack Pills */}
             <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
-                <Layers className="w-3.5 h-3.5 text-roseGlow-400" />
-                <span>Built With:</span>
-              </div>
+              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                Technologies Used
+              </h4>
               <div className="flex flex-wrap gap-1.5">
                 {project.technologies.map((tech) => (
                   <span
                     key={tech}
-                    className="px-3 py-1 rounded-xl text-xs font-mono bg-white/5 border border-white/10 text-slate-200"
+                    className="px-3 py-1 rounded-full text-xs font-mono bg-white/5 border border-white/10 text-slate-300"
                   >
                     {tech}
                   </span>
@@ -174,30 +248,30 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ projec
               </div>
             </div>
 
-            {/* Primary Action CTAs */}
-            <div className="pt-2 flex flex-col sm:flex-row gap-3">
+            {/* Bottom Actions */}
+            <div className="pt-2 flex items-center gap-3">
               <a
                 href={project.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-white text-sm font-bold shadow-glow transition-all hover:scale-[1.02]"
-                style={{
-                  backgroundColor: project.themeAccent || '#e11d48',
-                  boxShadow: project.themeGlow ? `0 0 25px ${project.themeGlow}` : undefined,
-                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-center font-semibold text-sm shadow-glow flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
               >
-                <span>Launch Live Website</span>
+                <span>Launch Project</span>
                 <ExternalLink className="w-4 h-4" />
               </a>
 
-              <Link
-                href={`/projects/${project.slug}`}
-                onClick={onClose}
-                className="inline-flex items-center justify-center gap-1.5 px-5 py-3.5 rounded-2xl glass-card text-xs font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                <BookOpen className="w-4 h-4 text-roseGlow-400" />
-                <span>Full Story</span>
-              </Link>
+              {project.githubUrl && (
+                <a
+                  href={project.githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-3 px-4 rounded-xl glass-card border border-white/10 hover:border-white/20 text-slate-200 hover:text-white text-sm font-medium flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  title="View Source Code"
+                >
+                  <Code2 className="w-4 h-4" />
+                  <span className="hidden xs:inline">Source Code</span>
+                </a>
+              )}
             </div>
           </div>
         </motion.div>

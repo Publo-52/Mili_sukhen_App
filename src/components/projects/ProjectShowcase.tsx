@@ -105,11 +105,20 @@ export const ProjectShowcase: React.FC = () => {
   const handleSaveProject = async (project: Project) => {
     const updated = saveProject(project);
     setProjects(updated);
+    setIsEditorOpen(false);
+    setEditingProject(null);
+
+    if (previewProject && previewProject.id === project.id) {
+      setPreviewProject(project);
+    }
 
     try {
       await fetch('/api/projects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': 'das@123',
+        },
         body: JSON.stringify({ project }),
       });
     } catch {}
@@ -120,14 +129,19 @@ export const ProjectShowcase: React.FC = () => {
 
   // Admin Delete Project
   const handleDeleteProject = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this project from the showcase?')) return;
-
     const updated = deleteProject(id);
     setProjects(updated);
+
+    if (previewProject && previewProject.id === id) {
+      setPreviewProject(null);
+    }
 
     try {
       await fetch(`/api/projects?id=${id}`, {
         method: 'DELETE',
+        headers: {
+          'x-admin-token': 'das@123',
+        },
       });
     } catch {}
 
@@ -278,6 +292,18 @@ export const ProjectShowcase: React.FC = () => {
       <ProjectPreviewModal
         project={previewProject}
         onClose={() => setPreviewProject(null)}
+        isFavorite={previewProject ? favoriteIds.includes(previewProject.id) : false}
+        onToggleFavorite={handleToggleFavorite}
+        isAdmin={isAdmin}
+        onEdit={(p) => {
+          setPreviewProject(null);
+          setEditingProject(p);
+          setIsEditorOpen(true);
+        }}
+        onDelete={(id) => {
+          setPreviewProject(null);
+          handleDeleteProject(id);
+        }}
       />
 
       {/* Admin Project Creator & Editor Modal (Only available to Sukhen) */}
