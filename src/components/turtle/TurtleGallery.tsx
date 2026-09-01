@@ -52,7 +52,7 @@ export const TurtleGallery: React.FC = () => {
   useEffect(() => {
     loadCreations();
 
-    // 1. Supabase Realtime Subscription for instant cross-device updates
+    // Supabase Realtime Subscription
     let channel: any = null;
     if (isSupabaseConfigured && supabase) {
       try {
@@ -107,7 +107,10 @@ export const TurtleGallery: React.FC = () => {
     try {
       await fetch('/api/turtle', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': 'das@123',
+        },
         body: JSON.stringify({ creation }),
       });
     } catch {}
@@ -117,8 +120,6 @@ export const TurtleGallery: React.FC = () => {
   };
 
   const handleDeleteCreation = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this Python artwork?')) return;
-
     const updated = deleteTurtleCreation(id);
     setCreations(updated);
 
@@ -129,6 +130,9 @@ export const TurtleGallery: React.FC = () => {
     try {
       await fetch(`/api/turtle?id=${id}`, {
         method: 'DELETE',
+        headers: {
+          'x-admin-token': 'das@123',
+        },
       });
     } catch {}
 
@@ -218,11 +222,14 @@ export const TurtleGallery: React.FC = () => {
                   {isAdmin && (
                     <div
                       className="absolute top-2 right-2 flex items-center gap-1 z-20"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
                       onPointerDown={(e) => e.stopPropagation()}
                       onTouchStart={(e) => e.stopPropagation()}
                     >
-                      <div className="flex items-center gap-1 bg-black/75 backdrop-blur-md p-1.5 rounded-full border border-white/20 shadow-lg">
+                      <div className="flex items-center gap-1.5 bg-black/85 backdrop-blur-md p-1.5 rounded-full border border-white/20 shadow-lg">
                         <button
                           type="button"
                           onClick={(e) => {
@@ -230,7 +237,7 @@ export const TurtleGallery: React.FC = () => {
                             e.preventDefault();
                             handleOpenEdit(creation);
                           }}
-                          className="p-1.5 rounded-full bg-white/10 hover:bg-white/25 text-amber-300 hover:text-white transition-all active:scale-90 cursor-pointer"
+                          className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 text-amber-300 hover:text-white flex items-center justify-center transition-all active:scale-90 cursor-pointer"
                           title="Edit Python Art"
                           aria-label="Edit Python Art"
                         >
@@ -243,7 +250,7 @@ export const TurtleGallery: React.FC = () => {
                             e.preventDefault();
                             handleDeleteCreation(creation.id);
                           }}
-                          className="p-1.5 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 hover:text-red-100 transition-all active:scale-90 cursor-pointer"
+                          className="w-7 h-7 rounded-full bg-red-500/25 hover:bg-red-500/50 text-red-300 hover:text-red-100 flex items-center justify-center transition-all active:scale-90 cursor-pointer"
                           title="Delete Python Art"
                           aria-label="Delete Python Art"
                         >
