@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSession } from '@/lib/sessions';
 import { AUTH_USERS, AUTH_CONFIG } from '@/data/config';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 interface RateLimitRecord {
   attempts: number;
@@ -182,6 +183,29 @@ export async function POST(request: NextRequest) {
         },
         { status: 403 }
       );
+    }
+
+    // Persist session to Supabase cloud database
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('device_sessions').upsert([
+          {
+            id: result.session.id,
+            user_name: result.session.userName,
+            user_role: result.session.userRole,
+            user_email: result.session.userEmail,
+            avatar: result.session.avatar,
+            device_name: result.session.deviceName,
+            user_agent: userAgent,
+            ip: ip,
+            created_at: result.session.createdAt,
+            last_seen_at: result.session.lastSeenAt,
+            expires_at: result.session.expiresAt,
+          },
+        ]);
+      } catch (err: any) {
+        console.warn('Supabase device_session error:', err?.message);
+      }
     }
 
     // Set session token in HTTP-only cookie for security
