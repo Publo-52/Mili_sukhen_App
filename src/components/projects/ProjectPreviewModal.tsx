@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, RefreshCw, AlertCircle, Sparkles, Heart } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { X, ExternalLink, Sparkles, Calendar, BookOpen, Layers } from 'lucide-react';
 import { Project } from '@/types';
 import { formatDate } from '@/lib/utils';
-import Link from 'next/link';
 
 interface ProjectPreviewModalProps {
   project: Project | null;
@@ -14,8 +15,6 @@ interface ProjectPreviewModalProps {
 }
 
 export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ project, onClose }) => {
-  const [iframeError, setIframeError] = useState(false);
-  const [iframeLoading, setIframeLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -34,157 +33,129 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({ projec
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[999999] bg-[#06040a] flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 pt-12 sm:pt-6 pb-20 sm:pb-6 overflow-y-auto">
-        {/* Modal Window */}
+      <div 
+        className="fixed inset-0 z-[999999] bg-[#06040a]/95 backdrop-blur-2xl flex flex-col items-center justify-center p-3 sm:p-6 overflow-y-auto"
+        onClick={onClose}
+      >
+        {/* Modal Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ duration: 0.3 }}
-          className="relative w-full max-w-5xl h-[82vh] sm:h-[88vh] bg-[#0e091b] rounded-3xl overflow-hidden flex flex-col border border-white/20 shadow-2xl z-[1000000] my-auto"
+          transition={{ duration: 0.25 }}
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-lg sm:max-w-xl max-h-[90vh] bg-[#0e0a1a] rounded-3xl overflow-hidden flex flex-col border border-white/20 shadow-2xl z-[1000000] my-auto"
         >
-          {/* Header Bar */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-obsidian-950/85">
-            <div className="flex items-center gap-3">
+          {/* Top Header Bar */}
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/10 bg-obsidian-950/90">
+            <div className="flex items-center gap-2 min-w-0 pr-2">
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center border"
+                className="w-7 h-7 rounded-full flex items-center justify-center border flex-shrink-0"
                 style={{
                   backgroundColor: project.themeAccent ? `${project.themeAccent}20` : 'rgba(244, 63, 94, 0.2)',
                   borderColor: project.themeAccent ? `${project.themeAccent}40` : 'rgba(244, 63, 94, 0.4)',
                   color: project.themeAccent || '#f43f5e',
                 }}
               >
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-3.5 h-3.5" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-semibold text-white truncate max-w-xs sm:max-w-md">
-                    {project.title}
-                  </h3>
-                  {project.themeBadge && (
-                    <span
-                      className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/60 border text-slate-200"
-                      style={{
-                        borderColor: project.themeAccent ? `${project.themeAccent}50` : 'rgba(255,255,255,0.1)',
-                      }}
-                    >
-                      {project.themeBadge}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-400 font-mono">
-                  {project.category} • Created {formatDate(project.createdAt)}
-                </p>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium uppercase tracking-wider bg-white/5 border border-white/10 text-roseGlow-300">
+                {project.category}
+              </span>
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Scrollable Content Body */}
+          <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5">
+            {/* Hero Image Preview */}
+            <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-obsidian-950 border border-white/10 shadow-lg">
+              <Image
+                src={project.thumbnail}
+                alt={project.title}
+                fill
+                sizes="(max-width: 768px) 100vw, 600px"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950/80 via-transparent to-transparent pointer-events-none" />
+              
+              {/* Date on image */}
+              <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 text-xs text-white/90 font-mono drop-shadow-md">
+                <Calendar className="w-3.5 h-3.5 text-roseGlow-400" />
+                <span>{formatDate(project.createdAt)}</span>
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/projects/${project.slug}`}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 hover:bg-white/20 text-slate-200 transition-colors"
-              >
-                <span>Full Story</span>
-              </Link>
+            {/* Title and Badges */}
+            <div className="space-y-1.5">
+              <h2 className="text-lg sm:text-2xl font-bold text-white tracking-tight">
+                {project.title}
+              </h2>
+              {project.themeBadge && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 border border-white/10 text-slate-300">
+                  <Sparkles className="w-3 h-3 text-roseGlow-400" />
+                  <span>{project.themeBadge}</span>
+                </div>
+              )}
+            </div>
 
+            {/* Description & Story */}
+            <div className="space-y-2">
+              <p className="text-xs sm:text-sm text-slate-300 font-light leading-relaxed">
+                {project.detailedStory || project.description}
+              </p>
+            </div>
+
+            {/* Tech Stack Pills */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
+                <Layers className="w-3.5 h-3.5 text-roseGlow-400" />
+                <span>Technologies Used:</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {project.technologies.map((tech) => (
+                  <span
+                    key={tech}
+                    className="px-2.5 py-1 rounded-lg text-xs font-mono bg-white/5 border border-white/10 text-slate-200"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row gap-2.5">
               <a
                 href={project.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-white transition-all hover:scale-105"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-white text-sm font-semibold shadow-glow transition-all hover:scale-[1.02]"
                 style={{
                   backgroundColor: project.themeAccent || '#e11d48',
-                  boxShadow: project.themeGlow ? `0 0 15px ${project.themeGlow}` : undefined,
+                  boxShadow: project.themeGlow ? `0 0 20px ${project.themeGlow}` : undefined,
                 }}
               >
-                <span>Open Full Website</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Launch Live Website</span>
+                <ExternalLink className="w-4 h-4" />
               </a>
 
-              <button
+              <Link
+                href={`/projects/${project.slug}`}
                 onClick={onClose}
-                className="p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-2"
-                aria-label="Close modal"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl glass-card text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
               >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Body / Iframe Area */}
-          <div className="flex-1 relative bg-obsidian-950/90 overflow-hidden">
-            {iframeLoading && !iframeError && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10 bg-obsidian-950/80">
-                <div className="w-10 h-10 border-2 border-roseGlow-500/20 border-t-roseGlow-500 rounded-full animate-spin" />
-                <p className="text-xs text-slate-400 font-mono tracking-wider animate-pulse">
-                  Connecting to memory…
-                </p>
-              </div>
-            )}
-
-            {/* Graceful Fallback if Iframe cannot be embedded or restricted */}
-            {iframeError ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4">
-                <div className="w-16 h-16 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/20 flex items-center justify-center text-roseGlow-400">
-                  <Heart className="w-8 h-8 animate-pulse" />
-                </div>
-                <div className="space-y-2 max-w-md">
-                  <h4 className="text-xl font-medium text-slate-100">
-                    Looks like this memory prefers its full window! ❤️
-                  </h4>
-                  <p className="text-sm text-slate-400">
-                    To maintain high security and full interactivity, this website is best viewed directly in your browser tab.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 pt-2">
-                  <a
-                    href={project.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-roseGlow-600 hover:bg-roseGlow-500 text-white font-medium text-sm shadow-glow transition-all"
-                  >
-                    <span>Launch Website in Browser</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                  <button
-                    onClick={() => {
-                      setIframeError(false);
-                      setIframeLoading(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full glass-card text-xs text-slate-300 hover:text-white"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Retry</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <iframe
-                src={project.url}
-                title={project.title}
-                className="w-full h-full border-0"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                onLoad={() => setIframeLoading(false)}
-                onError={() => {
-                  setIframeLoading(false);
-                  setIframeError(true);
-                }}
-              />
-            )}
-          </div>
-
-          {/* Footer Bar */}
-          <div className="px-6 py-3 border-t border-white/10 bg-obsidian-950 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-[11px] text-slate-500">Tech Stack:</span>
-              {project.technologies.map((t) => (
-                <span key={t} className="px-2 py-0.5 rounded-md bg-white/5 text-slate-300 border border-white/5 font-mono text-[11px]">
-                  {t}
-                </span>
-              ))}
-            </div>
-            <div className="font-serif italic text-roseGlow-300/80">
-              “Crafted with you in mind.”
+                <BookOpen className="w-3.5 h-3.5 text-roseGlow-400" />
+                <span>Full Story</span>
+              </Link>
             </div>
           </div>
         </motion.div>
