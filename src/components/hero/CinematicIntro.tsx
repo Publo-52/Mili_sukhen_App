@@ -18,29 +18,28 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
   onClose,
 }) => {
   const [stage, setStage] = useState<number>(0);
-  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const [isVisible, setIsVisible] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!forceShow) {
-      const alreadySeen = isIntroSeen();
-      if (alreadySeen) {
-        setIsVisible(false);
-        if (onComplete) onComplete();
-        return;
-      }
+    setMounted(true);
+    if (forceShow) {
+      setIsVisible(true);
+      setStage(0);
+
+      const timer1 = setTimeout(() => setStage(1), 400);
+      const timer2 = setTimeout(() => setStage(2), 1600);
+      const timer3 = setTimeout(() => setStage(3), 3000);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+      };
+    } else {
+      setIsVisible(false);
     }
-
-    // Sequence stages
-    const timer1 = setTimeout(() => setStage(1), 800);  // "For Mili…"
-    const timer2 = setTimeout(() => setStage(2), 2600); // "A collection of everything I created for you."
-    const timer3 = setTimeout(() => setStage(3), 4800); // Enter button ready
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-    };
-  }, [forceShow, onComplete]);
+  }, [forceShow]);
 
   const handleDismiss = () => {
     setIntroSeen(true);
@@ -49,14 +48,15 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
     if (onClose) onClose();
   };
 
-  if (!isVisible) return null;
+  if (!mounted || !isVisible) return null;
 
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 1 }}
-        exit={{ opacity: 0, transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] } }}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#06040a] px-6 text-center select-none overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.6 } }}
+        className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-[#06040a] px-6 text-center select-none overflow-hidden"
       >
         {/* Soft Ambient Light Ray */}
         <div className="absolute w-[600px] h-[600px] rounded-full bg-roseGlow-600/10 blur-[120px] pointer-events-none animate-pulse-slow" />
@@ -75,7 +75,7 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 1.2, ease: "easeOut" }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
             className="relative w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 p-0.5 shadow-glow-lg mx-auto border border-white/20 overflow-hidden mb-3"
           >
             <div className="w-full h-full rounded-[22px] bg-[#0c0817] flex items-center justify-center overflow-hidden">
@@ -95,7 +95,7 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.8 }}
             >
               <h1 className="text-4xl md:text-6xl font-serif font-light text-slate-100 tracking-wide">
                 For <span className="text-roseGlow-400 font-normal italic">Mili</span>…
@@ -108,7 +108,7 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.8 }}
               className="space-y-3"
             >
               <p className="text-lg md:text-2xl text-slate-300 font-light font-sans max-w-xl mx-auto leading-relaxed">
@@ -125,7 +125,7 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={{ duration: 0.6 }}
               className="pt-6"
             >
               <button
