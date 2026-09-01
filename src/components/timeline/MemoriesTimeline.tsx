@@ -277,13 +277,26 @@ export const MemoriesTimeline: React.FC = () => {
                 <div
                   className={`relative ${aspectClass} w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-obsidian-950 border border-white/5 group-hover:border-roseGlow-500/30 transition-all duration-300 shadow-sm group-hover:shadow-lg`}
                 >
-                  <Image
-                    src={getMediaThumbnail(memory)}
-                    alt={memory.title}
-                    fill
-                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw"
-                    className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                  />
+                  {isVideo ? (
+                    <video
+                      src={`${memory.url}#t=0.001`}
+                      poster={getMediaThumbnail(memory)}
+                      preload="metadata"
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 pointer-events-none"
+                    />
+                  ) : (
+                    <img
+                      src={memory.url}
+                      alt=""
+                      className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  )}
 
                   {/* Video Top-Left Badge */}
                   {isVideo && (
