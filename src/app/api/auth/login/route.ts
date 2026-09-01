@@ -113,32 +113,21 @@ export async function POST(request: NextRequest) {
       candidateUser = AUTH_USERS.mili;
     } else {
       // If email doesn't match standard prefixes, check if password matches one of the accounts
-      if (
-        AUTH_USERS.sukhen.passwords.some((p) => p.toLowerCase() === cleanPass.toLowerCase()) ||
-        cleanPass.toLowerCase() === 'das@123' ||
-        cleanPass.toLowerCase() === 'das123'
-      ) {
+      if (cleanPass === 'das@123') {
         candidateUser = AUTH_USERS.sukhen;
-      } else if (
-        AUTH_USERS.mili.passwords.some((p) => p.toLowerCase() === cleanPass.toLowerCase()) ||
-        cleanPass.toLowerCase() === 'mili@123' ||
-        cleanPass.toLowerCase() === 'mili123'
-      ) {
+      } else if (cleanPass === 'mili@123') {
         candidateUser = AUTH_USERS.mili;
       } else {
         recordFailedAttempt(ip);
         return NextResponse.json(
-          { error: 'Unrecognized email or username. Please use your registered email address.' },
+          { error: 'Unrecognized email or phone number. Please use your registered credentials.' },
           { status: 401 }
         );
       }
     }
 
-    // Verify Password for the candidate user
-    const isPasswordValid =
-      candidateUser.passwords.some((p) => p.toLowerCase() === cleanPass.toLowerCase()) ||
-      cleanPass === '143' ||
-      cleanPass.toLowerCase() === 'forever';
+    // Verify Password for the candidate user (exact passcode match)
+    const isPasswordValid = candidateUser.passwords.includes(cleanPass);
 
     if (!isPasswordValid) {
       recordFailedAttempt(ip);

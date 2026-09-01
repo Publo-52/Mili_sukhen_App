@@ -35,7 +35,7 @@ export const AUTH_USERS = {
       "+91 97329 34032"
     ],
     defaultEmail: "mandalsharmili06@gmail.com",
-    passwords: ["mili@123", "mili123", "mili", "143", "forever", "love", "sharmili", "sharmili123", "admin", "das@123"],
+    passwords: ["mili@123"],
     defaultPassword: "mili@123",
     avatar: "M",
     greeting: "Welcome back, Mili! Your Sanctuary & Admin Studio are ready.",
@@ -56,7 +56,7 @@ export const AUTH_USERS = {
       "+91 98326 95291"
     ],
     defaultEmail: "dassukhen@gmail.com",
-    passwords: ["das@123", "das123", "sukhen@123", "143", "admin", "sukhen", "forever", "dassukhen"],
+    passwords: ["das@123"],
     defaultPassword: "das@123",
     avatar: "S",
     greeting: "Welcome back, Sukhen! Creator Studio & Admin active.",
