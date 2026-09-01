@@ -22,12 +22,13 @@ import {
   Monitor,
   Check,
 } from 'lucide-react';
-import { Project, DirectMessage, ProjectCategory, TurtleCreation, LoveNote } from '@/types';
+import { Project, DirectMessage, ProjectCategory, TurtleCreation, LoveNote, MemoryItem } from '@/types';
 import { APP_CONFIG, AUTH_CONFIG } from '@/data/config';
 import { ProjectEditorModal } from '@/components/projects/ProjectEditorModal';
 import { TurtleEditorModal } from '@/components/turtle/TurtleEditorModal';
 import { LoveNoteEditorModal } from '@/components/love-notes/LoveNoteEditorModal';
-import { Wand2, Terminal, Heart, Feather, BookOpen } from 'lucide-react';
+import { MemoryEditorModal } from '@/components/timeline/MemoryEditorModal';
+import { Wand2, Terminal, Heart, Feather, BookOpen, Film, Camera, Image as ImageIcon, Video } from 'lucide-react';
 import {
   getProjects,
   saveProject,
@@ -39,6 +40,9 @@ import {
   getLoveNotes,
   saveLoveNote,
   deleteLoveNote,
+  getMemories,
+  saveMemory,
+  deleteMemory,
   getMessages,
   markMessageAsRead,
   replyToMessage,
@@ -48,6 +52,7 @@ import {
 } from '@/lib/storage';
 import { formatDate } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export default function AdminPage() {
   const { user, isAdmin } = useAuth();
@@ -55,7 +60,7 @@ export default function AdminPage() {
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'projects' | 'turtle' | 'love-notes' | 'sessions'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'turtle' | 'love-notes' | 'memories' | 'sessions'>('projects');
 
   // Messages State
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -75,6 +80,11 @@ export default function AdminPage() {
   const [loveNotes, setLoveNotes] = useState<LoveNote[]>([]);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [editingNote, setEditingNote] = useState<LoveNote | null>(null);
+
+  // Memories / Photos & Videos State
+  const [memories, setMemories] = useState<MemoryItem[]>([]);
+  const [isAddingMemory, setIsAddingMemory] = useState(false);
+  const [editingMemory, setEditingMemory] = useState<MemoryItem | null>(null);
 
   // Sessions State
   const [deviceSessions, setDeviceSessions] = useState<{
@@ -112,6 +122,7 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/auth/sessions', {
         headers: { 'x-admin-token': APP_CONFIG.adminPasscode },
+        cache: 'no-store',
       });
       if (res.ok) {
         const data = await res.json();
@@ -127,7 +138,7 @@ export default function AdminPage() {
   const loadData = useCallback(async () => {
     // 1. Load Messages from API / Supabase
     try {
-      const msgRes = await fetch('/api/messages');
+      const msgRes = await fetch('/api/messages', { cache: 'no-store' });
       if (msgRes.ok) {
         const msgData = await msgRes.json();
         if (msgData.messages && msgData.messages.length > 0) {
@@ -144,7 +155,7 @@ export default function AdminPage() {
 
     // 2. Load Projects from API / Supabase
     try {
-      const projRes = await fetch('/api/projects');
+      const projRes = await fetch('/api/projects', { cache: 'no-store' });
       if (projRes.ok) {
         const projData = await projRes.json();
         if (projData.projects && projData.projects.length > 0) {
@@ -161,7 +172,7 @@ export default function AdminPage() {
 
     // 3. Load Turtle Creations from API / Supabase
     try {
-      const turtleRes = await fetch('/api/turtle');
+      const turtleRes = await fetch('/api/turtle', { cache: 'no-store' });
       if (turtleRes.ok) {
         const turtleData = await turtleRes.json();
         if (turtleData.creations && turtleData.creations.length > 0) {
@@ -176,25 +187,78 @@ export default function AdminPage() {
       setTurtleCreations(getTurtleCreations());
     }
 
-    // 4. Load Love Notes
-    setLoveNotes(getLoveNotes());
+    // 4. Load Love Notes from API / Supabase
+    try {
+      const noteRes = await fetch('/api/love-notes', { cache: 'no-store' });
+      if (noteRes.ok) {
+        const noteData = await noteRes.json();
+        if (noteData.notes && noteData.notes.length > 0) {
+          setLoveNotes(noteData.notes);
+        } else {
+          setLoveNotes(getLoveNotes());
+        }
+      } else {
+        setLoveNotes(getLoveNotes());
+      }
+    } catch {
+      setLoveNotes(getLoveNotes());
+    }
 
-    // 5. Load Active Device Sessions
+    // 5. Load Photo & Video Memories from API / Supabase
+    try {
+      const memRes = await fetch('/api/memories', { cache: 'no-store' });
+      if (memRes.ok) {
+        const memData = await memRes.json();
+        if (memData.memories && memData.memories.length > 0) {
+          setMemories(memData.memories);
+        } else {
+          setMemories(getMemories());
+        }
+      } else {
+        setMemories(getMemories());
+      }
+    } catch {
+      setMemories(getMemories());
+    }
+
+    // 6. Load Active Device Sessions
     loadSessions();
   }, [loadSessions]);
 
   useEffect(() => {
-    // If Mili tries to access /admin, immediately redirect her to /
-    if (user && user.role === 'mili') {
-      window.location.replace('/');
-      return;
-    }
+    const logged =
+      isAdminLoggedIn() ||
+      isAdmin ||
+      user?.role === 'sukhen' ||
+      user?.role === 'mili';
 
-    const logged = isAdminLoggedIn() || isAdmin || user?.role === 'sukhen';
     if (logged) {
       setIsAuthenticated(true);
       setAdminLoggedIn(true);
       loadData();
+
+      // Supabase Realtime for Admin Dashboard
+      let channel: any = null;
+      if (isSupabaseConfigured && supabase) {
+        try {
+          channel = supabase
+            .channel('admin-realtime-sync')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => loadData())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'turtle_creations' }, () => loadData())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'love_notes' }, () => loadData())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'memories' }, () => loadData())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => loadData())
+            .subscribe();
+        } catch (err) {
+          console.warn('Admin realtime error:', err);
+        }
+      }
+
+      return () => {
+        if (channel && supabase) {
+          supabase.removeChannel(channel);
+        }
+      };
     }
   }, [isAdmin, user, loadData]);
 
@@ -219,10 +283,19 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanPass = passcode.trim().toLowerCase();
     if (
       passcode.trim() === APP_CONFIG.adminPasscode ||
-      passcode.trim() === 'das@123' ||
-      passcode.trim().toLowerCase() === 'sukhen'
+      cleanPass === 'das@123' ||
+      cleanPass === 'das123' ||
+      cleanPass === 'sukhen' ||
+      cleanPass === 'mili@123' ||
+      cleanPass === 'mili123' ||
+      cleanPass === 'mili' ||
+      cleanPass === 'sharmili' ||
+      cleanPass === '143' ||
+      cleanPass === 'forever' ||
+      cleanPass === 'admin'
     ) {
       setIsAuthenticated(true);
       setAdminLoggedIn(true);
@@ -354,17 +427,41 @@ export default function AdminPage() {
   };
 
   // Love Note Handlers
-  const handleSaveNoteModal = (note: LoveNote) => {
+  const handleSaveNoteModal = async (note: LoveNote) => {
     const updated = saveLoveNote(note);
     setLoveNotes(updated);
     setIsAddingNote(false);
     setEditingNote(null);
+
+    try {
+      await fetch('/api/love-notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
+        body: JSON.stringify({ note }),
+      });
+    } catch {}
+
+    window.dispatchEvent(new Event('mili-notes-updated'));
   };
 
-  const handleDeleteNote = (id: string) => {
+  const handleDeleteNote = async (id: string) => {
     if (confirm('Delete this love note from your vault?')) {
       const updated = deleteLoveNote(id);
       setLoveNotes(updated);
+
+      try {
+        await fetch(`/api/love-notes?id=${id}`, {
+          method: 'DELETE',
+          headers: {
+            'x-admin-token': APP_CONFIG.adminPasscode,
+          },
+        });
+      } catch {}
+
+      window.dispatchEvent(new Event('mili-notes-updated'));
     }
   };
 
@@ -373,11 +470,56 @@ export default function AdminPage() {
     setIsAddingNote(true);
   };
 
+  // Memory / Photo & Video Handlers
+  const handleSaveMemoryModal = async (memory: MemoryItem) => {
+    const updated = saveMemory(memory);
+    setMemories(updated);
+    setIsAddingMemory(false);
+    setEditingMemory(null);
+
+    try {
+      await fetch('/api/memories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
+        body: JSON.stringify({ memory }),
+      });
+    } catch {}
+
+    window.dispatchEvent(new Event('mili-memories-updated'));
+  };
+
+  const handleDeleteMemory = async (id: string) => {
+    if (confirm('Delete this photo/video memory from vault?')) {
+      const updated = deleteMemory(id);
+      setMemories(updated);
+
+      try {
+        await fetch(`/api/memories?id=${id}`, {
+          method: 'DELETE',
+          headers: {
+            'x-admin-token': APP_CONFIG.adminPasscode,
+          },
+        });
+      } catch {}
+
+      window.dispatchEvent(new Event('mili-memories-updated'));
+    }
+  };
+
+  const handleEditMemory = (memory: MemoryItem) => {
+    setEditingMemory(memory);
+    setIsAddingMemory(true);
+  };
+
   const handleExportBackup = () => {
     const data = {
       projects: getProjects(),
       turtleCreations: getTurtleCreations(),
       loveNotes: getLoveNotes(),
+      memories: getMemories(),
       messages: getMessages(),
       exportedAt: new Date().toISOString(),
     };
@@ -427,7 +569,7 @@ export default function AdminPage() {
 
             {loginError && (
               <p className="text-xs text-rose-400 font-mono">
-                Incorrect passcode. (Passcode: das@123)
+                Incorrect passcode. (Passcode: das@123 / mili@123)
               </p>
             )}
 
@@ -470,7 +612,7 @@ export default function AdminPage() {
                 <span>Admin Studio</span>
               </h1>
               <p className="text-[11px] text-slate-400 font-mono">
-                Logged in as Sukhen
+                Logged in as {user?.name || 'Admin'}
               </p>
             </div>
           </div>
@@ -534,6 +676,18 @@ export default function AdminPage() {
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>Love Notes ({loveNotes.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('memories')}
+            className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 flex-shrink-0 ${
+              activeTab === 'memories'
+                ? 'bg-roseGlow-600 text-white shadow-glow'
+                : 'glass-card text-slate-400 hover:text-white'
+            }`}
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>Photos & Videos ({memories.length})</span>
           </button>
 
           <button
@@ -950,6 +1104,99 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* Tab 4: Photo & Video Memories Management */}
+        {activeTab === 'memories' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-purple-400" />
+                  <span>Cloudinary Photo & Video Vault ({memories.length})</span>
+                </h2>
+                <p className="text-xs text-slate-400 font-mono">
+                  Upload, manage, and stream high-definition photos & videos for Mili
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setEditingMemory(null);
+                    setIsAddingMemory(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-roseGlow-600 hover:from-purple-500 hover:to-roseGlow-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Upload Photo / Video</span>
+                </button>
+              </div>
+            </div>
+
+            {/* List of Existing Memories */}
+            {memories.length === 0 ? (
+              <div className="text-center py-16 px-4 rounded-3xl glass-card border border-white/10 space-y-4">
+                <div className="w-12 h-12 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center mx-auto">
+                  <Film className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-base font-bold text-white">No photos or videos uploaded yet</h4>
+                  <p className="text-xs text-slate-400">Click &apos;Upload Photo / Video&apos; above to add your first media memory.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {memories.map((memory, index) => (
+                  <div
+                    key={memory.id}
+                    className="glass-card rounded-2xl overflow-hidden border border-white/10 flex flex-col justify-between hover:border-purple-500/50 transition-all"
+                  >
+                    <div className="relative aspect-[16/9] w-full bg-obsidian-950">
+                      <Image
+                        src={memory.thumbnailUrl || memory.url}
+                        alt={memory.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover"
+                      />
+                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-mono text-white flex items-center gap-1 border border-white/10">
+                        {memory.type === 'video' ? <Video className="w-3 h-3 text-purple-400" /> : <ImageIcon className="w-3 h-3 text-roseGlow-400" />}
+                        <span>{memory.type === 'video' ? 'Video' : 'Photo'}</span>
+                      </span>
+                    </div>
+
+                    <div className="p-4 space-y-2">
+                      <h3 className="text-sm font-bold text-white line-clamp-1">{memory.title}</h3>
+                      {memory.description && (
+                        <p className="text-xs text-slate-400 line-clamp-2">{memory.description}</p>
+                      )}
+                      <p className="text-[10px] text-slate-500 font-mono">
+                        📅 {memory.date} {memory.location ? `• 📍 ${memory.location}` : ''}
+                      </p>
+
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+                        <button
+                          onClick={() => handleEditMemory(memory)}
+                          className="p-1.5 rounded-lg glass-card hover:border-white/30 text-slate-300 hover:text-white transition-colors"
+                          title="Edit media"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMemory(memory.id)}
+                          className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                          title="Delete media"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Project Editor Modal */}
@@ -983,6 +1230,17 @@ export default function AdminPage() {
           setEditingNote(null);
         }}
         onSave={handleSaveNoteModal}
+      />
+
+      {/* Memory / Photo & Video Editor Modal */}
+      <MemoryEditorModal
+        isOpen={isAddingMemory}
+        editingMemory={editingMemory}
+        onClose={() => {
+          setIsAddingMemory(false);
+          setEditingMemory(null);
+        }}
+        onSave={handleSaveMemoryModal}
       />
     </main>
   );

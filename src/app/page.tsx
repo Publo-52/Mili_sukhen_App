@@ -11,8 +11,7 @@ import { TurtleGallery } from '@/components/turtle/TurtleGallery';
 import { MemoriesTimeline } from '@/components/timeline/MemoriesTimeline';
 import { LoveNotesVault } from '@/components/love-notes/LoveNotesVault';
 import { Footer } from '@/components/footer/Footer';
-import { getProjects, getTurtleCreations, getLoveNotes } from '@/lib/storage';
-import { INITIAL_MEMORIES } from '@/data/memories';
+import { getProjects, getTurtleCreations, getLoveNotes, getMemories } from '@/lib/storage';
 
 // Lazy load non-critical client modules for instant First Contentful Paint
 const ParticleCanvas = dynamic(() => import('@/components/hero/ParticleCanvas').then((m) => m.ParticleCanvas), { ssr: false });
@@ -28,19 +27,22 @@ export default function HomePage() {
   const [counts, setCounts] = useState({
     projects: 0,
     turtles: 0,
-    memories: INITIAL_MEMORIES.length,
+    memories: 0,
     loveNotes: 0,
   });
 
   // Sync with URL Hash and count data on load
   useEffect(() => {
-    // Load dynamic counts
-    setCounts({
-      projects: getProjects().length,
-      turtles: getTurtleCreations().length,
-      memories: INITIAL_MEMORIES.length,
-      loveNotes: getLoveNotes().length,
-    });
+    const updateCounts = () => {
+      setCounts({
+        projects: getProjects().length,
+        turtles: getTurtleCreations().length,
+        memories: getMemories().length,
+        loveNotes: getLoveNotes().length,
+      });
+    };
+
+    updateCounts();
 
     const handleHash = () => {
       const hash = window.location.hash.replace('#', '');
@@ -53,9 +55,17 @@ export default function HomePage() {
 
     handleHash();
     window.addEventListener('hashchange', handleHash);
+    window.addEventListener('mili-projects-updated', updateCounts);
+    window.addEventListener('mili-turtle-updated', updateCounts);
+    window.addEventListener('mili-notes-updated', updateCounts);
+    window.addEventListener('mili-memories-updated', updateCounts);
 
     return () => {
       window.removeEventListener('hashchange', handleHash);
+      window.removeEventListener('mili-projects-updated', updateCounts);
+      window.removeEventListener('mili-turtle-updated', updateCounts);
+      window.removeEventListener('mili-notes-updated', updateCounts);
+      window.removeEventListener('mili-memories-updated', updateCounts);
     };
   }, []);
 

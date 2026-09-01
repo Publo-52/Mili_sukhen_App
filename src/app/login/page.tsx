@@ -78,7 +78,7 @@ function LoginContent() {
         setStep('success');
         try {
           localStorage.setItem('mili_user', JSON.stringify(data.user));
-          if (data.user.role === 'sukhen') {
+          if (data.user.role === 'sukhen' || data.user.role === 'mili') {
             localStorage.setItem('mili_admin_authenticated', 'true');
           }
           if (data.sessionId) {
@@ -150,13 +150,14 @@ function LoginContent() {
           name: 'Mili',
           role: 'mili' as const,
           avatar: 'M',
-          title: "Mili's Sanctuary",
-          greeting: 'Welcome back, my love! Your universe is ready.',
+          title: 'Queen & Co-Admin',
+          greeting: 'Welcome back, Mili! Your Sanctuary & Admin Studio are ready.',
         };
         setLoggedInUser(userObj);
         setStep('success');
         try {
           localStorage.setItem('mili_user', JSON.stringify(userObj));
+          localStorage.setItem('mili_admin_authenticated', 'true');
           window.dispatchEvent(new Event('auth-changed'));
         } catch {}
         setTimeout(() => {

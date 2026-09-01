@@ -47,19 +47,21 @@ export interface TurtleCreation {
   canvasDrawingType?: 'heart' | 'rose' | 'galaxy' | 'tree' | 'mandala' | 'spiral' | 'love-app' | 'teddy' | 'rose-day' | 'opencv-sketch';
 }
 
-export interface MemoryMilestone {
+export interface MemoryItem {
   id: string;
-  year: string;
-  date: string;
   title: string;
-  description: string;
-  emotionalNote: string;
-  image?: string;
-  projectLink?: string;
-  projectTitle?: string;
-  badge?: string;
+  type: 'photo' | 'video';
+  url: string;
+  thumbnailUrl?: string;
+  date: string;
   location?: string;
+  description?: string;
+  isFavorite?: boolean;
+  aspectRatio?: 'portrait' | 'landscape' | 'square';
+  createdAt?: string;
 }
+
+export type MemoryMilestone = MemoryItem;
 
 export interface LoveNote {
   id: string;

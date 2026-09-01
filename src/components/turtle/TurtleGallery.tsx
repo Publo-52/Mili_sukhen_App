@@ -9,6 +9,7 @@ import { TurtleCreation } from '@/types';
 import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { formatDate } from '@/lib/utils';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 const FullscreenLightbox = dynamic(() => import('./FullscreenLightbox').then((m) => m.FullscreenLightbox), { ssr: false });
 const TurtleEditorModal = dynamic(() => import('./TurtleEditorModal').then((m) => m.TurtleEditorModal), { ssr: false });
@@ -24,7 +25,7 @@ export const TurtleGallery: React.FC = () => {
 
   const loadCreations = useCallback(async () => {
     try {
-      const res = await fetch('/api/turtle');
+      const res = await fetch('/api/turtle', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data?.creations && data.creations.length > 0) {
@@ -38,6 +39,51 @@ export const TurtleGallery: React.FC = () => {
 
   useEffect(() => {
     loadCreations();
+
+    // 1. Supabase Realtime Subscription for instant cross-device updates
+    let channel: any = null;
+    if (isSupabaseConfigured && supabase) {
+      try {
+        channel = supabase
+          .channel('turtle-realtime-sync')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'turtle_creations' },
+            () => {
+              loadCreations();
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.warn('Turtle realtime error:', err);
+      }
+    }
+
+    // 2. Re-fetch when phone screen turns on or user switches back to tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadCreations();
+      }
+    };
+    const handleFocus = () => loadCreations();
+    const handleSyncEvent = () => loadCreations();
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('mili-turtle-updated', handleSyncEvent);
+
+    // 3. Fallback background sync interval (every 8 seconds)
+    const interval = setInterval(loadCreations, 8000);
+
+    return () => {
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('mili-turtle-updated', handleSyncEvent);
+      clearInterval(interval);
+    };
   }, [loadCreations]);
 
   const handleSaveCreation = async (creation: TurtleCreation) => {
@@ -52,6 +98,7 @@ export const TurtleGallery: React.FC = () => {
       });
     } catch {}
 
+    window.dispatchEvent(new Event('mili-turtle-updated'));
     await loadCreations();
   };
 
@@ -67,6 +114,7 @@ export const TurtleGallery: React.FC = () => {
       });
     } catch {}
 
+    window.dispatchEvent(new Event('mili-turtle-updated'));
     await loadCreations();
   };
 

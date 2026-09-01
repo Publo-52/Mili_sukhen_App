@@ -25,7 +25,7 @@ export const AUTH_USERS = {
     id: "mili",
     name: "Mili",
     role: "mili" as const,
-    title: "Mili's Sanctuary",
+    title: "Queen & Co-Admin",
     phone: "9732934032",
     formattedPhone: "+91 97329 34032",
     emails: [
@@ -42,10 +42,10 @@ export const AUTH_USERS = {
       "+91 97329 34032"
     ],
     defaultEmail: "mandalsharmili06@gmail.com",
-    passwords: ["mili@123", "mili123", "mili", "143", "forever", "love", "sharmili", "sharmili123", "mili@love"],
+    passwords: ["mili@123", "mili123", "mili", "143", "forever", "love", "sharmili", "sharmili123", "mili@love", "admin", "das@123"],
     defaultPassword: "mili@123",
     avatar: "M",
-    greeting: "Welcome back, my love! Your universe is ready.",
+    greeting: "Welcome back, Mili! Your Sanctuary & Admin Studio are ready.",
     themeColor: "from-rose-500 to-pink-600",
     glowColor: "rgba(244, 63, 94, 0.4)",
   },

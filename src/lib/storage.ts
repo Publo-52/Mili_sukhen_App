@@ -164,6 +164,52 @@ export function toggleFavoriteNote(id: string): string[] {
   return updated;
 }
 
+// ----------------- Memories / Photo & Video Storage -----------------
+export function getMemories(): MemoryMilestone[] {
+  const saved = getStorageItem<MemoryMilestone[] | null>(KEYS.FAVORITE_MEMORIES + '_all', null);
+  if (!saved || saved.length === 0) {
+    return INITIAL_MEMORIES;
+  }
+  return saved;
+}
+
+export function saveMemory(memory: MemoryMilestone): MemoryMilestone[] {
+  const current = getMemories();
+  const index = current.findIndex(m => m.id === memory.id);
+  let updated: MemoryMilestone[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = memory;
+  } else {
+    updated = [memory, ...current];
+  }
+  setStorageItem(KEYS.FAVORITE_MEMORIES + '_all', updated);
+  return updated;
+}
+
+export function deleteMemory(id: string): MemoryMilestone[] {
+  const current = getMemories();
+  const updated = current.filter(m => m.id !== id);
+  setStorageItem(KEYS.FAVORITE_MEMORIES + '_all', updated);
+  return updated;
+}
+
+export function resetMemoriesToDefault(): MemoryMilestone[] {
+  setStorageItem(KEYS.FAVORITE_MEMORIES + '_all', INITIAL_MEMORIES);
+  return INITIAL_MEMORIES;
+}
+
+export function getFavoriteMemoryIds(): string[] {
+  return getStorageItem<string[]>(KEYS.FAVORITE_MEMORIES, ['mem-sample-1']);
+}
+
+export function toggleFavoriteMemory(id: string): string[] {
+  const current = getFavoriteMemoryIds();
+  const updated = current.includes(id) ? current.filter(item => item !== id) : [...current, id];
+  setStorageItem(KEYS.FAVORITE_MEMORIES, updated);
+  return updated;
+}
+
 // ----------------- Messages -----------------
 const SAMPLE_MESSAGES: DirectMessage[] = [
   {

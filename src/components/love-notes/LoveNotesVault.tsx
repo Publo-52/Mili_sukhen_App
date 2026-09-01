@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Sparkles, Shuffle, ArrowLeft, ArrowRight, Maximize2, BookOpen, Play, Pause, Plus, Edit3, Trash2, Feather } from 'lucide-react';
 import { LoveNote } from '@/types';
 import { getLoveNotes, saveLoveNote, deleteLoveNote, getFavoriteNoteIds, toggleFavoriteNote } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 const NoteReaderModal = dynamic(() => import('./NoteReaderModal').then((m) => m.NoteReaderModal), { ssr: false });
 const LoveNoteEditorModal = dynamic(() => import('./LoveNoteEditorModal').then((m) => m.LoveNoteEditorModal), { ssr: false });
@@ -33,16 +34,70 @@ export const LoveNotesVault: React.FC = () => {
   const [direction, setDirection] = useState(1);
   const { isAdmin } = useAuth();
 
-  // Load unlimited notes from storage
-  const loadNotes = () => {
-    const loaded = getLoveNotes();
-    setAllNotes(loaded);
-  };
+  // Load notes from API / Supabase with local fallback
+  const loadNotes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/love-notes', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.notes && data.notes.length > 0) {
+          setAllNotes(data.notes);
+          return;
+        }
+      }
+    } catch {}
+    setAllNotes(getLoveNotes());
+  }, []);
 
   useEffect(() => {
     loadNotes();
     setFavoriteIds(getFavoriteNoteIds());
-  }, []);
+
+    // 1. Supabase Realtime Subscription for Instant Updates across devices
+    let channel: any = null;
+    if (isSupabaseConfigured && supabase) {
+      try {
+        channel = supabase
+          .channel('love-notes-realtime-sync')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'love_notes' },
+            () => {
+              loadNotes();
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.warn('Love notes realtime error:', err);
+      }
+    }
+
+    // 2. Re-fetch when phone screen turns on or user switches back to tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadNotes();
+      }
+    };
+    const handleFocus = () => loadNotes();
+    const handleSyncEvent = () => loadNotes();
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('mili-notes-updated', handleSyncEvent);
+
+    // 3. Fallback background sync interval (every 8 seconds)
+    const interval = setInterval(loadNotes, 8000);
+
+    return () => {
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('mili-notes-updated', handleSyncEvent);
+      clearInterval(interval);
+    };
+  }, [loadNotes]);
 
   // Filter notes by mood
   const filteredNotes = useMemo(() => {
@@ -111,20 +166,40 @@ export const LoveNotesVault: React.FC = () => {
     setFavoriteIds(updated);
   };
 
-  const handleSaveNote = (note: LoveNote) => {
+  const handleSaveNote = async (note: LoveNote) => {
     const updated = saveLoveNote(note);
     setAllNotes(updated);
     setIsEditorOpen(false);
     setEditingNote(null);
+
+    try {
+      await fetch('/api/love-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note }),
+      });
+    } catch {}
+
+    window.dispatchEvent(new Event('mili-notes-updated'));
+    await loadNotes();
   };
 
-  const handleDeleteNote = (id: string) => {
+  const handleDeleteNote = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this love note?')) {
       const updated = deleteLoveNote(id);
       setAllNotes(updated);
       if (currentIndex >= updated.length) {
         setCurrentIndex(Math.max(0, updated.length - 1));
       }
+
+      try {
+        await fetch(`/api/love-notes?id=${id}`, {
+          method: 'DELETE',
+        });
+      } catch {}
+
+      window.dispatchEvent(new Event('mili-notes-updated'));
+      await loadNotes();
     }
   };
 

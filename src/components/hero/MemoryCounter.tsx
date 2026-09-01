@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Code2, Sparkles, BookOpen, Clock } from 'lucide-react';
+import { Code2, Sparkles, BookOpen, Clock, Camera, Film } from 'lucide-react';
 import { calculateDaysTogether } from '@/lib/utils';
 import { APP_CONFIG } from '@/data/config';
-import { getProjects, getTurtleCreations, getLoveNotes } from '@/lib/storage';
+import { getProjects, getTurtleCreations, getLoveNotes, getMemories } from '@/lib/storage';
 
 export const MemoryCounter: React.FC = () => {
   const [time, setTime] = useState(calculateDaysTogether(APP_CONFIG.anniversaryDate));
@@ -13,21 +13,77 @@ export const MemoryCounter: React.FC = () => {
   const [projectCount, setProjectCount] = useState(0);
   const [turtleCount, setTurtleCount] = useState(0);
   const [noteCount, setNoteCount] = useState(0);
+  const [memoryCount, setMemoryCount] = useState(0);
 
-  useEffect(() => {
-    setMounted(true);
+  const refreshCounts = useCallback(async () => {
+    // 1. Instant local baseline
     setProjectCount(getProjects().length);
     setTurtleCount(getTurtleCreations().length);
     setNoteCount(getLoveNotes().length);
+    setMemoryCount(getMemories().length);
+
+    // 2. Fresh fetch from server/Supabase
+    try {
+      const [pRes, tRes, nRes, mRes] = await Promise.all([
+        fetch('/api/projects', { cache: 'no-store' }),
+        fetch('/api/turtle', { cache: 'no-store' }),
+        fetch('/api/love-notes', { cache: 'no-store' }),
+        fetch('/api/memories', { cache: 'no-store' }),
+      ]);
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        if (pData?.projects) setProjectCount(pData.projects.length);
+      }
+      if (tRes.ok) {
+        const tData = await tRes.json();
+        if (tData?.creations) setTurtleCount(tData.creations.length);
+      }
+      if (nRes.ok) {
+        const nData = await nRes.json();
+        if (nData?.notes) setNoteCount(nData.notes.length);
+      }
+      if (mRes.ok) {
+        const mData = await mRes.json();
+        if (mData?.memories) setMemoryCount(mData.memories.length);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
+    refreshCounts();
 
     const updateTimer = () => {
       setTime(calculateDaysTogether(APP_CONFIG.anniversaryDate));
     };
 
     updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    const timerInterval = setInterval(updateTimer, 1000);
+    const syncInterval = setInterval(refreshCounts, 8000);
+
+    const handleSync = () => refreshCounts();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') refreshCounts();
+    };
+
+    window.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleSync);
+    window.addEventListener('mili-projects-updated', handleSync);
+    window.addEventListener('mili-turtle-updated', handleSync);
+    window.addEventListener('mili-notes-updated', handleSync);
+    window.addEventListener('mili-memories-updated', handleSync);
+
+    return () => {
+      clearInterval(timerInterval);
+      clearInterval(syncInterval);
+      window.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleSync);
+      window.removeEventListener('mili-projects-updated', handleSync);
+      window.removeEventListener('mili-turtle-updated', handleSync);
+      window.removeEventListener('mili-notes-updated', handleSync);
+      window.removeEventListener('mili-memories-updated', handleSync);
+    };
+  }, [refreshCounts]);
 
   const stats = [
     {
@@ -55,10 +111,10 @@ export const MemoryCounter: React.FC = () => {
       bgGlow: "group-hover:border-amber-500/40",
     },
     {
-      label: "Love Notes & Letters",
-      value: mounted ? `${noteCount} Letters` : "...",
-      subtext: "Written straight from heart",
-      icon: BookOpen,
+      label: "Photos & Videos",
+      value: mounted ? `${memoryCount} Moments` : "...",
+      subtext: "Cloudinary HD media vault",
+      icon: Camera,
       color: "text-pink-400",
       bgGlow: "group-hover:border-pink-500/40",
     },

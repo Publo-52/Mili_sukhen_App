@@ -191,11 +191,17 @@ export async function POST(request: NextRequest) {
   try {
     const session = getSessionFromRequest(request);
     const adminToken = request.headers.get('x-admin-token');
-    const isAdmin = session?.userRole === 'sukhen' || adminToken === APP_CONFIG.adminPasscode || adminToken === 'das@123';
+    const isAdmin =
+      session?.userRole === 'sukhen' ||
+      session?.userRole === 'mili' ||
+      adminToken === APP_CONFIG.adminPasscode ||
+      adminToken === 'das@123' ||
+      adminToken === 'mili@123' ||
+      adminToken === 'mili';
 
     if (!isAdmin) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only Sukhen (Admin) can auto-generate Python Art.' },
+        { error: 'Unauthorized. Only Admins (Sukhen & Mili) can auto-generate Python Art.' },
         { status: 403 }
       );
     }

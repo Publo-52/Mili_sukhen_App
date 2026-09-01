@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/sessions';
+import { APP_CONFIG } from '@/data/config';
 import { Project, ProjectCategory } from '@/types';
 
 // Theme presets for automatic styling
@@ -191,11 +192,17 @@ export async function POST(request: NextRequest) {
   try {
     const session = getSessionFromRequest(request);
     const adminToken = request.headers.get('x-admin-token');
-    const isAdmin = session?.userRole === 'sukhen' || adminToken === 'das@123';
+    const isAdmin =
+      session?.userRole === 'sukhen' ||
+      session?.userRole === 'mili' ||
+      adminToken === APP_CONFIG.adminPasscode ||
+      adminToken === 'das@123' ||
+      adminToken === 'mili@123' ||
+      adminToken === 'mili';
 
     if (!isAdmin) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only Sukhen (Admin) can auto-extract and create projects.' },
+        { error: 'Unauthorized. Only Admins (Sukhen & Mili) can auto-extract and create projects.' },
         { status: 403 }
       );
     }

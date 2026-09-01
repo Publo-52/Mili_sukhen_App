@@ -86,8 +86,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             localStorage.setItem('mili_user', JSON.stringify(data.user));
           } catch {}
-          if (data.user?.role === 'sukhen' || data.session?.userRole === 'sukhen') {
+          if (
+            data.user?.role === 'sukhen' ||
+            data.user?.role === 'mili' ||
+            data.session?.userRole === 'sukhen' ||
+            data.session?.userRole === 'mili'
+          ) {
             setAdminLoggedIn(true);
+            try {
+              localStorage.setItem('mili_admin_authenticated', 'true');
+            } catch {}
           }
           return;
         }
@@ -105,6 +113,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: parsed.role || 'mili',
               avatar: parsed.avatar || (parsed.role === 'sukhen' ? 'S' : 'M'),
             });
+            if (parsed.role === 'sukhen' || parsed.role === 'mili') {
+              setAdminLoggedIn(true);
+              try {
+                localStorage.setItem('mili_admin_authenticated', 'true');
+              } catch {}
+            }
             return;
           }
         } catch {}
@@ -121,6 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (parsed && parsed.name) {
             setIsAuthenticated(true);
             setUser(parsed);
+            if (parsed.role === 'sukhen' || parsed.role === 'mili') {
+              setAdminLoggedIn(true);
+            }
           }
         } catch {}
       }
@@ -137,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('mili_user');
       localStorage.removeItem('mili_session_ref');
       localStorage.removeItem('mili_admin_logged_in');
+      localStorage.removeItem('mili_admin_authenticated');
     } catch {}
     setAdminLoggedIn(false);
     setIsAuthenticated(false);
@@ -161,7 +179,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
 
-  const isAdmin = user?.role === 'sukhen' || (typeof window !== 'undefined' && Boolean(localStorage.getItem('mili_admin_authenticated') === 'true'));
+  const isAdmin =
+    user?.role === 'sukhen' ||
+    user?.role === 'mili' ||
+    (typeof window !== 'undefined' && Boolean(localStorage.getItem('mili_admin_authenticated') === 'true'));
   const isMili = user?.role === 'mili';
 
   return (

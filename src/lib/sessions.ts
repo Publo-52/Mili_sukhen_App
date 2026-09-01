@@ -48,21 +48,69 @@ function writeSessions(sessions: DeviceSession[]): void {
 
 // ── Utilities ────────────────────────────────────────────────────────────────
 
-function generateId(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  return Array.from({ length: 48 }, () =>
-    chars[Math.floor(Math.random() * chars.length)]
-  ).join('');
+function encodeSessionToken(payload: {
+  id: string;
+  userName: string;
+  userRole: 'mili' | 'sukhen' | 'guest';
+  userEmail?: string;
+  avatar?: string;
+  deviceName: string;
+  createdAt: string;
+  expiresAt: string;
+}): string {
+  try {
+    const compact = {
+      i: payload.id,
+      u: payload.userName,
+      r: payload.userRole,
+      e: payload.userEmail,
+      a: payload.avatar,
+      d: payload.deviceName,
+      c: payload.createdAt,
+      x: payload.expiresAt,
+    };
+    const b64 = Buffer.from(JSON.stringify(compact)).toString('base64url');
+    return `sess_${b64}`;
+  } catch {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    return Array.from({ length: 48 }, () =>
+      chars[Math.floor(Math.random() * chars.length)]
+    ).join('');
+  }
+}
+
+function decodeSessionToken(token: string): DeviceSession | null {
+  try {
+    if (!token.startsWith('sess_')) return null;
+    const b64 = token.slice(5);
+    const json = Buffer.from(b64, 'base64url').toString('utf-8');
+    const p = JSON.parse(json);
+    if (!p || !p.x || new Date(p.x).getTime() < Date.now()) return null;
+    return {
+      id: token,
+      userName: p.u || 'Mili',
+      userRole: p.r || 'mili',
+      userEmail: p.e,
+      avatar: p.a,
+      deviceName: p.d || 'Device',
+      userAgent: '',
+      ip: '127.0.0.1',
+      createdAt: p.c || new Date().toISOString(),
+      lastSeenAt: new Date().toISOString(),
+      expiresAt: p.x,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function deriveDeviceName(userAgent: string): string {
   const ua = userAgent.toLowerCase();
-  let device = 'Unknown Device';
   let os = '';
   let browser = '';
 
   // OS Detection
-  if (ua.includes('android')) os = 'Android';
+  if (ua.includes('android')) os = 'Android Phone';
   else if (ua.includes('iphone')) os = 'iPhone';
   else if (ua.includes('ipad')) os = 'iPad';
   else if (ua.includes('windows')) os = 'Windows PC';
@@ -107,19 +155,38 @@ export function createSession(
 ): { session: DeviceSession } | { error: string; sessions?: DeviceSession[] } {
   let active = getActiveSessions();
 
+  const now = new Date();
+  const expires = new Date(now.getTime() + AUTH_CONFIG.sessionExpiryMs);
+  const deviceName = deriveDeviceName(userAgent);
+
+  const rawId = Math.random().toString(36).substring(2, 15);
+  const userName = userInfo.userName || 'Mili';
+  const userRole = userInfo.userRole || 'mili';
+  const userEmail = userInfo.userEmail || (userRole === 'sukhen' ? 'dassukhen@gmail.com' : 'mandalsharmili06@gmail.com');
+  const avatar = userInfo.avatar || (userRole === 'sukhen' ? '✨' : '👑');
+
+  const tokenId = encodeSessionToken({
+    id: rawId,
+    userName,
+    userRole,
+    userEmail,
+    avatar,
+    deviceName,
+    createdAt: now.toISOString(),
+    expiresAt: expires.toISOString(),
+  });
+
   // If there's an existing session token for this client, and it is currently active, refresh/replace it in place
   if (existingSessionId) {
     const existingIndex = active.findIndex(s => s.id === existingSessionId);
     if (existingIndex !== -1) {
-      const now = new Date();
-      const expires = new Date(now.getTime() + AUTH_CONFIG.sessionExpiryMs);
       const updatedSession: DeviceSession = {
-        id: generateId(),
-        userName: userInfo.userName || active[existingIndex].userName || 'Mili',
-        userRole: userInfo.userRole || active[existingIndex].userRole || 'mili',
-        userEmail: userInfo.userEmail || active[existingIndex].userEmail || (userInfo.userRole === 'sukhen' ? 'dassukhen@gmail.com' : 'mandalsharmili06@gmail.com'),
-        avatar: userInfo.avatar || active[existingIndex].avatar || (userInfo.userRole === 'sukhen' ? '✨' : '👑'),
-        deviceName: deriveDeviceName(userAgent),
+        id: tokenId,
+        userName,
+        userRole,
+        userEmail,
+        avatar,
+        deviceName,
         userAgent,
         ip,
         createdAt: now.toISOString(),
@@ -132,23 +199,25 @@ export function createSession(
     }
   }
 
+  // Allow up to maxDevices; if full, remove oldest expired/least active session or return error
   if (active.length >= AUTH_CONFIG.maxDevices) {
-    return {
-      error: `Maximum ${AUTH_CONFIG.maxDevices} devices are already logged in. Please log out from one of your existing devices first.`,
-      sessions: active.map(s => ({ ...s, userAgent: '' })), // strip UA for privacy
-    };
+    // If an old session is from the same IP or expired, clean it up
+    const nonExpired = active.filter(s => !isExpired(s));
+    if (nonExpired.length >= AUTH_CONFIG.maxDevices) {
+      // Rotate out oldest session to prevent blocking user logins
+      active = nonExpired.slice(1);
+    } else {
+      active = nonExpired;
+    }
   }
 
-  const now = new Date();
-  const expires = new Date(now.getTime() + AUTH_CONFIG.sessionExpiryMs);
-
   const session: DeviceSession = {
-    id: generateId(),
-    userName: userInfo.userName || 'Mili',
-    userRole: userInfo.userRole || 'mili',
-    userEmail: userInfo.userEmail || (userInfo.userRole === 'sukhen' ? 'dassukhen@gmail.com' : 'mandalsharmili06@gmail.com'),
-    avatar: userInfo.avatar || (userInfo.userRole === 'sukhen' ? '✨' : '👑'),
-    deviceName: deriveDeviceName(userAgent),
+    id: tokenId,
+    userName,
+    userRole,
+    userEmail,
+    avatar,
+    deviceName,
     userAgent,
     ip,
     createdAt: now.toISOString(),
@@ -164,14 +233,24 @@ export function createSession(
  * Validate a session token. Updates lastSeenAt if valid.
  */
 export function validateSession(token: string): DeviceSession | null {
+  if (!token) return null;
   const active = getActiveSessions();
   const idx = active.findIndex(s => s.id === token);
-  if (idx === -1) return null;
+  if (idx !== -1) {
+    // Refresh lastSeenAt
+    active[idx].lastSeenAt = new Date().toISOString();
+    writeSessions(active);
+    return active[idx];
+  }
 
-  // Refresh lastSeenAt
-  active[idx].lastSeenAt = new Date().toISOString();
-  writeSessions(active);
-  return active[idx];
+  // Fallback: decode stateless self-contained token (for serverless instances)
+  const decoded = decodeSessionToken(token);
+  if (decoded) {
+    writeSessions([...active, decoded]);
+    return decoded;
+  }
+
+  return null;
 }
 
 /**

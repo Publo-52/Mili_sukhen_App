@@ -78,12 +78,28 @@ CREATE TABLE IF NOT EXISTS public.love_notes (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 6. Memories Table (for Cloudinary-hosted photos & videos)
+CREATE TABLE IF NOT EXISTS public.memories (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'photo', -- 'photo' or 'video'
+    url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    date TEXT DEFAULT 'Special Moments',
+    location TEXT,
+    description TEXT,
+    is_favorite BOOLEAN DEFAULT FALSE,
+    aspect_ratio TEXT DEFAULT 'landscape',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Enable Row Level Security (RLS) and allow public read/write for this app
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.device_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.turtle_creations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.love_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.memories ENABLE ROW LEVEL SECURITY;
 
 -- Policies for public access (so Next.js API can read and write with anon key)
 CREATE POLICY "Allow all operations on messages" ON public.messages FOR ALL USING (true) WITH CHECK (true);
@@ -91,4 +107,6 @@ CREATE POLICY "Allow all operations on projects" ON public.projects FOR ALL USIN
 CREATE POLICY "Allow all operations on device_sessions" ON public.device_sessions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on turtle_creations" ON public.turtle_creations FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on love_notes" ON public.love_notes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all operations on memories" ON public.memories FOR ALL USING (true) WITH CHECK (true);
+
 

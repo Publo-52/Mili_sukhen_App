@@ -1,122 +1,375 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { Sparkles, Calendar, MapPin, ExternalLink, Heart, Clock } from 'lucide-react';
-import { INITIAL_MEMORIES } from '@/data/memories';
+import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Image as ImageIcon, Video, Heart, Calendar, MapPin, Plus, Edit3, Trash2, Maximize2, Play, Film, Camera } from 'lucide-react';
+import { MemoryItem } from '@/types';
+import { getMemories, saveMemory, deleteMemory, getFavoriteMemoryIds, toggleFavoriteMemory } from '@/lib/storage';
+import { useAuth } from '@/lib/auth-context';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+
+const MemoryEditorModal = dynamic(() => import('./MemoryEditorModal').then((m) => m.MemoryEditorModal), { ssr: false });
+const MediaViewerModal = dynamic(() => import('./MediaViewerModal').then((m) => m.MediaViewerModal), { ssr: false });
+
+type FilterType = 'all' | 'photo' | 'video' | 'favorites';
 
 export const MemoriesTimeline: React.FC = () => {
+  const { user, isAdmin } = useAuth();
+  const [memories, setMemories] = useState<MemoryItem[]>([]);
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+
+  // Modal States
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingMemory, setEditingMemory] = useState<MemoryItem | null>(null);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+
+  // Load Memories from API / Supabase with local fallback
+  const loadMemories = useCallback(async () => {
+    try {
+      const res = await fetch('/api/memories', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.memories && data.memories.length > 0) {
+          setMemories(data.memories);
+          return;
+        }
+      }
+    } catch {}
+    setMemories(getMemories());
+  }, []);
+
+  useEffect(() => {
+    loadMemories();
+    setFavoriteIds(getFavoriteMemoryIds());
+
+    // 1. Supabase Realtime Subscription for instant photo/video sync across devices
+    let channel: any = null;
+    if (isSupabaseConfigured && supabase) {
+      try {
+        channel = supabase
+          .channel('memories-realtime-sync')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'memories' },
+            () => {
+              loadMemories();
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.warn('Memories realtime error:', err);
+      }
+    }
+
+    // 2. Phone wake / tab focus listener
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') loadMemories();
+    };
+    const handleFocus = () => loadMemories();
+    const handleSyncEvent = () => loadMemories();
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('mili-memories-updated', handleSyncEvent);
+
+    // 3. 8-second safety sync interval
+    const interval = setInterval(loadMemories, 8000);
+
+    return () => {
+      if (channel && supabase) supabase.removeChannel(channel);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('mili-memories-updated', handleSyncEvent);
+      clearInterval(interval);
+    };
+  }, [loadMemories]);
+
+  // Filtered Memories
+  const filteredMemories = useMemo(() => {
+    return memories.filter((m) => {
+      if (activeFilter === 'favorites') return favoriteIds.includes(m.id) || m.isFavorite;
+      if (activeFilter === 'photo') return m.type === 'photo';
+      if (activeFilter === 'video') return m.type === 'video';
+      return true;
+    });
+  }, [memories, activeFilter, favoriteIds]);
+
+  const handleToggleFavorite = (id: string) => {
+    const updated = toggleFavoriteMemory(id);
+    setFavoriteIds(updated);
+  };
+
+  const handleSaveMemory = async (memory: MemoryItem) => {
+    const updated = saveMemory(memory);
+    setMemories(updated);
+    setIsEditorOpen(false);
+    setEditingMemory(null);
+
+    try {
+      await fetch('/api/memories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memory }),
+      });
+    } catch {}
+
+    window.dispatchEvent(new Event('mili-memories-updated'));
+    await loadMemories();
+  };
+
+  const handleDeleteMemory = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this photo/video memory?')) return;
+
+    const updated = deleteMemory(id);
+    setMemories(updated);
+
+    try {
+      await fetch(`/api/memories?id=${id}`, {
+        method: 'DELETE',
+      });
+    } catch {}
+
+    window.dispatchEvent(new Event('mili-memories-updated'));
+    await loadMemories();
+  };
+
   return (
-    <section id="memories" className="pt-1 pb-4 px-3 sm:px-6 lg:px-8 max-w-4xl mx-auto relative">
-      {/* Header */}
-      <div className="text-center space-y-2 mb-4 sm:mb-6">
+    <section id="memories" className="pt-1 pb-6 px-3 sm:px-6 lg:px-8 max-w-6xl mx-auto relative">
+      {/* Section Header */}
+      <div className="text-center space-y-2 mb-6 sm:mb-8">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-mono tracking-wider uppercase">
-          <Clock className="w-3.5 h-3.5" />
-          <span>Timeline of Our Journey</span>
+          <Film className="w-3.5 h-3.5" />
+          <span>Cloudinary Photo & Video Vault</span>
         </div>
         <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight">
-          Milestones & Cherished Memories
+          Moments & Memories of Us
         </h2>
         <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto font-light leading-relaxed">
-          From the first spark to every digital world created—a chronological map of the days that defined our forever.
+          High-definition photos and videos celebrating our journey—hosted in the cloud and streaming in real-time.
         </p>
+
+        {/* Admin Action Button */}
+        {isAdmin && (
+          <div className="pt-2 flex items-center justify-center">
+            <button
+              onClick={() => {
+                setEditingMemory(null);
+                setIsEditorOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-roseGlow-500 to-purple-600 hover:from-roseGlow-400 hover:to-purple-500 text-white text-xs sm:text-sm font-semibold shadow-glow transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Upload Photo / Video</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Timeline Tree */}
-      <div className="relative">
-        {/* Glowing Center Line */}
-        <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2 bg-gradient-to-b from-roseGlow-500 via-purple-500 to-amber-500 opacity-40" />
+      {/* Filter Tabs */}
+      <div className="flex items-center justify-center gap-2 mb-6 flex-wrap">
+        {[
+          { id: 'all', label: `All Moments (${memories.length})`, icon: Film },
+          { id: 'photo', label: `Photos (${memories.filter((m) => m.type === 'photo').length})`, icon: Camera },
+          { id: 'video', label: `Videos (${memories.filter((m) => m.type === 'video').length})`, icon: Video },
+          { id: 'favorites', label: `Favorites (${favoriteIds.length})`, icon: Heart },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeFilter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveFilter(tab.id as FilterType)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-mono transition-all ${
+                isActive
+                  ? 'bg-roseGlow-500 text-white shadow-glow font-bold'
+                  : 'bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
 
-        <div className="space-y-8 md:space-y-12">
-          {INITIAL_MEMORIES.map((memory, index) => {
-            const isEven = index % 2 === 0;
+      {/* Memories Media Grid */}
+      {filteredMemories.length === 0 ? (
+        <div className="text-center py-16 px-4 rounded-3xl glass-card border border-white/10 max-w-md mx-auto space-y-4">
+          <div className="w-12 h-12 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center mx-auto">
+            <Camera className="w-6 h-6" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-base font-bold text-white">No media in this album yet</h4>
+            <p className="text-xs text-slate-400">
+              {isAdmin ? 'Click below to upload photos or videos directly to Cloudinary.' : 'New memories will appear here soon.'}
+            </p>
+          </div>
+          {isAdmin && (
+            <button
+              onClick={() => {
+                setEditingMemory(null);
+                setIsEditorOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Upload First Photo / Video</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {filteredMemories.map((memory, index) => {
+            const isFav = favoriteIds.includes(memory.id) || memory.isFavorite;
+            const isVideo = memory.type === 'video';
+
             return (
               <motion.div
                 key={memory.id}
-                initial={{ opacity: 0, y: 25 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.08 }}
-                className={`relative flex flex-col md:flex-row items-start ${
-                  isEven ? 'md:flex-row-reverse' : ''
-                } gap-6 pl-9 md:pl-0`}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+                className="group glass-card glass-card-hover rounded-2xl overflow-hidden border border-white/10 relative flex flex-col justify-between"
               >
-                {/* Center Glowing Milestone Node */}
-                <div className="absolute left-4 md:left-1/2 top-5 -translate-x-1/2 w-7 h-7 rounded-full bg-obsidian-950 border-2 border-roseGlow-500 flex items-center justify-center text-roseGlow-400 shadow-glow z-10">
-                  <Sparkles className="w-3 h-3" />
+                {/* Media Thumbnail Container */}
+                <div
+                  onClick={() => setViewerIndex(index)}
+                  className="relative aspect-[4/3] w-full bg-obsidian-950 overflow-hidden cursor-pointer"
+                >
+                  {isVideo ? (
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={memory.thumbnailUrl || memory.url}
+                        alt={memory.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      {/* Play Button Overlay */}
+                      <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 flex items-center justify-center transition-colors">
+                        <div className="w-12 h-12 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                          <Play className="w-5 h-5 fill-white translate-x-0.5" />
+                        </div>
+                      </div>
+                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-mono text-purple-300 border border-purple-500/30 flex items-center gap-1">
+                        <Video className="w-3 h-3" />
+                        <span>Video</span>
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={memory.url}
+                        alt={memory.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-mono text-roseGlow-300 border border-roseGlow-500/30 flex items-center gap-1">
+                        <ImageIcon className="w-3 h-3" />
+                        <span>Photo</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Favorite Heart Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleFavorite(memory.id);
+                    }}
+                    className="absolute top-3 right-3 p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:text-roseGlow-400 transition-colors"
+                  >
+                    <Heart className={`w-4 h-4 ${isFav ? 'fill-roseGlow-500 text-roseGlow-500' : ''}`} />
+                  </button>
                 </div>
 
-                {/* Content Card */}
-                <div className="w-full md:w-[calc(50%-2rem)]">
-                  <div className="glass-card glass-card-hover rounded-2xl sm:rounded-3xl p-4 sm:p-5 space-y-3 border border-white/10 relative overflow-hidden">
-                    {/* Year & Badge Header */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-mono font-bold text-roseGlow-400 px-2.5 py-0.5 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/20">
-                        {memory.year} • {memory.date}
-                      </span>
-                      {memory.badge && (
-                        <span className="text-[10px] font-mono text-slate-400">
-                          {memory.badge}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Image Preview if available */}
-                    {memory.image && (
-                      <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden bg-obsidian-900 border border-white/5">
-                        <Image
-                          src={memory.image}
-                          alt={memory.title}
-                          fill
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                        />
-                      </div>
-                    )}
-
-                    {/* Title & Description */}
-                    <div className="space-y-1.5">
-                      <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                        {memory.title}
-                      </h3>
-                      <p className="text-xs sm:text-[13px] text-slate-300 font-light leading-relaxed">
+                {/* Card Content Info */}
+                <div className="p-4 sm:p-5 space-y-2.5 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1">
+                    <h3
+                      onClick={() => setViewerIndex(index)}
+                      className="text-base font-bold text-white hover:text-roseGlow-300 cursor-pointer transition-colors line-clamp-1"
+                    >
+                      {memory.title}
+                    </h3>
+                    {memory.description && (
+                      <p className="text-xs text-slate-300 font-light line-clamp-2 leading-relaxed">
                         {memory.description}
                       </p>
-                    </div>
+                    )}
+                  </div>
 
-                    {/* Emotional Note Quote */}
-                    <div className="p-2.5 rounded-xl bg-white/5 border-l-2 border-roseGlow-500 text-xs font-serif italic text-roseGlow-200/90 leading-relaxed">
-                      “{memory.emotionalNote}”
-                    </div>
-
-                    {/* Footer Details: Location & Linked Project */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5 text-[11px] text-slate-400 font-mono">
-                      {memory.location && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-roseGlow-400" />
-                          <span>{memory.location}</span>
+                  {/* Date, Location & Admin Controls */}
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                    <div className="flex items-center gap-2 truncate max-w-[70%]">
+                      {memory.date && (
+                        <div className="flex items-center gap-1 truncate">
+                          <Calendar className="w-3 h-3 text-roseGlow-400 flex-shrink-0" />
+                          <span className="truncate">{memory.date}</span>
                         </div>
                       )}
-
-                      {memory.projectLink && (
-                        <Link
-                          href={memory.projectLink}
-                          className="inline-flex items-center gap-1 text-roseGlow-400 hover:text-white transition-colors"
-                        >
-                          <span>{memory.projectTitle || 'View Project'}</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </Link>
-                      )}
                     </div>
+
+                    {/* Admin Actions */}
+                    {isAdmin && (
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => {
+                            setEditingMemory(memory);
+                            setIsEditorOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                          title="Edit Memory"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMemory(memory.id)}
+                          className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 transition-colors"
+                          title="Delete Memory"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>
             );
           })}
         </div>
-      </div>
+      )}
+
+      {/* Media Viewer Modal */}
+      {viewerIndex !== null && (
+        <MediaViewerModal
+          isOpen={viewerIndex !== null}
+          onClose={() => setViewerIndex(null)}
+          memories={filteredMemories}
+          currentIndex={viewerIndex}
+          onNavigate={(newIdx) => setViewerIndex(newIdx)}
+          onToggleFavorite={handleToggleFavorite}
+          isFavorite={favoriteIds.includes(filteredMemories[viewerIndex]?.id)}
+        />
+      )}
+
+      {/* Memory Upload/Editor Modal */}
+      {isEditorOpen && (
+        <MemoryEditorModal
+          isOpen={isEditorOpen}
+          onClose={() => {
+            setIsEditorOpen(false);
+            setEditingMemory(null);
+          }}
+          onSave={handleSaveMemory}
+          editingMemory={editingMemory}
+        />
+      )}
     </section>
   );
 };

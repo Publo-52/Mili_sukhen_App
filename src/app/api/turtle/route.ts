@@ -5,11 +5,19 @@ import { getSessionFromRequest } from '@/lib/sessions';
 import { APP_CONFIG } from '@/data/config';
 import { TurtleCreation } from '@/types';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 function isAuthorizedAdmin(request: Request): boolean {
   const session = getSessionFromRequest(request);
-  if (session?.userRole === 'sukhen') return true;
+  if (session?.userRole === 'sukhen' || session?.userRole === 'mili') return true;
   const adminToken = request.headers.get('x-admin-token');
-  return adminToken === APP_CONFIG.adminPasscode || adminToken === 'das@123';
+  return (
+    adminToken === APP_CONFIG.adminPasscode ||
+    adminToken === 'das@123' ||
+    adminToken === 'mili@123' ||
+    adminToken === 'mili'
+  );
 }
 
 export async function GET() {
@@ -21,38 +29,52 @@ export async function GET() {
         .order('created_at', { ascending: false });
 
       if (!error && data && data.length > 0) {
-        return NextResponse.json({
-          creations: data.map((t) => ({
-            id: t.id,
-            title: t.title,
-            slug: t.slug,
-            description: t.description,
-            artworkImage: t.artwork_image,
-            pythonScript: t.python_script,
-            createdAt: t.created_at,
-            category: t.category,
-            inspiration: t.inspiration,
-            tags: Array.isArray(t.tags) ? t.tags : (t.tags ? JSON.parse(t.tags) : []),
-            featured: Boolean(t.featured),
-            canvasDrawingType: t.canvas_drawing_type,
-          })),
-        });
+        return NextResponse.json(
+          {
+            creations: data.map((t) => ({
+              id: t.id,
+              title: t.title,
+              slug: t.slug,
+              description: t.description,
+              artworkImage: t.artwork_image,
+              pythonScript: t.python_script,
+              createdAt: t.created_at,
+              category: t.category,
+              inspiration: t.inspiration,
+              tags: Array.isArray(t.tags) ? t.tags : (t.tags ? JSON.parse(t.tags) : []),
+              featured: Boolean(t.featured),
+              canvasDrawingType: t.canvas_drawing_type,
+            })),
+          },
+          {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+              Pragma: 'no-cache',
+            },
+          }
+        );
       }
     } catch {
       // fallback
     }
   }
 
-  return NextResponse.json({
-    creations: INITIAL_TURTLE_CREATIONS,
-  });
+  return NextResponse.json(
+    { creations: INITIAL_TURTLE_CREATIONS },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        Pragma: 'no-cache',
+      },
+    }
+  );
 }
 
 export async function POST(request: Request) {
   try {
     if (!isAuthorizedAdmin(request)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only Sukhen (Admin) can add or edit Python Art.' },
+        { error: 'Unauthorized. Only Admins (Sukhen & Mili) can add or edit Python Art.' },
         { status: 403 }
       );
     }
@@ -104,7 +126,7 @@ export async function DELETE(request: Request) {
   try {
     if (!isAuthorizedAdmin(request)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only Sukhen (Admin) can delete Python Art.' },
+        { error: 'Unauthorized. Only Admins (Sukhen & Mili) can delete Python Art.' },
         { status: 403 }
       );
     }

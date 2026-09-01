@@ -181,12 +181,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* Admin Dashboard link (ONLY visible to Sukhen) */}
+            {/* Admin Dashboard link */}
             {isAdmin && (
               <Link
                 href="/admin"
                 className="p-2 rounded-full glass-card border border-purple-500/50 text-purple-300 shadow-glow bg-purple-500/10 hover:bg-purple-500/20 transition-all"
-                title="Admin Studio (Sukhen Only)"
+                title="Admin Studio"
                 aria-label="Admin Studio"
               >
                 <Shield className="w-4 h-4" />
@@ -199,12 +199,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="flex items-center gap-2">
                   <div
                     className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-card border text-xs font-mono ${
-                      isAdmin
+                      user?.role === 'sukhen'
                         ? 'border-purple-500/30 text-purple-200 bg-purple-950/20'
                         : 'border-roseGlow-500/30 text-roseGlow-300 bg-roseGlow-950/20'
                     }`}
                   >
-                    <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${isAdmin ? 'bg-purple-600 text-white' : 'bg-roseGlow-600 text-white'}`}>
+                    <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${user?.role === 'sukhen' ? 'bg-purple-600 text-white' : 'bg-roseGlow-600 text-white'}`}>
                       {user?.name?.[0] || 'M'}
                     </div>
                     <span className="font-semibold">{user?.name || 'Mili'}</span>
@@ -312,13 +312,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {isAuthenticated ? (
                   <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/10">
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${isAdmin ? 'bg-purple-600 text-white' : 'bg-roseGlow-600 text-white'}`}>
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${user?.role === 'sukhen' ? 'bg-purple-600 text-white' : 'bg-roseGlow-600 text-white'}`}>
                         {user?.name?.[0] || 'M'}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-white leading-tight">{user?.name || 'Mili'}</p>
                         <p className="text-[11px] font-mono text-slate-400">
-                          {isAdmin ? 'Creator / Admin' : 'Mili'}
+                          {user?.role === 'sukhen' ? 'Creator & Admin' : 'Queen & Admin'}
                         </p>
                       </div>
                     </div>

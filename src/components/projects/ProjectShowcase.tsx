@@ -7,6 +7,7 @@ import { Project, ProjectCategory } from '@/types';
 import { getProjects, saveProject, deleteProject, getFavoriteProjectIds, toggleFavoriteProject } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { ProjectCard } from './ProjectCard';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 const ProjectPreviewModal = dynamic(() => import('./ProjectPreviewModal').then((m) => m.ProjectPreviewModal), { ssr: false });
 const ProjectEditorModal = dynamic(() => import('./ProjectEditorModal').then((m) => m.ProjectEditorModal), { ssr: false });
@@ -35,7 +36,7 @@ export const ProjectShowcase: React.FC = () => {
 
   const loadProjects = useCallback(async () => {
     try {
-      const res = await fetch('/api/projects');
+      const res = await fetch('/api/projects', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data?.projects && data.projects.length > 0) {
@@ -50,6 +51,51 @@ export const ProjectShowcase: React.FC = () => {
   useEffect(() => {
     loadProjects();
     setFavoriteIds(getFavoriteProjectIds());
+
+    // 1. Supabase Realtime Subscription for Instant Updates across devices
+    let channel: any = null;
+    if (isSupabaseConfigured && supabase) {
+      try {
+        channel = supabase
+          .channel('projects-realtime-sync')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'projects' },
+            () => {
+              loadProjects();
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.warn('Realtime subscription error:', err);
+      }
+    }
+
+    // 2. Re-fetch whenever phone screen turns on or user switches back to tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadProjects();
+      }
+    };
+    const handleFocus = () => loadProjects();
+    const handleSyncEvent = () => loadProjects();
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('mili-projects-updated', handleSyncEvent);
+
+    // 3. Fallback background sync interval (every 8 seconds)
+    const interval = setInterval(loadProjects, 8000);
+
+    return () => {
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('mili-projects-updated', handleSyncEvent);
+      clearInterval(interval);
+    };
   }, [loadProjects]);
 
   const handleToggleFavorite = (id: string) => {
@@ -70,6 +116,7 @@ export const ProjectShowcase: React.FC = () => {
       });
     } catch {}
 
+    window.dispatchEvent(new Event('mili-projects-updated'));
     await loadProjects();
   };
 
@@ -86,6 +133,7 @@ export const ProjectShowcase: React.FC = () => {
       });
     } catch {}
 
+    window.dispatchEvent(new Event('mili-projects-updated'));
     await loadProjects();
   };
 
