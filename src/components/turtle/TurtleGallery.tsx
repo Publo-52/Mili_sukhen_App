@@ -3,18 +3,31 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import { Sparkles, Code2, Maximize2, Terminal, Play, Heart, Plus, Wand2, Edit3, Trash2 } from 'lucide-react';
+import {
+  Sparkles,
+  Play,
+  Wand2,
+  Edit3,
+  Trash2,
+  Terminal,
+} from 'lucide-react';
 import { TurtleCreation } from '@/types';
 import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
-import { formatDate, getOptimizedImageUrl } from '@/lib/utils';
+import { getOptimizedImageUrl } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-const FullscreenLightbox = dynamic(() => import('./FullscreenLightbox').then((m) => m.FullscreenLightbox), { ssr: false });
-const TurtleEditorModal = dynamic(() => import('./TurtleEditorModal').then((m) => m.TurtleEditorModal), { ssr: false });
+const FullscreenLightbox = dynamic(
+  () => import('./FullscreenLightbox').then((m) => m.FullscreenLightbox),
+  { ssr: false }
+);
+const TurtleEditorModal = dynamic(
+  () => import('./TurtleEditorModal').then((m) => m.TurtleEditorModal),
+  { ssr: false }
+);
 
 export const TurtleGallery: React.FC = () => {
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const [creations, setCreations] = useState<TurtleCreation[]>([]);
   const [selectedCreation, setSelectedCreation] = useState<TurtleCreation | null>(null);
 
@@ -58,7 +71,6 @@ export const TurtleGallery: React.FC = () => {
       }
     }
 
-    // 2. Re-fetch when phone screen turns on or user switches back to tab
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         loadCreations();
@@ -84,6 +96,13 @@ export const TurtleGallery: React.FC = () => {
   const handleSaveCreation = async (creation: TurtleCreation) => {
     const updated = saveTurtleCreation(creation);
     setCreations(updated);
+    setIsEditorOpen(false);
+    setEditingCreation(null);
+
+    // If currently viewing this creation in lightbox, update it
+    if (selectedCreation && selectedCreation.id === creation.id) {
+      setSelectedCreation(creation);
+    }
 
     try {
       await fetch('/api/turtle', {
@@ -98,10 +117,14 @@ export const TurtleGallery: React.FC = () => {
   };
 
   const handleDeleteCreation = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this Python Turtle creation?')) return;
+    if (!confirm('Are you sure you want to delete this Python artwork?')) return;
 
     const updated = deleteTurtleCreation(id);
     setCreations(updated);
+
+    if (selectedCreation && selectedCreation.id === id) {
+      setSelectedCreation(null);
+    }
 
     try {
       await fetch(`/api/turtle?id=${id}`, {
@@ -111,6 +134,11 @@ export const TurtleGallery: React.FC = () => {
 
     window.dispatchEvent(new Event('mili-turtle-updated'));
     await loadCreations();
+  };
+
+  const handleOpenEdit = (creation: TurtleCreation) => {
+    setEditingCreation(creation);
+    setIsEditorOpen(true);
   };
 
   return (
@@ -123,14 +151,14 @@ export const TurtleGallery: React.FC = () => {
             <span>Things I Drew For You</span>
           </div>
 
-          {/* Admin Only Magic Generator Button */}
+          {/* Admin Only Generator Button */}
           {isAdmin && (
             <button
               onClick={() => {
                 setEditingCreation(null);
                 setIsEditorOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow hover:scale-105 transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow hover:scale-105 transition-all cursor-pointer"
             >
               <Wand2 className="w-3.5 h-3.5" />
               <span>+ Add Python Art</span>
@@ -139,14 +167,14 @@ export const TurtleGallery: React.FC = () => {
         </div>
 
         <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight">
-          Python Turtle Artwork
+          Generative Python Artwork
         </h2>
         <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto font-light leading-relaxed">
-          Mathematical equations and recursive scripts turned into digital flowers, cosmic spirals, and love trees. Click any piece to see it drawn in real time!
+          Parametric equations, blooming roses, cosmic galaxies & live mathematical algorithms coded in Python specifically for you.
         </p>
       </div>
 
-      {/* Pinterest-style Staggered Masonry Columns */}
+      {/* Grid: Responsive 2-column on mobile, 3-column on desktop */}
       <div className="columns-2 md:columns-2 lg:columns-3 gap-3 sm:gap-4 md:gap-6 [column-fill:_balance]">
         {creations.map((creation, idx) => {
           const TURTLE_ASPECTS = [
@@ -166,7 +194,7 @@ export const TurtleGallery: React.FC = () => {
                 className="group relative flex flex-col cursor-pointer select-none"
                 onClick={() => setSelectedCreation(creation)}
               >
-                {/* 1. Clean Pinterest Media Container */}
+                {/* 1. Media Container */}
                 <div
                   className={`relative ${aspectClass} w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-[#07050d] border border-white/5 group-hover:border-amber-500/40 transition-all duration-300 shadow-sm group-hover:shadow-lg`}
                 >
@@ -186,37 +214,47 @@ export const TurtleGallery: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Admin Controls */}
+                  {/* Admin Controls (High-priority touch target & proper isolation) */}
                   {isAdmin && (
-                    <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
-                      <div className="flex items-center gap-0.5 bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/15">
+                    <div
+                      className="absolute top-2 right-2 flex items-center gap-1 z-20"
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center gap-1 bg-black/75 backdrop-blur-md p-1.5 rounded-full border border-white/20 shadow-lg">
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setEditingCreation(creation);
-                            setIsEditorOpen(true);
+                            e.preventDefault();
+                            handleOpenEdit(creation);
                           }}
-                          className="p-0.5 rounded-full hover:bg-white/20 text-slate-200 hover:text-white transition-colors"
+                          className="p-1.5 rounded-full bg-white/10 hover:bg-white/25 text-amber-300 hover:text-white transition-all active:scale-90 cursor-pointer"
                           title="Edit Python Art"
+                          aria-label="Edit Python Art"
                         >
-                          <Edit3 className="w-3 h-3 text-amber-400" />
+                          <Edit3 className="w-3.5 h-3.5" />
                         </button>
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
+                            e.preventDefault();
                             handleDeleteCreation(creation.id);
                           }}
-                          className="p-0.5 rounded-full hover:bg-red-500/30 text-slate-200 hover:text-red-400 transition-colors"
+                          className="p-1.5 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 hover:text-red-100 transition-all active:scale-90 cursor-pointer"
                           title="Delete Python Art"
+                          aria-label="Delete Python Art"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* 2. Pinterest Bottom Row: Clean Title & Play icon */}
+                {/* 2. Bottom Row: Title & Play Icon */}
                 <div className="pt-1.5 px-0.5 flex items-center justify-between gap-1">
                   <h3 className="text-[12px] sm:text-[13px] font-medium text-slate-200 group-hover:text-amber-300 transition-colors truncate flex-1">
                     {creation.title}
@@ -240,10 +278,16 @@ export const TurtleGallery: React.FC = () => {
         })}
       </div>
 
-      {/* Lightbox / Canvas Viewer */}
+      {/* Fullscreen Lightbox / Studio Canvas Viewer */}
       <FullscreenLightbox
         creation={selectedCreation}
         onClose={() => setSelectedCreation(null)}
+        isAdmin={isAdmin}
+        onEdit={(c) => {
+          setSelectedCreation(null);
+          handleOpenEdit(c);
+        }}
+        onDelete={(id) => handleDeleteCreation(id)}
       />
 
       {/* Admin Python Art Creator & Editor Modal */}

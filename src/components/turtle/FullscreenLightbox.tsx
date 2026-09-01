@@ -14,6 +14,8 @@ import {
   FileCode,
   Calendar,
   BookOpen,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import { TurtleCreation } from '@/types';
 import { TurtleCanvasViewer } from './TurtleCanvasViewer';
@@ -22,6 +24,9 @@ import { formatDate } from '@/lib/utils';
 interface FullscreenLightboxProps {
   creation: TurtleCreation | null;
   onClose: () => void;
+  isAdmin?: boolean;
+  onEdit?: (creation: TurtleCreation) => void;
+  onDelete?: (id: string) => void;
 }
 
 type TabType = 'canvas' | 'code' | 'story';
@@ -29,6 +34,9 @@ type TabType = 'canvas' | 'code' | 'story';
 export const FullscreenLightbox: React.FC<FullscreenLightboxProps> = ({
   creation,
   onClose,
+  isAdmin = false,
+  onEdit,
+  onDelete,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('canvas');
   const [copied, setCopied] = useState(false);
@@ -81,21 +89,49 @@ export const FullscreenLightbox: React.FC<FullscreenLightboxProps> = ({
         >
           {/* Top Header Card */}
           <div className="p-4 sm:p-5 border-b border-white/10 bg-[#120c22]/90 shrink-0 space-y-3">
-            {/* Row 1: Category Badge & Close Button */}
+            {/* Row 1: Category Badge & Actions */}
             <div className="flex items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/30 text-roseGlow-300 text-xs font-mono">
                 <Sparkles className="w-3.5 h-3.5 text-roseGlow-400" />
                 <span>{creation.category || 'Python Generative Art'}</span>
               </span>
 
-              <button
-                onClick={onClose}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
-                title="Close (Esc)"
-                aria-label="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1.5">
+                {/* Admin Actions in Lightbox Header */}
+                {isAdmin && (
+                  <>
+                    {onEdit && (
+                      <button
+                        onClick={() => onEdit(creation)}
+                        className="px-2.5 py-1 rounded-full bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                        title="Edit Creation"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        onClick={() => onDelete(creation.id)}
+                        className="px-2.5 py-1 rounded-full bg-red-500/15 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-xs font-mono flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                        title="Delete Creation"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    )}
+                  </>
+                )}
+
+                <button
+                  onClick={onClose}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer ml-1"
+                  title="Close (Esc)"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Row 2: Artwork Title & Date */}
