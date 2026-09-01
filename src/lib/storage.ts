@@ -124,6 +124,17 @@ export function resetProjectsToDefault(): Project[] {
   return INITIAL_PROJECTS;
 }
 
+export function restoreAllDefaults(): void {
+  setStorageItem(KEYS.DELETED_PROJECTS, []);
+  setStorageItem(KEYS.DELETED_TURTLE, []);
+  setStorageItem(KEYS.DELETED_NOTES, []);
+  setStorageItem(KEYS.DELETED_MEMORIES, []);
+  setStorageItem(KEYS.PROJECTS, INITIAL_PROJECTS);
+  setStorageItem(KEYS.CUSTOM_TURTLE, INITIAL_TURTLE_CREATIONS);
+  setStorageItem(KEYS.LOVE_NOTES, INITIAL_LOVE_NOTES);
+  setStorageItem(KEYS.FAVORITE_MEMORIES + '_all', INITIAL_MEMORIES);
+}
+
 // ----------------- Turtle Creations Storage -----------------
 export function getTurtleCreations(): TurtleCreation[] {
   const deletedIds = getDeletedTurtleIds();

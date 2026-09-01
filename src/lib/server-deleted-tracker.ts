@@ -37,3 +37,10 @@ export function markMemoryDeletedOnServer(id: string) {
 export function isMemoryDeletedOnServer(id: string): boolean {
   return deletedMemoryIds.has(id);
 }
+
+export function clearAllDeletedOnServer() {
+  deletedProjectIds.clear();
+  deletedTurtleIds.clear();
+  deletedNoteIds.clear();
+  deletedMemoryIds.clear();
+}

@@ -59,6 +59,7 @@ import {
   markTurtleDeleted,
   markNoteDeleted,
   markMemoryDeleted,
+  restoreAllDefaults,
   isAdminLoggedIn,
   setAdminLoggedIn,
 } from '@/lib/storage';
@@ -428,6 +429,25 @@ export default function AdminPage() {
     setIsAddingMemory(true);
   };
 
+  const handleRestoreDefaults = async () => {
+    restoreAllDefaults();
+
+    try {
+      await fetch('/api/admin/restore', {
+        method: 'POST',
+        headers: {
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
+      });
+    } catch {}
+
+    window.dispatchEvent(new Event('mili-projects-updated'));
+    window.dispatchEvent(new Event('mili-turtle-updated'));
+    window.dispatchEvent(new Event('mili-notes-updated'));
+    window.dispatchEvent(new Event('mili-memories-updated'));
+    await loadData();
+  };
+
   const handleExportBackup = () => {
     const data = {
       projects: getProjects(),
@@ -533,6 +553,15 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleRestoreDefaults}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/30 text-purple-200 border border-purple-500/30 text-xs font-mono transition-all active:scale-95 cursor-pointer"
+              title="Restore all initial projects, artworks, and notes"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Restore All</span>
+            </button>
+
             <button
               onClick={handleExportBackup}
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card text-xs font-mono text-slate-300 hover:text-white cursor-pointer"
