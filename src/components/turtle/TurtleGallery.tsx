@@ -36,14 +36,15 @@ export const TurtleGallery: React.FC = () => {
   const [editingCreation, setEditingCreation] = useState<TurtleCreation | null>(null);
 
   const loadCreations = useCallback(async () => {
-    const deletedIds = getDeletedTurtleIds();
     try {
       const res = await fetch('/api/turtle', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data?.creations) {
-          const valid = data.creations.filter((c: TurtleCreation) => !deletedIds.includes(c.id));
-          setCreations(valid);
+        if (data?.creations && Array.isArray(data.creations)) {
+          setCreations(data.creations);
+          try {
+            localStorage.setItem('mili_custom_turtle', JSON.stringify(data.creations));
+          } catch {}
           return;
         }
       }

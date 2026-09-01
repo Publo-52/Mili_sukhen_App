@@ -79,14 +79,15 @@ export const MemoriesTimeline: React.FC = () => {
 
   // Load Memories from API / Supabase with local fallback
   const loadMemories = useCallback(async () => {
-    const deletedIds = getDeletedMemoryIds();
     try {
       const res = await fetch('/api/memories', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data?.memories && Array.isArray(data.memories)) {
-          const valid = data.memories.filter((m: MemoryItem) => !deletedIds.includes(m.id));
-          setMemories(valid);
+          setMemories(data.memories);
+          try {
+            localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
+          } catch {}
           return;
         }
       }

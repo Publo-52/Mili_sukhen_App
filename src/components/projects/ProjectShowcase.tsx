@@ -35,14 +35,15 @@ export const ProjectShowcase: React.FC = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
   const loadProjects = useCallback(async () => {
-    const deletedIds = getDeletedProjectIds();
     try {
       const res = await fetch('/api/projects', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data?.projects) {
-          const valid = data.projects.filter((p: Project) => !deletedIds.includes(p.id));
-          setProjects(valid);
+        if (data?.projects && Array.isArray(data.projects)) {
+          setProjects(data.projects);
+          try {
+            localStorage.setItem('mili_universe_projects', JSON.stringify(data.projects));
+          } catch {}
           return;
         }
       }
@@ -161,10 +162,14 @@ export const ProjectShowcase: React.FC = () => {
       // Search query filter
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
-      const inTitle = proj.title.toLowerCase().includes(query);
-      const inDesc = proj.description.toLowerCase().includes(query);
-      const inTech = proj.technologies.some((t) => t.toLowerCase().includes(query));
-      const inTags = proj.tags?.some((t) => t.toLowerCase().includes(query)) ?? false;
+      const inTitle = proj.title?.toLowerCase().includes(query) ?? false;
+      const inDesc = proj.description?.toLowerCase().includes(query) ?? false;
+      const inTech = Array.isArray(proj.technologies)
+        ? proj.technologies.some((t) => t?.toLowerCase().includes(query))
+        : false;
+      const inTags = Array.isArray(proj.tags)
+        ? proj.tags.some((t) => t?.toLowerCase().includes(query))
+        : false;
 
       return inTitle || inDesc || inTech || inTags;
     });

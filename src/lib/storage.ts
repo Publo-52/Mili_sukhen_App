@@ -87,10 +87,8 @@ export function markMemoryDeleted(id: string): void {
 
 // ----------------- Projects Storage -----------------
 export function getProjects(): Project[] {
-  const deletedIds = getDeletedProjectIds();
   const saved = getStorageItem<Project[] | null>(KEYS.PROJECTS, null);
-  const baseline = saved === null ? INITIAL_PROJECTS : saved;
-  return baseline.filter((p) => !deletedIds.includes(p.id));
+  return saved === null || saved.length === 0 ? INITIAL_PROJECTS : saved;
 }
 
 export function saveProject(project: Project): Project[] {
@@ -137,10 +135,8 @@ export function restoreAllDefaults(): void {
 
 // ----------------- Turtle Creations Storage -----------------
 export function getTurtleCreations(): TurtleCreation[] {
-  const deletedIds = getDeletedTurtleIds();
   const saved = getStorageItem<TurtleCreation[] | null>(KEYS.CUSTOM_TURTLE, null);
-  const baseline = saved === null ? INITIAL_TURTLE_CREATIONS : saved;
-  return baseline.filter((c) => !deletedIds.includes(c.id));
+  return saved === null || saved.length === 0 ? INITIAL_TURTLE_CREATIONS : saved;
 }
 
 export function saveTurtleCreation(creation: TurtleCreation): TurtleCreation[] {
@@ -170,10 +166,8 @@ export function deleteTurtleCreation(id: string): TurtleCreation[] {
 
 // ----------------- Love Notes Storage -----------------
 export function getLoveNotes(): LoveNote[] {
-  const deletedIds = getDeletedNoteIds();
   const saved = getStorageItem<LoveNote[] | null>(KEYS.LOVE_NOTES, null);
-  const baseline = saved === null ? INITIAL_LOVE_NOTES : saved;
-  return baseline.filter((n) => !deletedIds.includes(n.id));
+  return saved === null || saved.length === 0 ? INITIAL_LOVE_NOTES : saved;
 }
 
 export function saveLoveNote(note: LoveNote): LoveNote[] {
@@ -232,10 +226,8 @@ export function toggleFavoriteNote(id: string): string[] {
 
 // ----------------- Memories / Photo & Video Storage -----------------
 export function getMemories(): MemoryMilestone[] {
-  const deletedIds = getDeletedMemoryIds();
   const saved = getStorageItem<MemoryMilestone[] | null>(KEYS.FAVORITE_MEMORIES + '_all', null);
-  const baseline = saved === null ? INITIAL_MEMORIES : saved;
-  return baseline.filter((m) => !deletedIds.includes(m.id));
+  return saved === null || saved.length === 0 ? INITIAL_MEMORIES : saved;
 }
 
 export function saveMemory(memory: MemoryMilestone): MemoryMilestone[] {

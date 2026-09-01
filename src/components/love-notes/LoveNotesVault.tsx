@@ -70,14 +70,15 @@ export const LoveNotesVault: React.FC = () => {
 
   // Load notes from API / Supabase with local fallback
   const loadNotes = useCallback(async () => {
-    const deletedIds = getDeletedNoteIds();
     try {
       const res = await fetch('/api/love-notes', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data?.notes) {
-          const valid = data.notes.filter((n: LoveNote) => !deletedIds.includes(n.id));
-          setAllNotes(valid);
+        if (data?.notes && Array.isArray(data.notes)) {
+          setAllNotes(data.notes);
+          try {
+            localStorage.setItem('mili_universe_love_notes', JSON.stringify(data.notes));
+          } catch {}
           return;
         }
       }

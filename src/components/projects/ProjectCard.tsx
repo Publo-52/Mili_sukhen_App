@@ -39,7 +39,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   const aspectClass = PIN_ASPECTS[index % PIN_ASPECTS.length];
   const titleAccentClass = project.themeTextAccent || 'group-hover:text-roseGlow-300';
-  const displayThumbnail = getOptimizedImageUrl(project.thumbnail, { width: 800, quality: 'auto' });
+  const defaultThumb = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop';
+  const displayThumbnail = getOptimizedImageUrl(project.thumbnail || defaultThumb, { width: 800, quality: 'auto' }) || defaultThumb;
 
   return (
     <div
