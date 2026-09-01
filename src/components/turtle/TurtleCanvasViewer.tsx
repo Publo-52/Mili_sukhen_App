@@ -823,31 +823,32 @@ export const TurtleCanvasViewer: React.FC<TurtleCanvasViewerProps> = ({ creation
   return (
     <div className="relative w-full rounded-2xl overflow-hidden glass-card border border-white/10 flex flex-col">
       {/* Canvas Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-obsidian-900/80">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-roseGlow-400" />
-          <span className="text-xs font-mono text-slate-300">
-            {creation.canvasDrawingType === 'love-app' && '⚡ Live Python Tkinter App Simulator'}
-            {creation.canvasDrawingType === 'teddy' && '🧸 Live Python Turtle Teddy Day Engine (Exact Virtual VM)'}
-            {creation.canvasDrawingType === 'rose-day' && '🌹 Live Python Turtle Rose Day Engine (Exact Virtual VM)'}
-            {creation.canvasDrawingType === 'opencv-sketch' && '✍️ Live OpenCV Contour Pencil Sketcher'}
-            {!['love-app', 'teddy', 'rose-day', 'opencv-sketch'].includes(creation.canvasDrawingType || '') && 'Live Python Turtle Replayer'}
+      <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/10 bg-[#100b20]">
+        <div className="flex items-center gap-2 min-w-0 pr-2">
+          <Sparkles className="w-3.5 h-3.5 text-roseGlow-400 shrink-0" />
+          <span className="text-xs font-mono text-slate-300 truncate">
+            {creation.canvasDrawingType === 'love-app' && 'Live Python Tkinter Simulator'}
+            {creation.canvasDrawingType === 'teddy' && 'Live Turtle Teddy Engine'}
+            {creation.canvasDrawingType === 'rose-day' && 'Live Turtle Rose Engine'}
+            {creation.canvasDrawingType === 'opencv-sketch' && 'Live OpenCV Pencil Sketcher'}
+            {!['love-app', 'teddy', 'rose-day', 'opencv-sketch'].includes(creation.canvasDrawingType || '') && 'Live Python Turtle Engine'}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => setIsPlaying(!isPlaying)}
-            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-            title={isPlaying ? "Pause" : "Play"}
+            className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white transition-colors flex items-center gap-1 text-xs font-mono active:scale-95"
+            title={isPlaying ? "Pause Animation" : "Play Animation"}
           >
-            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+            {isPlaying ? <Pause className="w-3.5 h-3.5 text-amber-300" /> : <Play className="w-3.5 h-3.5 fill-current text-roseGlow-400" />}
+            <span className="hidden sm:inline">{isPlaying ? 'Pause' : 'Play'}</span>
           </button>
           <button
             onClick={handleReset}
-            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-            title="Redraw"
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white transition-colors active:scale-95"
+            title="Replay Animation"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3.5 h-3.5 text-purple-300" />
           </button>
         </div>
       </div>
