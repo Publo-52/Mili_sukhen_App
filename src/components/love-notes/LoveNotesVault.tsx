@@ -58,7 +58,7 @@ export const LoveNotesVault: React.FC = () => {
   const [allNotes, setAllNotes] = useState<LoveNote[]>([]);
   const [selectedMood, setSelectedMood] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'featured' | 'grid'>('featured');
+  const [viewMode, setViewMode] = useState<'featured' | 'grid'>('grid');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
