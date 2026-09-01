@@ -21,6 +21,8 @@ import {
   Monitor,
   BookOpen,
   Layers,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { Project } from '@/types';
 import { formatDate } from '@/lib/utils';
@@ -48,6 +50,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('live');
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const [iframeLoading, setIframeLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -70,11 +73,14 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
   // Escape key to dismiss
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (isFullscreen) setIsFullscreen(false);
+        else onClose();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, isFullscreen]);
 
   const handleShare = async () => {
     if (!project) return;
@@ -103,7 +109,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
   return createPortal(
     <AnimatePresence>
       <div
-        className="fixed inset-0 z-[999999] bg-black/85 backdrop-blur-2xl flex flex-col items-center justify-end sm:justify-center p-0 sm:p-4 overflow-y-auto"
+        className="fixed inset-0 z-[999999] bg-black/90 backdrop-blur-2xl flex flex-col items-center justify-end sm:justify-center p-0 sm:p-3 overflow-y-auto"
         onClick={onClose}
       >
         {/* Modal Window */}
@@ -111,12 +117,16 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
           initial={{ opacity: 0, scale: 0.96, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 30 }}
-          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-3xl max-h-[92vh] sm:max-h-[88vh] bg-[#0c0817] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col border border-white/15 shadow-[0_20px_70px_rgba(0,0,0,0.85)] z-[1000000]"
+          className={`relative w-full bg-[#0c0817] overflow-hidden flex flex-col border border-white/15 shadow-[0_20px_70px_rgba(0,0,0,0.85)] z-[1000000] transition-all duration-300 ${
+            isFullscreen
+              ? 'fixed inset-0 max-w-full max-h-full rounded-none h-screen'
+              : 'max-w-4xl max-h-[94vh] sm:max-h-[90vh] rounded-t-3xl sm:rounded-3xl'
+          }`}
         >
-          {/* Top Header Bar */}
-          <div className="p-4 sm:p-5 border-b border-white/10 bg-[#120c22]/95 shrink-0 space-y-3">
+          {/* Top Header Card */}
+          <div className="p-3.5 sm:p-4 border-b border-white/10 bg-[#120c22]/95 shrink-0 space-y-2.5">
             {/* Row 1: Category Badge & Control Icons */}
             <div className="flex items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-roseGlow-500/15 text-roseGlow-300 border border-roseGlow-500/30">
@@ -125,56 +135,22 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
               </span>
 
               <div className="flex items-center gap-1.5">
-                {/* Favorite Toggle */}
-                {onToggleFavorite && (
-                  <button
-                    type="button"
-                    onClick={() => onToggleFavorite(project.id)}
-                    className={`p-2 rounded-full transition-all active:scale-90 cursor-pointer ${
-                      isFavorite
-                        ? 'bg-roseGlow-600/20 text-roseGlow-400 border border-roseGlow-500/40'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
-                    }`}
-                    title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                    aria-label="Favorite"
-                  >
-                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-roseGlow-500 text-roseGlow-500' : ''}`} />
-                  </button>
-                )}
-
-                {/* Admin Actions */}
-                {isAdmin && (
-                  <>
-                    {onEdit && (
-                      <button
-                        type="button"
-                        onClick={() => onEdit(project)}
-                        className="px-2.5 py-1 rounded-full bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
-                        title="Edit Project"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Edit</span>
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        type="button"
-                        onClick={() => onDelete(project.id)}
-                        className="px-2.5 py-1 rounded-full bg-red-500/15 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-xs font-mono flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
-                        title="Delete Project"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Delete</span>
-                      </button>
-                    )}
-                  </>
-                )}
+                {/* Fullscreen Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                  title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                  aria-label="Toggle Fullscreen"
+                >
+                  {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </button>
 
                 {/* Share Button */}
                 <button
                   type="button"
                   onClick={handleShare}
-                  className="p-2 rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
                   title="Share or copy link"
                   aria-label="Share"
                 >
@@ -185,7 +161,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer ml-1"
+                  className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-slate-200 hover:text-white flex items-center justify-center transition-colors active:scale-95 cursor-pointer ml-1"
                   title="Close (Esc)"
                   aria-label="Close"
                 >
@@ -194,15 +170,62 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
               </div>
             </div>
 
-            {/* Row 2: Title & Date */}
-            <div>
-              <h2 className="text-base sm:text-xl font-bold text-white tracking-tight leading-snug break-words">
-                {project.title}
-              </h2>
-              <p className="text-xs text-slate-400 font-mono mt-1 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                <span>Created {formatDate(project.createdAt)}</span>
-              </p>
+            {/* Row 2: Title, Date & Action Pills */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug break-words">
+                  {project.title}
+                </h2>
+                <p className="text-[11px] text-slate-400 font-mono mt-0.5 flex items-center gap-1.5">
+                  <Calendar className="w-3 h-3 text-slate-500" />
+                  <span>Created {formatDate(project.createdAt)}</span>
+                </p>
+              </div>
+
+              {/* Action Buttons: Favorite, Edit, Delete */}
+              <div className="flex items-center gap-1.5 flex-wrap pt-0.5 sm:pt-0">
+                {onToggleFavorite && (
+                  <button
+                    type="button"
+                    onClick={() => onToggleFavorite(project.id)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-mono flex items-center gap-1 transition-all active:scale-90 cursor-pointer ${
+                      isFavorite
+                        ? 'bg-roseGlow-600/25 text-roseGlow-300 border border-roseGlow-500/50 shadow-glow font-bold'
+                        : 'bg-white/10 hover:bg-white/20 text-slate-300 border border-white/10'
+                    }`}
+                  >
+                    <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-roseGlow-500 text-roseGlow-500' : ''}`} />
+                    <span>{isFavorite ? 'Favorited' : 'Favorite'}</span>
+                  </button>
+                )}
+
+                {isAdmin && (
+                  <>
+                    {onEdit && (
+                      <button
+                        type="button"
+                        onClick={() => onEdit(project)}
+                        className="px-2.5 py-1 rounded-full bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                        title="Edit Project"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>Edit</span>
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={() => onDelete(project.id)}
+                        className="px-2.5 py-1 rounded-full bg-red-500/15 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-xs font-mono flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                        title="Delete Project"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Delete</span>
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Row 3: Segmented Tabs */}
@@ -210,7 +233,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('live')}
-                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer ${
                   activeTab === 'live'
                     ? 'bg-roseGlow-600 text-white shadow-glow font-bold'
                     : 'text-slate-400 hover:text-slate-200'
@@ -223,7 +246,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('story')}
-                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer ${
                   activeTab === 'story'
                     ? 'bg-purple-600 text-white shadow-glow-violet font-bold'
                     : 'text-slate-400 hover:text-slate-200'
@@ -236,7 +259,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('tech')}
-                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-mono font-medium transition-all cursor-pointer ${
                   activeTab === 'tech'
                     ? 'bg-pink-600 text-white shadow-glow font-bold'
                     : 'text-slate-400 hover:text-slate-200'
@@ -249,12 +272,12 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
           </div>
 
           {/* Modal Content Body */}
-          <div className="p-3 sm:p-5 overflow-y-auto max-h-[calc(88vh-180px)] space-y-4">
+          <div className="p-3 sm:p-4 overflow-y-auto flex-1 space-y-3">
             {/* 1. Live Interactive Web Preview Tab */}
             {activeTab === 'live' && (
-              <div className="space-y-3">
+              <div className="space-y-2.5 flex flex-col h-full">
                 {/* Browser Control Bar */}
-                <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#100b20] border border-white/10 flex-wrap gap-2 text-xs font-mono">
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#100b20] border border-white/10 flex-wrap gap-2 text-xs font-mono shrink-0">
                   <div className="flex items-center gap-2 text-slate-300 min-w-0 flex-1 truncate">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                     <span className="text-slate-400 truncate">{project.url}</span>
@@ -285,7 +308,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
                     <button
                       type="button"
                       onClick={handleReloadIframe}
-                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
+                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
                       title="Reload Preview"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
@@ -296,7 +319,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
                       href={project.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-roseGlow-600 to-purple-600 text-white font-semibold hover:brightness-110 shadow-glow transition-all active:scale-95"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-roseGlow-600 to-purple-600 text-white font-semibold hover:brightness-110 shadow-glow transition-all active:scale-95 cursor-pointer"
                     >
                       <span>Open Live</span>
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -304,12 +327,14 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
                   </div>
                 </div>
 
-                {/* Embedded Web Viewport */}
+                {/* Embedded Web Viewport with Full Height */}
                 <div
-                  className={`relative mx-auto rounded-2xl overflow-hidden border border-white/10 bg-black transition-all duration-300 ${
+                  className={`relative mx-auto rounded-2xl overflow-hidden border border-white/10 bg-black transition-all duration-300 w-full ${
                     deviceMode === 'mobile'
-                      ? 'max-w-xs aspect-[9/16] shadow-2xl border-2 border-slate-700'
-                      : 'w-full aspect-[16/10] sm:aspect-[16/10]'
+                      ? 'max-w-xs h-[52vh] sm:h-[58vh] shadow-2xl border-2 border-slate-700'
+                      : isFullscreen
+                      ? 'h-[calc(100vh-160px)]'
+                      : 'h-[52vh] sm:h-[60vh]'
                   }`}
                 >
                   {iframeLoading && (
