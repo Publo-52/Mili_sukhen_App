@@ -29,11 +29,10 @@ import {
   deleteLoveNote,
   getFavoriteNoteIds,
   toggleFavoriteNote,
-  getDeletedNoteIds,
-  markNoteDeleted,
 } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { APP_CONFIG } from '@/data/config';
 
 const NoteReaderModal = dynamic(
   () => import('./NoteReaderModal').then((m) => m.NoteReaderModal),
@@ -220,7 +219,10 @@ export const LoveNotesVault: React.FC = () => {
     try {
       await fetch('/api/love-notes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': APP_CONFIG.adminPasscode,
+        },
         body: JSON.stringify({ note }),
       });
     } catch {}
@@ -230,7 +232,6 @@ export const LoveNotesVault: React.FC = () => {
   };
 
   const handleDeleteNote = async (id: string) => {
-    markNoteDeleted(id);
     const updated = deleteLoveNote(id);
     setAllNotes(updated);
     if (currentIndex >= updated.length) {
@@ -241,7 +242,7 @@ export const LoveNotesVault: React.FC = () => {
       await fetch(`/api/love-notes?id=${id}`, {
         method: 'DELETE',
         headers: {
-          'x-admin-token': 'das@123',
+          'x-admin-token': APP_CONFIG.adminPasscode,
         },
       });
     } catch {}

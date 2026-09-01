@@ -8,6 +8,7 @@ import { getProjects, saveProject, deleteProject, toggleFavoriteProject, getFavo
 import { useAuth } from '@/lib/auth-context';
 import { ProjectCard } from './ProjectCard';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { APP_CONFIG } from '@/data/config';
 
 const ProjectPreviewModal = dynamic(() => import('./ProjectPreviewModal').then((m) => m.ProjectPreviewModal), { ssr: false });
 const ProjectEditorModal = dynamic(() => import('./ProjectEditorModal').then((m) => m.ProjectEditorModal), { ssr: false });
@@ -118,7 +119,7 @@ export const ProjectShowcase: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': 'das@123',
+          'x-admin-token': APP_CONFIG.adminPasscode,
         },
         body: JSON.stringify({ project }),
       });
@@ -130,7 +131,6 @@ export const ProjectShowcase: React.FC = () => {
 
   // Admin Delete Project
   const handleDeleteProject = async (id: string) => {
-    markProjectDeleted(id);
     const updated = deleteProject(id);
     setProjects(updated);
 
@@ -142,7 +142,7 @@ export const ProjectShowcase: React.FC = () => {
       await fetch(`/api/projects?id=${id}`, {
         method: 'DELETE',
         headers: {
-          'x-admin-token': 'das@123',
+          'x-admin-token': APP_CONFIG.adminPasscode,
         },
       });
     } catch {}

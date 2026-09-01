@@ -55,10 +55,6 @@ import {
   deleteMemory,
   getMessages,
   markMessageAsRead,
-  markProjectDeleted,
-  markTurtleDeleted,
-  markNoteDeleted,
-  markMemoryDeleted,
   restoreAllDefaults,
   isAdminLoggedIn,
   setAdminLoggedIn,
@@ -284,7 +280,6 @@ export default function AdminPage() {
   };
 
   const handleDeleteProject = async (id: string) => {
-    markProjectDeleted(id);
     const updated = deleteProject(id);
     setProjects(updated);
 
@@ -327,7 +322,6 @@ export default function AdminPage() {
   };
 
   const handleDeleteTurtle = async (id: string) => {
-    markTurtleDeleted(id);
     const updated = deleteTurtleCreation(id);
     setTurtleCreations(updated);
 
@@ -365,7 +359,6 @@ export default function AdminPage() {
   };
 
   const handleDeleteNote = async (id: string) => {
-    markNoteDeleted(id);
     const updated = deleteLoveNote(id);
     setLoveNotes(updated);
 
@@ -408,7 +401,6 @@ export default function AdminPage() {
   };
 
   const handleDeleteMemory = async (id: string) => {
-    markMemoryDeleted(id);
     const updated = deleteMemory(id);
     setMemories(updated);
 

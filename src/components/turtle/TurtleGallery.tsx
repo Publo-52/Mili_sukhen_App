@@ -12,10 +12,11 @@ import {
   Terminal,
 } from 'lucide-react';
 import { TurtleCreation } from '@/types';
-import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation, getDeletedTurtleIds, markTurtleDeleted } from '@/lib/storage';
+import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { getOptimizedImageUrl } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { APP_CONFIG } from '@/data/config';
 
 const FullscreenLightbox = dynamic(
   () => import('./FullscreenLightbox').then((m) => m.FullscreenLightbox),
@@ -112,7 +113,7 @@ export const TurtleGallery: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': 'das@123',
+          'x-admin-token': APP_CONFIG.adminPasscode,
         },
         body: JSON.stringify({ creation }),
       });
@@ -123,7 +124,6 @@ export const TurtleGallery: React.FC = () => {
   };
 
   const handleDeleteCreation = async (id: string) => {
-    markTurtleDeleted(id);
     const updated = deleteTurtleCreation(id);
     setCreations(updated);
 
@@ -135,7 +135,7 @@ export const TurtleGallery: React.FC = () => {
       await fetch(`/api/turtle?id=${id}`, {
         method: 'DELETE',
         headers: {
-          'x-admin-token': 'das@123',
+          'x-admin-token': APP_CONFIG.adminPasscode,
         },
       });
     } catch {}

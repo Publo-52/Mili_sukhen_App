@@ -26,8 +26,6 @@ import {
   deleteMemory,
   getFavoriteMemoryIds,
   toggleFavoriteMemory,
-  getDeletedMemoryIds,
-  markMemoryDeleted,
 } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -174,7 +172,6 @@ export const MemoriesTimeline: React.FC = () => {
   };
 
   const handleDeleteMemory = async (id: string) => {
-    markMemoryDeleted(id);
     const updated = deleteMemory(id);
     setMemories(updated);
 
