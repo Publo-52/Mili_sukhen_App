@@ -33,7 +33,7 @@ export const MemoriesTimeline: React.FC = () => {
       const res = await fetch('/api/memories', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data?.memories && Array.isArray(data.memories)) {
+        if (data?.memories && Array.isArray(data.memories) && data.memories.length > 0) {
           setMemories(data.memories);
           return;
         }
