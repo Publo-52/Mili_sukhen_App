@@ -35,12 +35,7 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanInput = passcode.trim().toLowerCase();
-    if (
-      cleanInput === APP_CONFIG.surprisePasscode.toLowerCase() ||
-      cleanInput === 'mili' ||
-      cleanInput === '143' ||
-      cleanInput === 'love'
-    ) {
+    if (cleanInput === APP_CONFIG.surprisePasscode.toLowerCase()) {
       setIsUnlocked(true);
       setError(false);
       // Trigger cinematic confetti burst

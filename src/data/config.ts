@@ -8,7 +8,6 @@ export const APP_CONFIG: AppConfig = {
   contactVisibility: 'PRIVATE',
   adminPasscode: "das@123",
   surprisePasscode: "forever",
-  contactPasscode: "143",
   socials: {
     creatorPhone: "+91 98326 95291",
     creatorEmail: "dassukhen@gmail.com",

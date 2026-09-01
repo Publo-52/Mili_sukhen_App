@@ -100,7 +100,6 @@ export interface AppConfig {
   contactVisibility: 'PUBLIC' | 'PRIVATE';
   adminPasscode: string;
   surprisePasscode: string;
-  contactPasscode: string;
   socials: {
     creatorPhone?: string;
     creatorEmail?: string;
