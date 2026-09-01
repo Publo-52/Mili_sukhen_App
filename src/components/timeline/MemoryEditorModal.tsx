@@ -1,9 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Image as ImageIcon, Video, Sparkles, MapPin, Calendar, Heart, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  X,
+  Upload,
+  Image as ImageIcon,
+  Video,
+  Sparkles,
+  MapPin,
+  Calendar,
+  Heart,
+  AlertCircle,
+  Loader2,
+  CheckCircle2,
+  Zap,
+} from 'lucide-react';
 import { MemoryItem } from '@/types';
+import { uploadMediaWithProgress, UploadProgressEvent } from '@/lib/cloudinaryUpload';
 
 interface MemoryEditorModalProps {
   isOpen: boolean;
@@ -23,15 +37,31 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
   const [title, setTitle] = useState(editingMemory?.title || '');
   const [url, setUrl] = useState(editingMemory?.url || '');
   const [thumbnailUrl, setThumbnailUrl] = useState(editingMemory?.thumbnailUrl || '');
-  const [date, setDate] = useState(editingMemory?.date || new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }));
+  const [date, setDate] = useState(
+    editingMemory?.date ||
+      new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+  );
   const [location, setLocation] = useState(editingMemory?.location || '');
   const [description, setDescription] = useState(editingMemory?.description || '');
   const [isFavorite, setIsFavorite] = useState(Boolean(editingMemory?.isFavorite));
-  const [aspectRatio, setAspectRatio] = useState<'portrait' | 'landscape' | 'square'>(editingMemory?.aspectRatio || 'landscape');
+  const [aspectRatio, setAspectRatio] = useState<'portrait' | 'landscape' | 'square'>(
+    editingMemory?.aspectRatio || 'landscape'
+  );
 
+  // Upload States
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadMessage, setUploadMessage] = useState('');
+  const [uploadStage, setUploadStage] = useState<UploadProgressEvent['stage'] | 'idle'>('idle');
+  const [compressionStats, setCompressionStats] = useState<{
+    originalSizeStr: string;
+    finalSizeStr: string;
+    savedPercent: number;
+  } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -42,6 +72,9 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
     }
     return () => {
       document.body.style.overflow = '';
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, [isOpen]);
 
@@ -51,81 +84,57 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset states
     setIsUploading(true);
+    setUploadProgress(5);
+    setUploadStage('compressing');
+    setUploadMessage('Preparing upload...');
+    setCompressionStats(null);
     setUploadError(null);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'ss5tzziw';
-      const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'mili_preset';
-
-      let uploadSuccess = false;
-      let data: any = null;
-
-      // 1. Direct Cloudinary Client-Side Upload (Fastest, supports HD photos & videos, bypasses server limits)
-      try {
-        const directFormData = new FormData();
-        directFormData.append('file', file);
-        directFormData.append('upload_preset', preset);
-        directFormData.append('folder', 'mili_universe_memories');
-
-        const directRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
-          method: 'POST',
-          body: directFormData,
-        });
-
-        if (directRes.ok) {
-          const directData = await directRes.json();
-          let thumb = directData.secure_url;
-          if (directData.resource_type === 'video') {
-            thumb = directData.secure_url.replace(/\.[^/.]+$/, '.jpg');
+      const result = await uploadMediaWithProgress(file, {
+        folder: 'mili_universe_memories',
+        signal: controller.signal,
+        onProgress: (evt) => {
+          setUploadProgress(evt.percent);
+          setUploadStage(evt.stage);
+          setUploadMessage(evt.message);
+          if (evt.savedStats) {
+            setCompressionStats(evt.savedStats);
           }
-          data = {
-            url: directData.secure_url,
-            thumbnailUrl: thumb,
-            resourceType: directData.resource_type === 'video' ? 'video' : 'photo',
-          };
-          uploadSuccess = true;
-        } else {
-          const errData = await directRes.json().catch(() => null);
-          console.warn('Direct upload response not ok:', errData);
-        }
-      } catch (directErr) {
-        console.warn('Direct upload error, falling back to server route:', directErr);
-      }
+        },
+      });
 
-      // 2. Server Route Fallback
-      if (!uploadSuccess) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('resourceType', type);
-
-        const res = await fetch('/api/cloudinary/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const contentType = res.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-          data = await res.json();
-        } else {
-          throw new Error('Server returned non-JSON response (' + res.status + ')');
-        }
-
-        if (!res.ok) {
-          throw new Error(data?.error || 'Failed to upload to Cloudinary');
-        }
-      }
-
-      setUrl(data.url);
-      setThumbnailUrl(data.thumbnailUrl || data.url);
-      if (data.resourceType) setType(data.resourceType);
+      setUrl(result.url);
+      setThumbnailUrl(result.thumbnailUrl || result.url);
+      if (result.resourceType) setType(result.resourceType);
       if (!title) setTitle(file.name.replace(/\.[^/.]+$/, ''));
     } catch (err: any) {
-      console.error('Upload failed:', err);
-      setUploadError(err?.message || 'Upload failed. Please check network or paste a direct image URL.');
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+        setUploadError('Upload was cancelled.');
+      } else {
+        console.error('Upload failed:', err);
+        setUploadError(
+          err?.message || 'Upload failed. Please check network connection or try again.'
+        );
+      }
     } finally {
       setIsUploading(false);
+      abortControllerRef.current = null;
     }
+  };
+
+  const handleCancelUpload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setIsUploading(false);
+    setUploadProgress(0);
+    setUploadStage('idle');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,7 +143,9 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
 
     setIsSaving(true);
     const memoryRecord: MemoryItem = {
-      id: editingMemory?.id || `mem_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id:
+        editingMemory?.id ||
+        `mem_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       title: title.trim(),
       type,
       url: url.trim(),
@@ -174,12 +185,13 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
                 <h3 className="text-lg sm:text-xl font-bold text-white">
                   {editingMemory ? 'Edit Memory' : 'Upload Photo / Video to Vault'}
                 </h3>
-                <p className="text-xs text-slate-400">Stored in Cloudinary with instant real-time sync</p>
+                <p className="text-xs text-slate-400">High-speed Cloudinary vault with instant auto-optimization</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition-colors"
+              disabled={isUploading || isSaving}
+              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition-colors disabled:opacity-50"
             >
               <X className="w-5 h-5" />
             </button>
@@ -215,7 +227,7 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
             </div>
 
             {/* Cloudinary File Upload Box */}
-            <div className="p-4 rounded-2xl bg-white/5 border border-dashed border-white/20 hover:border-purple-400/50 transition-colors text-center">
+            <div className="p-4 rounded-2xl bg-white/5 border border-dashed border-white/20 hover:border-purple-400/50 transition-all text-center">
               <input
                 type="file"
                 id="memory-file-upload"
@@ -224,29 +236,67 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
                 disabled={isUploading}
                 className="hidden"
               />
-              <label
-                htmlFor="memory-file-upload"
-                className="cursor-pointer flex flex-col items-center justify-center gap-2 py-2"
-              >
-                {isUploading ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
-                    <span className="text-xs text-purple-300 font-mono">Uploading to Cloudinary...</span>
+
+              {isUploading ? (
+                <div className="flex flex-col items-center gap-3 py-3">
+                  <div className="flex items-center justify-between w-full px-2 text-xs">
+                    <span className="text-purple-300 font-medium flex items-center gap-1.5">
+                      <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
+                      {uploadMessage || 'Uploading...'}
+                    </span>
+                    <span className="font-mono font-bold text-white text-sm">
+                      {uploadProgress}%
+                    </span>
                   </div>
-                ) : (
-                  <>
-                    <div className="p-3 rounded-full bg-purple-500/20 text-purple-300">
-                      <Upload className="w-6 h-6" />
+
+                  {/* Progress Bar Container */}
+                  <div className="w-full h-2.5 bg-obsidian-900 rounded-full overflow-hidden border border-white/10 relative">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-roseGlow-500 via-purple-500 to-cyan-400"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${uploadProgress}%` }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                    />
+                  </div>
+
+                  {/* Compression stats pill */}
+                  {compressionStats && compressionStats.savedPercent > 0 && (
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px]">
+                      <Zap className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>
+                        Optimized: {compressionStats.originalSizeStr} ➔ {compressionStats.finalSizeStr} ({compressionStats.savedPercent}% lighter)
+                      </span>
                     </div>
-                    <span className="text-xs sm:text-sm font-medium text-white">
-                      Click to select {type === 'video' ? 'video file' : 'photo'} from your device
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleCancelUpload}
+                    className="text-xs text-roseGlow-400 hover:text-roseGlow-300 underline pt-1"
+                  >
+                    Cancel upload
+                  </button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="memory-file-upload"
+                  className="cursor-pointer flex flex-col items-center justify-center gap-2 py-2"
+                >
+                  <div className="p-3 rounded-full bg-purple-500/20 text-purple-300 group-hover:scale-110 transition-transform">
+                    <Upload className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-medium text-white">
+                    Click to select {type === 'video' ? 'video file' : 'photo'} from your device
+                  </span>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                    <span className="inline-flex items-center gap-1 text-emerald-400">
+                      <Zap className="w-3 h-3" /> Auto-optimizing
                     </span>
-                    <span className="text-[11px] text-slate-400">
-                      Supports JPG, PNG, WEBP, MP4, MOV, WebM
-                    </span>
-                  </>
-                )}
-              </label>
+                    <span>•</span>
+                    <span>Supports JPG, PNG, WEBP, MP4, MOV, WebM</span>
+                  </div>
+                </label>
+              )}
             </div>
 
             {uploadError && (
@@ -258,16 +308,23 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
 
             {/* Direct URL Input */}
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">
-                Media URL (Cloudinary / Web URL) *
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-mono text-slate-400">
+                  Media URL (Cloudinary / Web URL) *
+                </label>
+                {url && (
+                  <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Media linked
+                  </span>
+                )}
+              </div>
               <input
                 type="url"
                 required
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://res.cloudinary.com/... or any image/video URL"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-obsidian-950 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-purple-500/50"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-obsidian-950 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-purple-500/50 font-mono"
               />
             </div>
 
@@ -372,13 +429,14 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs sm:text-sm text-slate-300 transition-colors"
+                disabled={isUploading || isSaving}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs sm:text-sm text-slate-300 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={isSaving || !url.trim() || !title.trim()}
+                disabled={isSaving || isUploading || !url.trim() || !title.trim()}
                 className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-roseGlow-500 to-purple-600 hover:from-roseGlow-400 hover:to-purple-500 text-white text-xs sm:text-sm font-semibold shadow-glow transition-all disabled:opacity-50 flex items-center gap-2"
               >
                 {isSaving ? (

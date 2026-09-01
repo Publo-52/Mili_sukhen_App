@@ -3,14 +3,44 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Sparkles, Shuffle, ArrowLeft, ArrowRight, Maximize2, BookOpen, Play, Pause, Plus, Edit3, Trash2, Feather } from 'lucide-react';
+import {
+  Heart,
+  Sparkles,
+  Shuffle,
+  ArrowLeft,
+  ArrowRight,
+  Maximize2,
+  BookOpen,
+  Play,
+  Pause,
+  Edit3,
+  Trash2,
+  Feather,
+  LayoutGrid,
+  Layers,
+  Search,
+  Quote,
+  Clock,
+} from 'lucide-react';
 import { LoveNote } from '@/types';
-import { getLoveNotes, saveLoveNote, deleteLoveNote, getFavoriteNoteIds, toggleFavoriteNote } from '@/lib/storage';
+import {
+  getLoveNotes,
+  saveLoveNote,
+  deleteLoveNote,
+  getFavoriteNoteIds,
+  toggleFavoriteNote,
+} from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-const NoteReaderModal = dynamic(() => import('./NoteReaderModal').then((m) => m.NoteReaderModal), { ssr: false });
-const LoveNoteEditorModal = dynamic(() => import('./LoveNoteEditorModal').then((m) => m.LoveNoteEditorModal), { ssr: false });
+const NoteReaderModal = dynamic(
+  () => import('./NoteReaderModal').then((m) => m.NoteReaderModal),
+  { ssr: false }
+);
+const LoveNoteEditorModal = dynamic(
+  () => import('./LoveNoteEditorModal').then((m) => m.LoveNoteEditorModal),
+  { ssr: false }
+);
 
 const MOOD_FILTERS = [
   { id: 'all', label: 'All Letters' },
@@ -25,6 +55,8 @@ const MOOD_FILTERS = [
 export const LoveNotesVault: React.FC = () => {
   const [allNotes, setAllNotes] = useState<LoveNote[]>([]);
   const [selectedMood, setSelectedMood] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'featured' | 'grid'>('featured');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
@@ -53,7 +85,7 @@ export const LoveNotesVault: React.FC = () => {
     loadNotes();
     setFavoriteIds(getFavoriteNoteIds());
 
-    // 1. Supabase Realtime Subscription for Instant Updates across devices
+    // 1. Supabase Realtime Subscription
     let channel: any = null;
     if (isSupabaseConfigured && supabase) {
       try {
@@ -72,7 +104,6 @@ export const LoveNotesVault: React.FC = () => {
       }
     }
 
-    // 2. Re-fetch when phone screen turns on or user switches back to tab
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         loadNotes();
@@ -85,7 +116,6 @@ export const LoveNotesVault: React.FC = () => {
     window.addEventListener('focus', handleFocus);
     window.addEventListener('mili-notes-updated', handleSyncEvent);
 
-    // 3. Fallback background sync interval (every 8 seconds)
     const interval = setInterval(loadNotes, 8000);
 
     return () => {
@@ -99,11 +129,18 @@ export const LoveNotesVault: React.FC = () => {
     };
   }, [loadNotes]);
 
-  // Filter notes by mood
+  // Filter notes by mood & search query
   const filteredNotes = useMemo(() => {
-    if (selectedMood === 'all') return allNotes;
-    return allNotes.filter((n) => n.moodTag === selectedMood);
-  }, [allNotes, selectedMood]);
+    return allNotes.filter((n) => {
+      const matchesMood = selectedMood === 'all' || n.moodTag === selectedMood;
+      const matchesSearch =
+        !searchQuery.trim() ||
+        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        n.fullMessage.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (n.snippet && n.snippet.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesMood && matchesSearch;
+    });
+  }, [allNotes, selectedMood, searchQuery]);
 
   // Keep index within bounds
   useEffect(() => {
@@ -112,17 +149,25 @@ export const LoveNotesVault: React.FC = () => {
     }
   }, [filteredNotes.length, currentIndex]);
 
-  // Auto-rotation timer: switches automatically every 5.5 seconds
+  // Auto-rotation timer for featured view
   useEffect(() => {
-    if (!isAutoPlaying || readingNote !== null || isEditorOpen || filteredNotes.length <= 1) return;
+    if (
+      !isAutoPlaying ||
+      viewMode !== 'featured' ||
+      readingNote !== null ||
+      isEditorOpen ||
+      filteredNotes.length <= 1
+    ) {
+      return;
+    }
 
     const timer = setInterval(() => {
       setDirection(1);
       setCurrentIndex((prev) => (prev + 1) % filteredNotes.length);
-    }, 5500);
+    }, 6000);
 
     return () => clearInterval(timer);
-  }, [isAutoPlaying, readingNote, isEditorOpen, filteredNotes.length]);
+  }, [isAutoPlaying, viewMode, readingNote, isEditorOpen, filteredNotes.length]);
 
   const currentNote = filteredNotes[currentIndex] || allNotes[0] || {
     id: 'placeholder',
@@ -134,7 +179,7 @@ export const LoveNotesVault: React.FC = () => {
     isFavorite: true,
   };
 
-  const isFavorite = favoriteIds.includes(currentNote.id);
+  const isCurrentFavorite = favoriteIds.includes(currentNote.id);
 
   const handleNext = () => {
     setDirection(1);
@@ -161,8 +206,8 @@ export const LoveNotesVault: React.FC = () => {
     setCurrentIndex(nextIdx);
   };
 
-  const handleToggleFavorite = () => {
-    const updated = toggleFavoriteNote(currentNote.id);
+  const handleToggleFavorite = (noteId: string) => {
+    const updated = toggleFavoriteNote(noteId);
     setFavoriteIds(updated);
   };
 
@@ -203,267 +248,411 @@ export const LoveNotesVault: React.FC = () => {
     }
   };
 
+  // Helper to get count per mood
+  const getMoodCount = (moodId: string) => {
+    if (moodId === 'all') return allNotes.length;
+    return allNotes.filter((n) => n.moodTag === moodId).length;
+  };
+
   return (
-    <section id="love-notes" className="pt-1 pb-4 px-3 sm:px-6 lg:px-8 max-w-4xl mx-auto relative">
-      {/* Header */}
-      <div className="text-center space-y-2 mb-4 sm:mb-6">
-        <div className="flex items-center justify-center gap-2 flex-wrap">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-300 text-xs font-mono tracking-wider uppercase">
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Private Love Notes Vault</span>
+    <section
+      id="love-notes"
+      className="pt-4 pb-12 px-3 sm:px-6 lg:px-8 max-w-5xl mx-auto relative select-none sm:select-auto"
+    >
+      {/* Background Decorative Glow */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-roseGlow-500/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Header Area */}
+      <div className="text-center space-y-3 mb-6 sm:mb-8 relative z-10">
+        <div className="flex items-center justify-center gap-2.5 flex-wrap">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/30 text-roseGlow-300 text-xs font-mono tracking-wider uppercase">
+            <BookOpen className="w-3.5 h-3.5 text-roseGlow-400" />
+            <span>Private Love Letters Vault</span>
           </div>
 
-          {/* Admin "+ Write Love Note" Button */}
+          {/* Admin Write Button */}
           {isAdmin && (
             <button
               onClick={() => {
                 setEditingNote(null);
                 setIsEditorOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-roseGlow-600 via-pink-600 to-purple-600 hover:opacity-90 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow hover:scale-105 transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-roseGlow-500 to-purple-600 hover:from-roseGlow-400 hover:to-purple-500 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-glow hover:scale-105 transition-all"
             >
               <Feather className="w-3.5 h-3.5" />
-              <span>+ Write Love Note</span>
+              <span>+ Write Note</span>
             </button>
           )}
         </div>
 
-        <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight">
+        <h2 className="text-2xl sm:text-4xl md:text-5xl font-serif font-extrabold text-white tracking-tight">
           Letters & Notes for Mili
         </h2>
         <p className="text-slate-400 text-xs sm:text-sm max-w-xl mx-auto font-light leading-relaxed">
-          An unlimited collection of {allNotes.length} heartfelt letters, promises, and quiet thoughts from Sukhen.
+          A dedicated space of {allNotes.length} heartfelt letters, promises, and quiet thoughts from Sukhen.
         </p>
 
-        {/* Mood Category Filter Tabs */}
-        <div className="flex items-center justify-center gap-1.5 pt-2 overflow-x-auto no-scrollbar whitespace-nowrap max-w-full px-1">
-          {MOOD_FILTERS.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => {
-                setSelectedMood(m.id);
-                setCurrentIndex(0);
-              }}
-              className={`px-3 py-1 rounded-full text-xs font-mono transition-all flex-shrink-0 ${
-                selectedMood === m.id
-                  ? 'bg-roseGlow-600 text-white shadow-glow font-bold'
-                  : 'glass-card text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Dynamic Auto-Rotation Progress Bar */}
-        {filteredNotes.length > 1 && (
-          <div className="flex items-center justify-center gap-1.5 pt-2 max-w-xs mx-auto">
-            {filteredNotes.slice(0, Math.min(filteredNotes.length, 10)).map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSelectNote(idx)}
-                aria-label={`Jump to Love Note ${idx + 1}`}
-                className="flex-1 h-1.5 rounded-full overflow-hidden bg-white/10 hover:bg-white/20 transition-all cursor-pointer relative"
-              >
-                {currentIndex === idx && (
-                  <motion.div
-                    key={`${idx}-${isAutoPlaying}`}
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: isAutoPlaying ? 5.5 : 0.3, ease: 'linear' }}
-                    className="h-full bg-gradient-to-r from-roseGlow-500 to-purple-500 shadow-glow"
-                  />
-                )}
-                {currentIndex > idx && (
-                  <div className="h-full w-full bg-roseGlow-500/70" />
-                )}
-              </button>
-            ))}
+        {/* View Switcher & Mood Filter Bar */}
+        <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 max-w-3xl mx-auto">
+          {/* Mood Category Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full pb-1 sm:pb-0 px-1">
+            {MOOD_FILTERS.map((m) => {
+              const count = getMoodCount(m.id);
+              if (count === 0 && m.id !== 'all') return null;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => {
+                    setSelectedMood(m.id);
+                    setCurrentIndex(0);
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-mono transition-all flex items-center gap-1.5 flex-shrink-0 ${
+                    selectedMood === m.id
+                      ? 'bg-roseGlow-500 text-white shadow-glow font-bold'
+                      : 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 border border-white/10'
+                  }`}
+                >
+                  <span>{m.label}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      selectedMood === m.id
+                        ? 'bg-black/30 text-white'
+                        : 'bg-white/10 text-slate-400'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        )}
+
+          {/* View Mode Toggle (Featured vs Grid) */}
+          <div className="flex items-center bg-obsidian-950 p-1 rounded-xl border border-white/10 shrink-0">
+            <button
+              onClick={() => setViewMode('featured')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono transition-all ${
+                viewMode === 'featured'
+                  ? 'bg-white/15 text-white font-medium shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Featured Letter View"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Spotlight</span>
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-white/15 text-white font-medium shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Grid View of All Letters"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>All ({filteredNotes.length})</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Main Auto-Rotating Love Note Card */}
-      <div className="relative max-w-full">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentNote.id}
-            initial={{ opacity: 0, x: direction * 20, scale: 0.98 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: direction * -20, scale: 0.98 }}
-            transition={{ duration: 0.45 }}
-            className="glass-card rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-roseGlow-500/30 shadow-2xl relative overflow-hidden space-y-4 sm:space-y-5"
-          >
-            {/* Top Bar inside Card */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-gradient-to-r from-roseGlow-500/20 to-purple-500/20 text-roseGlow-300 border border-roseGlow-500/30 font-bold">
-                  Letter #{currentIndex + 1} of {filteredNotes.length}
-                </span>
+      {/* ─── FEATURED SPOTLIGHT VIEW ─── */}
+      {viewMode === 'featured' && (
+        <div className="relative max-w-3xl mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentNote.id}
+              initial={{ opacity: 0, x: direction * 25, scale: 0.98 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: direction * -25, scale: 0.98 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="bg-gradient-to-b from-[#130b24]/90 to-[#0c0817]/95 rounded-3xl p-5 sm:p-9 border border-roseGlow-500/25 shadow-2xl backdrop-blur-xl relative overflow-hidden space-y-5"
+            >
+              {/* Subtle top gradient accent line */}
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-roseGlow-500/60 to-transparent" />
 
-                {/* Auto Play Status Indicator */}
+              {/* Top Bar inside Card */}
+              <div className="flex items-center justify-between gap-2 flex-wrap pb-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-3 py-1 rounded-full text-xs font-mono bg-roseGlow-500/15 text-roseGlow-300 border border-roseGlow-500/30 font-medium">
+                    Letter #{currentIndex + 1} of {filteredNotes.length}
+                  </span>
+
+                  <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-slate-500" />
+                    <span>{currentNote.date}</span>
+                  </span>
+                </div>
+
+                {/* Card Actions */}
+                <div className="flex items-center gap-1.5">
+                  {/* Admin Edit & Delete */}
+                  {isAdmin && (
+                    <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10 mr-1">
+                      <button
+                        onClick={() => {
+                          setEditingNote(currentNote);
+                          setIsEditorOpen(true);
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                        title="Edit Love Note"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteNote(currentNote.id)}
+                        className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                        title="Delete Love Note"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Favorite Toggle */}
+                  <button
+                    onClick={() => handleToggleFavorite(currentNote.id)}
+                    className={`p-2 rounded-xl border transition-all ${
+                      isCurrentFavorite
+                        ? 'bg-roseGlow-500/20 text-roseGlow-300 border-roseGlow-500/40 shadow-glow'
+                        : 'bg-white/5 text-slate-400 hover:text-white border-white/10'
+                    }`}
+                    title={isCurrentFavorite ? 'Saved in Cherished' : 'Add to Cherished'}
+                    aria-label="Toggle favorite"
+                  >
+                    <Heart
+                      className={`w-4 h-4 ${isCurrentFavorite ? 'fill-roseGlow-400 text-roseGlow-400' : ''}`}
+                    />
+                  </button>
+
+                  {/* Open Reading Modal */}
+                  <button
+                    onClick={() => setReadingNote(currentNote)}
+                    className="p-2 rounded-xl bg-white/5 text-slate-300 hover:text-white border border-white/10 hover:border-white/20 transition-all"
+                    title="Fullscreen Reading Mode"
+                    aria-label="Open reading mode"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Note Title & Quote */}
+              <div className="space-y-3 pt-1">
+                <h3 className="text-xl sm:text-3xl font-serif font-bold text-white tracking-tight leading-snug">
+                  {currentNote.title}
+                </h3>
+
+                {currentNote.snippet && (
+                  <div className="relative p-4 rounded-2xl bg-roseGlow-500/10 border-l-4 border-roseGlow-500 text-roseGlow-200/90 font-serif italic text-base sm:text-lg leading-relaxed">
+                    <Quote className="w-5 h-5 text-roseGlow-400/30 absolute top-3 right-3" />
+                    <p>“{currentNote.snippet}”</p>
+                  </div>
+                )}
+
+                {/* Brief Message Sneak Peek */}
+                <p className="text-slate-300 font-serif text-sm sm:text-base leading-relaxed line-clamp-3 opacity-90">
+                  {currentNote.fullMessage}
+                </p>
+              </div>
+
+              {/* Bottom Card Bar: Read Full Note & Auto-play indicator */}
+              <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-3">
+                <button
+                  onClick={() => setReadingNote(currentNote)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-roseGlow-500/20 to-purple-500/20 hover:from-roseGlow-500/30 hover:to-purple-500/30 border border-roseGlow-500/30 text-roseGlow-300 text-xs sm:text-sm font-medium transition-all group shadow-sm"
+                >
+                  <span>Read Full Letter</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-roseGlow-400" />
+                </button>
+
+                {/* Auto-Play Toggle */}
                 {filteredNotes.length > 1 && (
                   <button
                     onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors"
-                    title={isAutoPlaying ? "Click to Pause Auto-Rotation" : "Click to Resume Auto-Rotation"}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors"
                   >
                     {isAutoPlaying ? (
                       <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                        <span>Auto-Playing ↻</span>
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-[11px]">Auto-Playing</span>
                       </>
                     ) : (
                       <>
-                        <Pause className="w-2.5 h-2.5 text-amber-400" />
-                        <span>Paused</span>
+                        <Pause className="w-3 h-3 text-amber-400" />
+                        <span className="text-[11px]">Paused</span>
                       </>
                     )}
                   </button>
                 )}
-
-                <span className="text-[11px] text-slate-400 font-mono hidden sm:inline-block">
-                  • {currentNote.date}
-                </span>
               </div>
+            </motion.div>
+          </AnimatePresence>
 
-              <div className="flex items-center gap-1.5">
-                {/* Admin Quick Edit & Delete */}
-                {isAdmin && (
-                  <div className="flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10 mr-1">
-                    <button
-                      onClick={() => {
-                        setEditingNote(currentNote);
-                        setIsEditorOpen(true);
-                      }}
-                      className="p-1 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-                      title="Edit Love Note"
-                      aria-label="Edit Love Note"
-                    >
-                      <Edit3 className="w-3.5 h-3.5 text-amber-400" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteNote(currentNote.id)}
-                      className="p-1 rounded-full hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
-                      title="Delete Love Note"
-                      aria-label="Delete Love Note"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-
-                <button
-                  onClick={handleToggleFavorite}
-                  className={`p-1.5 sm:p-2 rounded-full transition-all ${
-                    isFavorite
-                      ? 'bg-roseGlow-600 text-white shadow-glow'
-                      : 'glass-card text-slate-400 hover:text-white'
-                  }`}
-                  aria-label={isFavorite ? "Remove favorite" : "Add to favorites"}
-                >
-                  <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorite ? 'fill-white' : ''}`} />
-                </button>
-
-                <button
-                  onClick={() => setReadingNote(currentNote)}
-                  className="p-1.5 sm:p-2 rounded-full glass-card text-slate-300 hover:text-white transition-colors"
-                  title="Fullscreen reading mode"
-                  aria-label="Fullscreen reading mode"
-                >
-                  <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Note Title & Preview */}
-            <div className="space-y-2.5">
-              <h3 className="text-lg sm:text-2xl font-serif font-bold text-white tracking-tight leading-snug">
-                {currentNote.title}
-              </h3>
-              <p className="text-slate-300 font-serif text-sm sm:text-lg leading-relaxed italic border-l-2 border-roseGlow-500 pl-3 sm:pl-4 py-0.5">
-                “{currentNote.snippet}”
-              </p>
-            </div>
-
-            {/* Read Full Note Button */}
-            <div className="pt-1 flex items-center justify-between">
+          {/* Navigation Controls Bar below card */}
+          <div className="flex items-center justify-between pt-5 gap-3">
+            {/* Prev / Next Buttons */}
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setReadingNote(currentNote)}
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-mono text-roseGlow-400 hover:text-roseGlow-300 transition-colors"
+                onClick={handlePrev}
+                disabled={filteredNotes.length <= 1}
+                className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-roseGlow-500/40 text-slate-300 hover:text-white transition-all active:scale-95 disabled:opacity-40"
+                title="Previous Letter"
+                aria-label="Previous Letter"
               >
-                <span>Read Full Letter</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowLeft className="w-4 h-4" />
               </button>
 
-              {/* Quick Dots Selector */}
-              {filteredNotes.length > 1 && (
-                <div className="flex items-center gap-1.5">
-                  {filteredNotes.slice(0, Math.min(filteredNotes.length, 7)).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSelectNote(i)}
-                      aria-label={`Select Note ${i + 1}`}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        currentIndex === i
-                          ? 'w-5 bg-roseGlow-500 shadow-glow'
-                          : 'bg-white/20 hover:bg-white/40'
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
+              <button
+                onClick={handleNext}
+                disabled={filteredNotes.length <= 1}
+                className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-roseGlow-500/40 text-slate-300 hover:text-white transition-all active:scale-95 disabled:opacity-40"
+                title="Next Letter"
+                aria-label="Next Letter"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
-          </motion.div>
-        </AnimatePresence>
 
-        {/* Carousel Navigation Controls */}
-        <div className="flex items-center justify-between pt-4 sm:pt-6">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrev}
-              disabled={filteredNotes.length <= 1}
-              className="p-2.5 sm:p-3 rounded-full glass-card hover:border-roseGlow-500/40 text-slate-300 hover:text-white transition-all active:scale-95 disabled:opacity-40"
-              aria-label="Previous note"
-              title="Previous Note"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={filteredNotes.length <= 1}
-              className="p-2.5 sm:p-3 rounded-full glass-card hover:border-roseGlow-500/40 text-slate-300 hover:text-white transition-all active:scale-95 disabled:opacity-40"
-              aria-label="Next note"
-              title="Next Note"
-            >
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {/* Segmented Dots Indicator */}
             {filteredNotes.length > 1 && (
-              <button
-                onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                className="p-2.5 sm:p-3 rounded-full glass-card hover:border-white/30 text-slate-300 hover:text-white transition-all active:scale-95"
-                title={isAutoPlaying ? "Pause Auto-play" : "Resume Auto-play"}
-              >
-                {isAutoPlaying ? <Pause className="w-4 h-4 text-amber-400" /> : <Play className="w-4 h-4 text-emerald-400 fill-current" />}
-              </button>
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-[200px] sm:max-w-none px-2">
+                {filteredNotes.slice(0, Math.min(filteredNotes.length, 10)).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSelectNote(i)}
+                    aria-label={`Select Note ${i + 1}`}
+                    className={`h-2 rounded-full transition-all ${
+                      currentIndex === i
+                        ? 'w-6 bg-gradient-to-r from-roseGlow-500 to-purple-500 shadow-glow'
+                        : 'w-2 bg-white/20 hover:bg-white/40'
+                    }`}
+                  />
+                ))}
+              </div>
             )}
+
+            {/* Random Letter Button */}
+            <button
+              onClick={handleRandom}
+              disabled={filteredNotes.length <= 1}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-pink-500/40 text-xs font-mono text-slate-200 hover:text-white transition-all active:scale-95 disabled:opacity-40"
+            >
+              <Shuffle className="w-3.5 h-3.5 text-pink-400" />
+              <span className="hidden sm:inline">Random Letter</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── GRID VIEW OF ALL LETTERS ─── */}
+      {viewMode === 'grid' && (
+        <div className="space-y-4">
+          {/* Search Box in Grid View */}
+          <div className="relative max-w-md mx-auto mb-6">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search in love letters..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-xl bg-obsidian-950 border border-white/10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/50"
+            />
           </div>
 
-          <button
-            onClick={handleRandom}
-            disabled={filteredNotes.length <= 1}
-            className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full glass-card hover:border-pink-500/40 text-xs font-mono text-slate-200 hover:text-white transition-all active:scale-95 disabled:opacity-40"
-          >
-            <Shuffle className="w-3.5 h-3.5 text-pink-400" />
-            <span>Random Letter</span>
-          </button>
+          {filteredNotes.length === 0 ? (
+            <div className="text-center py-16 px-4 rounded-3xl bg-white/5 border border-white/10 space-y-3">
+              <Sparkles className="w-8 h-8 text-roseGlow-400 mx-auto" />
+              <h4 className="text-base font-serif font-bold text-white">No letters found</h4>
+              <p className="text-xs text-slate-400">
+                Try searching for different words or select another category.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+              {filteredNotes.map((note) => {
+                const isFav = favoriteIds.includes(note.id);
+                return (
+                  <motion.div
+                    key={note.id}
+                    layout
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="bg-gradient-to-b from-[#130b24]/80 to-[#0c0817]/90 rounded-2xl p-5 border border-white/10 hover:border-roseGlow-500/40 transition-all flex flex-col justify-between group shadow-lg hover:shadow-glow/20"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+                        <span className="px-2.5 py-0.5 rounded-full bg-roseGlow-500/10 text-roseGlow-300 border border-roseGlow-500/20 text-[11px]">
+                          {note.date || 'Romantic Note'}
+                        </span>
+                        <button
+                          onClick={() => handleToggleFavorite(note.id)}
+                          className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                        >
+                          <Heart
+                            className={`w-3.5 h-3.5 ${isFav ? 'fill-roseGlow-400 text-roseGlow-400' : ''}`}
+                          />
+                        </button>
+                      </div>
+
+                      <h4 className="text-lg font-serif font-bold text-white group-hover:text-roseGlow-200 transition-colors leading-snug line-clamp-2">
+                        {note.title}
+                      </h4>
+
+                      <p className="text-slate-300 text-xs font-serif leading-relaxed line-clamp-3 opacity-80 italic">
+                        “{note.snippet || note.fullMessage}”
+                      </p>
+                    </div>
+
+                    <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between">
+                      <button
+                        onClick={() => setReadingNote(note)}
+                        className="inline-flex items-center gap-1 text-xs font-mono text-roseGlow-400 hover:text-roseGlow-300 transition-colors"
+                      >
+                        <span>Read Letter</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+
+                      {isAdmin && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              setEditingNote(note);
+                              setIsEditorOpen(true);
+                            }}
+                            className="p-1 rounded-md hover:bg-white/10 text-slate-400 hover:text-amber-300"
+                            title="Edit"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteNote(note.id)}
+                            className="p-1 rounded-md hover:bg-red-500/20 text-slate-400 hover:text-red-400"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Fullscreen Reading Modal */}
       <NoteReaderModal
         note={readingNote}
+        allNotes={filteredNotes}
         onClose={() => setReadingNote(null)}
+        onNavigate={(newNote) => setReadingNote(newNote)}
+        isFavorite={readingNote ? favoriteIds.includes(readingNote.id) : false}
+        onToggleFavorite={handleToggleFavorite}
       />
 
       {/* Admin Write / Edit Love Note Modal */}
@@ -479,4 +668,3 @@ export const LoveNotesVault: React.FC = () => {
     </section>
   );
 };
-

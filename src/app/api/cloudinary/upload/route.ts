@@ -30,13 +30,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert file to buffer / base64 or upload as FormData
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // Direct Binary Blob transfer (avoiding 33% Base64 size expansion)
+    const arrayBuffer = await file.arrayBuffer();
     const mimeType = file.type || (resourceType === 'video' ? 'video/mp4' : 'image/jpeg');
-    const base64Data = `data:${mimeType};base64,${buffer.toString('base64')}`;
+    const blob = new Blob([arrayBuffer], { type: mimeType });
 
     const uploadFormData = new FormData();
-    uploadFormData.append('file', base64Data);
+    uploadFormData.append('file', blob, file.name || 'upload');
     uploadFormData.append('folder', folder);
 
     if (apiSecret && apiKey) {
