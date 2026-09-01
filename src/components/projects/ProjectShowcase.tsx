@@ -237,9 +237,9 @@ export const ProjectShowcase: React.FC = () => {
         </div>
       </div>
 
-      {/* Projects Grid */}
+      {/* Projects Grid (Pinterest-style 2-column on mobile, 3-column on desktop) */}
       {filteredProjects.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 md:gap-6 lg:gap-8">
           {filteredProjects.map((project, idx) => (
             <ProjectCard
               key={project.id}
