@@ -237,24 +237,25 @@ export const ProjectShowcase: React.FC = () => {
         </div>
       </div>
 
-      {/* Projects Grid (Pinterest-style 2-column on mobile, 3-column on desktop) */}
+      {/* Projects Masonry (True Pinterest-style Staggered 2-column on mobile, 3-column on desktop) */}
       {filteredProjects.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 md:gap-6 lg:gap-8">
+        <div className="columns-2 md:columns-2 lg:columns-3 gap-3 sm:gap-4 md:gap-6 [column-fill:_balance]">
           {filteredProjects.map((project, idx) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              index={idx}
-              isAdmin={isAdmin}
-              onEdit={(p) => {
-                setEditingProject(p);
-                setIsEditorOpen(true);
-              }}
-              onDelete={handleDeleteProject}
-              isFavorite={favoriteIds.includes(project.id)}
-              onToggleFavorite={handleToggleFavorite}
-              onQuickPreview={(proj) => setPreviewProject(proj)}
-            />
+            <div key={project.id} className="break-inside-avoid mb-3 sm:mb-4 md:mb-6">
+              <ProjectCard
+                project={project}
+                index={idx}
+                isAdmin={isAdmin}
+                onEdit={(p) => {
+                  setEditingProject(p);
+                  setIsEditorOpen(true);
+                }}
+                onDelete={handleDeleteProject}
+                isFavorite={favoriteIds.includes(project.id)}
+                onToggleFavorite={handleToggleFavorite}
+                onQuickPreview={(proj) => setPreviewProject(proj)}
+              />
+            </div>
           ))}
         </div>
       ) : (
