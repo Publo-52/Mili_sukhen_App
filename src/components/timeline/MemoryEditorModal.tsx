@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
@@ -5,8 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   Upload,
-  Image as ImageIcon,
-  Video,
+  Camera,
+  Film,
   Sparkles,
   MapPin,
   Calendar,
@@ -15,9 +17,14 @@ import {
   Loader2,
   CheckCircle2,
   Zap,
+  Link2,
+  RefreshCw,
+  Play,
+  FileText,
 } from 'lucide-react';
 import { MemoryItem } from '@/types';
 import { uploadMediaWithProgress, UploadProgressEvent } from '@/lib/cloudinaryUpload';
+import { isMediaVideo } from '@/lib/utils';
 
 interface MemoryEditorModalProps {
   isOpen: boolean;
@@ -39,20 +46,17 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
   const [thumbnailUrl, setThumbnailUrl] = useState(editingMemory?.thumbnailUrl || '');
   const [date, setDate] = useState(
     editingMemory?.date ||
-      new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+      new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
   );
   const [location, setLocation] = useState(editingMemory?.location || '');
   const [description, setDescription] = useState(editingMemory?.description || '');
   const [isFavorite, setIsFavorite] = useState(Boolean(editingMemory?.isFavorite));
-  const [aspectRatio, setAspectRatio] = useState<'portrait' | 'landscape' | 'square'>(
-    editingMemory?.aspectRatio || 'landscape'
-  );
+  const [showUrlInput, setShowUrlInput] = useState(Boolean(editingMemory?.url && !editingMemory?.url.includes('cloudinary.com')));
 
   // Upload States
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadMessage, setUploadMessage] = useState('');
-  const [uploadStage, setUploadStage] = useState<UploadProgressEvent['stage'] | 'idle'>('idle');
   const [compressionStats, setCompressionStats] = useState<{
     originalSizeStr: string;
     finalSizeStr: string;
@@ -62,6 +66,7 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -78,6 +83,20 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
     };
   }, [isOpen]);
 
+  // Sync editing memory when opening
+  useEffect(() => {
+    if (editingMemory) {
+      setType(editingMemory.type || 'photo');
+      setTitle(editingMemory.title || '');
+      setUrl(editingMemory.url || '');
+      setThumbnailUrl(editingMemory.thumbnailUrl || '');
+      setDate(editingMemory.date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }));
+      setLocation(editingMemory.location || '');
+      setDescription(editingMemory.description || '');
+      setIsFavorite(Boolean(editingMemory.isFavorite));
+    }
+  }, [editingMemory, isOpen]);
+
   if (!isOpen || !mounted) return null;
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +106,6 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
     // Reset states
     setIsUploading(true);
     setUploadProgress(5);
-    setUploadStage('compressing');
     setUploadMessage('Preparing upload...');
     setCompressionStats(null);
     setUploadError(null);
@@ -99,9 +117,8 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
       const result = await uploadMediaWithProgress(file, {
         folder: 'mili_universe_memories',
         signal: controller.signal,
-        onProgress: (evt) => {
+        onProgress: (evt: UploadProgressEvent) => {
           setUploadProgress(evt.percent);
-          setUploadStage(evt.stage);
           setUploadMessage(evt.message);
           if (evt.savedStats) {
             setCompressionStats(evt.savedStats);
@@ -111,8 +128,15 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
 
       setUrl(result.url);
       setThumbnailUrl(result.thumbnailUrl || result.url);
-      if (result.resourceType) setType(result.resourceType);
-      if (!title) setTitle(file.name.replace(/\.[^/.]+$/, ''));
+      if (result.resourceType) {
+        setType(result.resourceType);
+      } else if (file.type.startsWith('video/')) {
+        setType('video');
+      }
+      if (!title.trim()) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+        setTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
+      }
     } catch (err: any) {
       if (err.name === 'AbortError' || err.message?.includes('aborted')) {
         setUploadError('Upload was cancelled.');
@@ -134,7 +158,6 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
     }
     setIsUploading(false);
     setUploadProgress(0);
-    setUploadStage('idle');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -147,14 +170,14 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
         editingMemory?.id ||
         `mem_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       title: title.trim(),
-      type,
+      type: isMediaVideo(url) ? 'video' : type,
       url: url.trim(),
       thumbnailUrl: thumbnailUrl.trim() || url.trim(),
       date: date.trim() || 'A special moment',
       location: location.trim(),
       description: description.trim(),
       isFavorite,
-      aspectRatio,
+      aspectRatio: 'landscape',
       createdAt: editingMemory?.createdAt || new Date().toISOString(),
     };
 
@@ -166,91 +189,106 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
     }
   };
 
+  const hasMedia = Boolean(url.trim());
+  const isVideoMedia = isMediaVideo(url) || type === 'video';
+
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[999999] bg-[#06040a]/95 backdrop-blur-2xl flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 pt-10 sm:pt-6 pb-24 sm:pb-8 overflow-y-auto">
+      <div className="fixed inset-0 z-[999999] bg-[#06040a]/90 backdrop-blur-xl flex flex-col items-center justify-end sm:justify-center p-0 sm:p-6 overflow-y-auto">
+        {/* Modal Window / Bottom Sheet on Mobile */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-obsidian-950 border border-white/15 rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-7 my-auto max-h-[85vh] overflow-y-auto text-slate-200"
+          initial={{ opacity: 0, y: 40, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 40, scale: 0.96 }}
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          className="relative w-full max-w-xl bg-gradient-to-b from-[#130b24] to-[#0a0614] border border-white/15 rounded-t-[32px] sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] sm:max-h-[88vh] flex flex-col text-slate-200"
         >
+          {/* Mobile Top Drag Handle Indicator */}
+          <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 sm:hidden shrink-0" />
+
           {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-white/10">
+          <div className="px-5 sm:px-6 py-4 border-b border-white/10 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-purple-500/20 text-purple-300">
-                <Sparkles className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-xl bg-roseGlow-500/15 border border-roseGlow-500/30 flex items-center justify-center text-roseGlow-300 shrink-0">
+                <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white">
-                  {editingMemory ? 'Edit Memory' : 'Upload Photo / Video to Vault'}
+                <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  {editingMemory ? 'Edit Memory' : 'Upload to Vault'}
                 </h3>
-                <p className="text-xs text-slate-400">High-speed Cloudinary vault with instant auto-optimization</p>
+                <p className="text-[11px] text-slate-400 font-mono">
+                  Cloudinary high-definition photo & video storage
+                </p>
               </div>
             </div>
+
             <button
               onClick={onClose}
               disabled={isUploading || isSaving}
-              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition-colors disabled:opacity-50"
+              className="p-2 rounded-xl text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50"
+              aria-label="Close modal"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-            {/* Type Selector (Photo vs Video) */}
-            <div className="grid grid-cols-2 gap-3">
+          {/* Scrollable Form Body */}
+          <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-white/10">
+            {/* 1. Media Type Segmented Switcher */}
+            <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/40 border border-white/10">
               <button
                 type="button"
                 onClick={() => setType('photo')}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all ${
+                className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all ${
                   type === 'photo'
-                    ? 'bg-roseGlow-500/20 border-roseGlow-500/50 text-roseGlow-300 shadow-glow'
-                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+                    ? 'bg-roseGlow-500 text-white shadow-glow font-bold'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <ImageIcon className="w-4 h-4" />
-                <span>📸 Photo / Image</span>
+                <Camera className="w-4 h-4" />
+                <span>Photo</span>
               </button>
               <button
                 type="button"
                 onClick={() => setType('video')}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all ${
+                className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all ${
                   type === 'video'
-                    ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-glow'
-                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+                    ? 'bg-purple-600 text-white shadow-glow font-bold'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <Video className="w-4 h-4" />
-                <span>🎬 Video Moment</span>
+                <Film className="w-4 h-4" />
+                <span>Video</span>
               </button>
             </div>
 
-            {/* Cloudinary File Upload Box */}
-            <div className="p-4 rounded-2xl bg-white/5 border border-dashed border-white/20 hover:border-purple-400/50 transition-all text-center">
+            {/* 2. Media Upload & Live Interactive Preview Area */}
+            <div className="relative">
               <input
+                ref={fileInputRef}
                 type="file"
-                id="memory-file-upload"
+                id="vault-file-picker"
                 accept={type === 'video' ? 'video/*' : 'image/*'}
                 onChange={handleFileUpload}
                 disabled={isUploading}
                 className="hidden"
               />
 
+              {/* Uploading Progress View */}
               {isUploading ? (
-                <div className="flex flex-col items-center gap-3 py-3">
-                  <div className="flex items-center justify-between w-full px-2 text-xs">
+                <div className="p-5 rounded-2xl bg-black/40 border border-purple-500/40 space-y-3.5 text-center">
+                  <div className="flex items-center justify-between text-xs px-1">
                     <span className="text-purple-300 font-medium flex items-center gap-1.5">
-                      <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
-                      {uploadMessage || 'Uploading...'}
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+                      <span>{uploadMessage || 'Uploading to Cloudinary...'}</span>
                     </span>
                     <span className="font-mono font-bold text-white text-sm">
                       {uploadProgress}%
                     </span>
                   </div>
 
-                  {/* Progress Bar Container */}
-                  <div className="w-full h-2.5 bg-obsidian-900 rounded-full overflow-hidden border border-white/10 relative">
+                  {/* Animated Progress Bar */}
+                  <div className="w-full h-2.5 bg-obsidian-950 rounded-full overflow-hidden border border-white/10">
                     <motion.div
                       className="h-full bg-gradient-to-r from-roseGlow-500 via-purple-500 to-cyan-400"
                       initial={{ width: 0 }}
@@ -259,9 +297,9 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
                     />
                   </div>
 
-                  {/* Compression stats pill */}
+                  {/* Optimization Badge */}
                   {compressionStats && compressionStats.savedPercent > 0 && (
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px]">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px]">
                       <Zap className="w-3.5 h-3.5 text-emerald-400" />
                       <span>
                         Optimized: {compressionStats.originalSizeStr} ➔ {compressionStats.finalSizeStr} ({compressionStats.savedPercent}% lighter)
@@ -269,89 +307,127 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
                     </div>
                   )}
 
-                  <button
-                    type="button"
-                    onClick={handleCancelUpload}
-                    className="text-xs text-roseGlow-400 hover:text-roseGlow-300 underline pt-1"
-                  >
-                    Cancel upload
-                  </button>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={handleCancelUpload}
+                      className="text-xs text-roseGlow-400 hover:text-roseGlow-300 underline"
+                    >
+                      Cancel Upload
+                    </button>
+                  </div>
+                </div>
+              ) : hasMedia ? (
+                /* Media Uploaded - Interactive Live Preview Card */
+                <div className="relative rounded-2xl overflow-hidden border border-roseGlow-500/40 bg-black/60 shadow-lg">
+                  <div className="relative aspect-[16/9] w-full bg-obsidian-950 flex items-center justify-center">
+                    {isVideoMedia ? (
+                      <video
+                        src={url}
+                        controls
+                        playsInline
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <Image
+                        src={url}
+                        alt="Preview"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 600px"
+                        className="object-contain"
+                      />
+                    )}
+
+                    {/* Top Overlay Badges */}
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 pointer-events-none">
+                      <span className="px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md text-emerald-300 border border-emerald-500/30 text-[11px] font-mono flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                        <span>Ready in Vault</span>
+                      </span>
+                    </div>
+
+                    {/* Change Media Button */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute top-2.5 right-2.5 px-3 py-1 rounded-full bg-black/80 hover:bg-black text-white backdrop-blur-md border border-white/20 text-xs font-mono flex items-center gap-1.5 transition-all shadow-md"
+                    >
+                      <RefreshCw className="w-3 h-3 text-roseGlow-400" />
+                      <span>Change</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
+                /* Empty Dropzone Card */
                 <label
-                  htmlFor="memory-file-upload"
-                  className="cursor-pointer flex flex-col items-center justify-center gap-2 py-2"
+                  htmlFor="vault-file-picker"
+                  className="cursor-pointer group flex flex-col items-center justify-center p-6 rounded-2xl bg-white/5 hover:bg-white/[0.08] border border-dashed border-white/20 hover:border-roseGlow-500/50 transition-all text-center"
                 >
-                  <div className="p-3 rounded-full bg-purple-500/20 text-purple-300 group-hover:scale-110 transition-transform">
-                    <Upload className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-roseGlow-500/20 to-purple-600/20 border border-white/10 group-hover:scale-110 group-hover:border-roseGlow-500/40 transition-all flex items-center justify-center text-roseGlow-300 mb-2.5 shadow-sm">
+                    <Upload className="w-5 h-5" />
                   </div>
-                  <span className="text-xs sm:text-sm font-medium text-white">
-                    Click to select {type === 'video' ? 'video file' : 'photo'} from your device
+                  <span className="text-sm font-semibold text-white group-hover:text-roseGlow-200 transition-colors">
+                    Tap to select {type === 'video' ? 'video' : 'photo'} from device
                   </span>
-                  <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                    <span className="inline-flex items-center gap-1 text-emerald-400">
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 pt-1 font-mono">
+                    <span className="text-emerald-400 flex items-center gap-0.5">
                       <Zap className="w-3 h-3" /> Auto-optimizing
                     </span>
                     <span>•</span>
-                    <span>Supports JPG, PNG, WEBP, MP4, MOV, WebM</span>
+                    <span>JPG, PNG, WEBP, MP4, MOV</span>
                   </div>
                 </label>
               )}
             </div>
 
+            {/* Error Message */}
             {uploadError && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{uploadError}</span>
               </div>
             )}
 
-            {/* Direct URL Input */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-mono text-slate-400">
-                  Media URL (Cloudinary / Web URL) *
-                </label>
-                {url && (
-                  <span className="text-[11px] text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Media linked
-                  </span>
-                )}
-              </div>
-              <input
-                type="url"
-                required
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://res.cloudinary.com/... or any image/video URL"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-obsidian-950 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-purple-500/50 font-mono"
-              />
+            {/* Optional Collapsible Direct URL Link */}
+            <div className="pt-0.5">
+              {!showUrlInput ? (
+                <button
+                  type="button"
+                  onClick={() => setShowUrlInput(true)}
+                  className="text-[11px] font-mono text-slate-400 hover:text-roseGlow-300 transition-colors flex items-center gap-1"
+                >
+                  <Link2 className="w-3 h-3" />
+                  <span>Or paste external image/video link</span>
+                </button>
+              ) : (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-mono text-slate-300 flex items-center gap-1">
+                      <Link2 className="w-3 h-3 text-roseGlow-400" />
+                      <span>Direct Media URL</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowUrlInput(false)}
+                      className="text-[10px] text-slate-400 hover:text-white"
+                    >
+                      Hide
+                    </button>
+                  </div>
+                  <input
+                    type="url"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="https://res.cloudinary.com/... or any media URL"
+                    className="w-full px-3.5 py-2 rounded-xl bg-obsidian-950 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/50 font-mono"
+                  />
+                </div>
+              )}
             </div>
 
-            {/* Live Media Preview if URL available */}
-            {url && (
-              <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden bg-obsidian-950 border border-white/10">
-                {type === 'video' ? (
-                  <video
-                    src={url}
-                    controls
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <Image
-                    src={url}
-                    alt="Preview"
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="w-full h-full object-contain"
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Title / Caption */}
+            {/* 3. Title / Caption Field */}
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">
+              <label className="block text-xs font-mono text-slate-300 mb-1.5">
                 Title / Caption *
               </label>
               <input
@@ -359,85 +435,88 @@ export const MemoryEditorModal: React.FC<MemoryEditorModalProps> = ({
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Stargazing by the Lake, Our First Roadtrip..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-obsidian-950 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-purple-500/50"
+                placeholder="e.g., Stargazing by the Lake, Kolkata Sunset..."
+                className="w-full px-3.5 py-2.5 rounded-xl bg-obsidian-950 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/50"
               />
             </div>
 
-            {/* Date & Location */}
+            {/* 4. Date & Location Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">
-                  <Calendar className="w-3 h-3 inline mr-1 text-roseGlow-400" />
-                  Date / Moment
+                <label className="block text-xs font-mono text-slate-300 mb-1.5 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-roseGlow-400" />
+                  <span>Date / Moment</span>
                 </label>
                 <input
                   type="text"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  placeholder="e.g., October 14, 2025"
-                  className="w-full px-3.5 py-2 rounded-xl bg-obsidian-950 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-purple-500/50"
+                  placeholder="e.g., September 1, 2026"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-obsidian-950 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/50"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">
-                  <MapPin className="w-3 h-3 inline mr-1 text-purple-400" />
-                  Location / Tag
+                <label className="block text-xs font-mono text-slate-300 mb-1.5 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-purple-400" />
+                  <span>Location / Tag</span>
                 </label>
                 <input
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g., Favorite Café, Kolkata, Sunset Point"
-                  className="w-full px-3.5 py-2 rounded-xl bg-obsidian-950 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-purple-500/50"
+                  placeholder="e.g., Favorite Café, Rooftop"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-obsidian-950 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/50"
                 />
               </div>
             </div>
 
-            {/* Description / Emotional Note */}
+            {/* 5. Memory Story / Note (Optional) */}
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">
-                Memory Story / Note
+              <label className="block text-xs font-mono text-slate-300 mb-1.5 flex items-center gap-1">
+                <FileText className="w-3 h-3 text-roseGlow-400" />
+                <span>Memory Story / Note (Optional)</span>
               </label>
               <textarea
-                rows={3}
+                rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Write a sweet memory or story about this moment..."
-                className="w-full px-3.5 py-2 rounded-xl bg-obsidian-950 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-purple-500/50 resize-none"
+                placeholder="Write a sweet memory or note about this moment..."
+                className="w-full px-3.5 py-2 rounded-xl bg-obsidian-950 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/50 resize-none"
               />
             </div>
 
-            {/* Favorite Checkbox */}
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="checkbox"
-                id="is-fav-memory"
-                checked={isFavorite}
-                onChange={(e) => setIsFavorite(e.target.checked)}
-                className="w-4 h-4 rounded text-roseGlow-500 bg-obsidian-950 border-white/20 focus:ring-roseGlow-500 cursor-pointer"
-              />
-              <label htmlFor="is-fav-memory" className="text-xs text-slate-300 flex items-center gap-1.5 cursor-pointer">
-                <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-roseGlow-400 text-roseGlow-400' : 'text-slate-400'}`} />
-                <span>Mark as Cherished Favorite</span>
+            {/* 6. Cherished Favorite Checkbox */}
+            <div className="pt-1">
+              <label className="flex items-center gap-2 text-xs font-mono text-slate-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isFavorite}
+                  onChange={(e) => setIsFavorite(e.target.checked)}
+                  className="w-4 h-4 rounded accent-roseGlow-500 cursor-pointer"
+                />
+                <span className="flex items-center gap-1.5 text-roseGlow-300">
+                  <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-roseGlow-400 text-roseGlow-400' : 'text-slate-400'}`} />
+                  <span>Mark as Cherished Favorite</span>
+                </span>
               </label>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+            {/* 7. Action Buttons */}
+            <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isUploading || isSaving}
-                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs sm:text-sm text-slate-300 transition-colors disabled:opacity-50"
+                className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-mono text-slate-300 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
+
               <button
                 type="submit"
                 disabled={isSaving || isUploading || !url.trim() || !title.trim()}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-roseGlow-500 to-purple-600 hover:from-roseGlow-400 hover:to-purple-500 text-white text-xs sm:text-sm font-semibold shadow-glow transition-all disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-roseGlow-500 to-purple-600 hover:from-roseGlow-400 hover:to-purple-500 text-white text-xs sm:text-sm font-semibold shadow-glow transition-all disabled:opacity-40 flex items-center gap-2"
               >
                 {isSaving ? (
                   <>
