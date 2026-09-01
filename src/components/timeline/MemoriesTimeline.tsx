@@ -26,6 +26,7 @@ import {
   deleteMemory,
   getFavoriteMemoryIds,
   toggleFavoriteMemory,
+  getDeletedMemoryIds,
 } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -50,11 +51,13 @@ function getMediaThumbnail(memory: MemoryItem): string {
     return memory.thumbnailUrl;
   }
 
-  if (memory.url) {
+  if (isVideo && memory.url) {
     if (memory.url.includes('cloudinary.com')) {
-      return memory.url.replace(/\.(mp4|mov|webm|avi|mkv|m4v)$/i, '.jpg');
+      const match = memory.url.match(/\/upload\/(?:v\d+\/)?(.+?)\.[^.]+$/);
+      if (match && match[1]) {
+        return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dc1qqj4m6'}/video/upload/so_0,w_800,c_limit,f_jpg,q_auto/${match[1]}.jpg`;
+      }
     }
-    return memory.url;
   }
 
   return 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop';
@@ -75,12 +78,14 @@ export const MemoriesTimeline: React.FC = () => {
 
   // Load Memories from API / Supabase with local fallback
   const loadMemories = useCallback(async () => {
+    const deletedIds = getDeletedMemoryIds();
     try {
       const res = await fetch('/api/memories', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data?.memories && Array.isArray(data.memories) && data.memories.length > 0) {
-          setMemories(data.memories);
+        if (data?.memories && Array.isArray(data.memories)) {
+          const valid = data.memories.filter((m: MemoryItem) => !deletedIds.includes(m.id));
+          setMemories(valid);
           return;
         }
       }

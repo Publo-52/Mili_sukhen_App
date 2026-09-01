@@ -29,6 +29,7 @@ import {
   deleteLoveNote,
   getFavoriteNoteIds,
   toggleFavoriteNote,
+  getDeletedNoteIds,
 } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -68,12 +69,14 @@ export const LoveNotesVault: React.FC = () => {
 
   // Load notes from API / Supabase with local fallback
   const loadNotes = useCallback(async () => {
+    const deletedIds = getDeletedNoteIds();
     try {
       const res = await fetch('/api/love-notes', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data?.notes && data.notes.length > 0) {
-          setAllNotes(data.notes);
+        if (data?.notes) {
+          const valid = data.notes.filter((n: LoveNote) => !deletedIds.includes(n.id));
+          setAllNotes(valid);
           return;
         }
       }

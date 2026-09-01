@@ -17,6 +17,10 @@ const KEYS = {
   ADMIN_LOGGED_IN: 'mili_admin_authenticated',
   CONTACT_UNLOCKED: 'mili_contact_unlocked',
   CUSTOM_TURTLE: 'mili_custom_turtle',
+  DELETED_PROJECTS: 'mili_deleted_project_ids',
+  DELETED_TURTLE: 'mili_deleted_turtle_ids',
+  DELETED_NOTES: 'mili_deleted_note_ids',
+  DELETED_MEMORIES: 'mili_deleted_memory_ids',
 };
 
 // Safe LocalStorage access
@@ -40,16 +44,59 @@ function setStorageItem<T>(key: string, value: T): void {
   }
 }
 
+// ----------------- Deleted IDs Tracking (Prevents resurrecting deleted defaults) -----------------
+export function getDeletedProjectIds(): string[] {
+  return getStorageItem<string[]>(KEYS.DELETED_PROJECTS, []);
+}
+export function markProjectDeleted(id: string): void {
+  const deleted = getDeletedProjectIds();
+  if (!deleted.includes(id)) {
+    setStorageItem(KEYS.DELETED_PROJECTS, [...deleted, id]);
+  }
+}
+
+export function getDeletedTurtleIds(): string[] {
+  return getStorageItem<string[]>(KEYS.DELETED_TURTLE, []);
+}
+export function markTurtleDeleted(id: string): void {
+  const deleted = getDeletedTurtleIds();
+  if (!deleted.includes(id)) {
+    setStorageItem(KEYS.DELETED_TURTLE, [...deleted, id]);
+  }
+}
+
+export function getDeletedNoteIds(): string[] {
+  return getStorageItem<string[]>(KEYS.DELETED_NOTES, []);
+}
+export function markNoteDeleted(id: string): void {
+  const deleted = getDeletedNoteIds();
+  if (!deleted.includes(id)) {
+    setStorageItem(KEYS.DELETED_NOTES, [...deleted, id]);
+  }
+}
+
+export function getDeletedMemoryIds(): string[] {
+  return getStorageItem<string[]>(KEYS.DELETED_MEMORIES, []);
+}
+export function markMemoryDeleted(id: string): void {
+  const deleted = getDeletedMemoryIds();
+  if (!deleted.includes(id)) {
+    setStorageItem(KEYS.DELETED_MEMORIES, [...deleted, id]);
+  }
+}
+
 // ----------------- Projects Storage -----------------
 export function getProjects(): Project[] {
+  const deletedIds = getDeletedProjectIds();
   const saved = getStorageItem<Project[] | null>(KEYS.PROJECTS, null);
-  if (saved === null) {
-    return INITIAL_PROJECTS;
-  }
-  return saved;
+  const baseline = saved === null ? INITIAL_PROJECTS : saved;
+  return baseline.filter((p) => !deletedIds.includes(p.id));
 }
 
 export function saveProject(project: Project): Project[] {
+  const deletedIds = getDeletedProjectIds().filter((id) => id !== project.id);
+  setStorageItem(KEYS.DELETED_PROJECTS, deletedIds);
+
   const current = getProjects();
   const index = current.findIndex((p) => p.id === project.id);
   let updated: Project[];
@@ -64,6 +111,7 @@ export function saveProject(project: Project): Project[] {
 }
 
 export function deleteProject(id: string): Project[] {
+  markProjectDeleted(id);
   const current = getProjects();
   const updated = current.filter((p) => p.id !== id);
   setStorageItem(KEYS.PROJECTS, updated);
@@ -71,20 +119,23 @@ export function deleteProject(id: string): Project[] {
 }
 
 export function resetProjectsToDefault(): Project[] {
+  setStorageItem(KEYS.DELETED_PROJECTS, []);
   setStorageItem(KEYS.PROJECTS, INITIAL_PROJECTS);
   return INITIAL_PROJECTS;
 }
 
 // ----------------- Turtle Creations Storage -----------------
 export function getTurtleCreations(): TurtleCreation[] {
+  const deletedIds = getDeletedTurtleIds();
   const saved = getStorageItem<TurtleCreation[] | null>(KEYS.CUSTOM_TURTLE, null);
-  if (saved === null) {
-    return INITIAL_TURTLE_CREATIONS;
-  }
-  return saved;
+  const baseline = saved === null ? INITIAL_TURTLE_CREATIONS : saved;
+  return baseline.filter((c) => !deletedIds.includes(c.id));
 }
 
 export function saveTurtleCreation(creation: TurtleCreation): TurtleCreation[] {
+  const deletedIds = getDeletedTurtleIds().filter((id) => id !== creation.id);
+  setStorageItem(KEYS.DELETED_TURTLE, deletedIds);
+
   const current = getTurtleCreations();
   const index = current.findIndex((c) => c.id === creation.id);
   let updated: TurtleCreation[];
@@ -99,22 +150,25 @@ export function saveTurtleCreation(creation: TurtleCreation): TurtleCreation[] {
 }
 
 export function deleteTurtleCreation(id: string): TurtleCreation[] {
+  markTurtleDeleted(id);
   const current = getTurtleCreations();
   const updated = current.filter((c) => c.id !== id);
   setStorageItem(KEYS.CUSTOM_TURTLE, updated);
   return updated;
 }
 
-// ----------------- Love Notes Storage (Unlimited) -----------------
+// ----------------- Love Notes Storage -----------------
 export function getLoveNotes(): LoveNote[] {
+  const deletedIds = getDeletedNoteIds();
   const saved = getStorageItem<LoveNote[] | null>(KEYS.LOVE_NOTES, null);
-  if (saved === null) {
-    return INITIAL_LOVE_NOTES;
-  }
-  return saved;
+  const baseline = saved === null ? INITIAL_LOVE_NOTES : saved;
+  return baseline.filter((n) => !deletedIds.includes(n.id));
 }
 
 export function saveLoveNote(note: LoveNote): LoveNote[] {
+  const deletedIds = getDeletedNoteIds().filter((id) => id !== note.id);
+  setStorageItem(KEYS.DELETED_NOTES, deletedIds);
+
   const current = getLoveNotes();
   const index = current.findIndex((n) => n.id === note.id);
   let updated: LoveNote[];
@@ -129,6 +183,7 @@ export function saveLoveNote(note: LoveNote): LoveNote[] {
 }
 
 export function deleteLoveNote(id: string): LoveNote[] {
+  markNoteDeleted(id);
   const current = getLoveNotes();
   const updated = current.filter((n) => n.id !== id);
   setStorageItem(KEYS.LOVE_NOTES, updated);
@@ -136,6 +191,7 @@ export function deleteLoveNote(id: string): LoveNote[] {
 }
 
 export function resetLoveNotesToDefault(): LoveNote[] {
+  setStorageItem(KEYS.DELETED_NOTES, []);
   setStorageItem(KEYS.LOVE_NOTES, INITIAL_LOVE_NOTES);
   return INITIAL_LOVE_NOTES;
 }
@@ -165,14 +221,16 @@ export function toggleFavoriteNote(id: string): string[] {
 
 // ----------------- Memories / Photo & Video Storage -----------------
 export function getMemories(): MemoryMilestone[] {
+  const deletedIds = getDeletedMemoryIds();
   const saved = getStorageItem<MemoryMilestone[] | null>(KEYS.FAVORITE_MEMORIES + '_all', null);
-  if (saved === null) {
-    return INITIAL_MEMORIES;
-  }
-  return saved;
+  const baseline = saved === null ? INITIAL_MEMORIES : saved;
+  return baseline.filter((m) => !deletedIds.includes(m.id));
 }
 
 export function saveMemory(memory: MemoryMilestone): MemoryMilestone[] {
+  const deletedIds = getDeletedMemoryIds().filter((id) => id !== memory.id);
+  setStorageItem(KEYS.DELETED_MEMORIES, deletedIds);
+
   const current = getMemories();
   const index = current.findIndex((m) => m.id === memory.id);
   let updated: MemoryMilestone[];
@@ -187,6 +245,7 @@ export function saveMemory(memory: MemoryMilestone): MemoryMilestone[] {
 }
 
 export function deleteMemory(id: string): MemoryMilestone[] {
+  markMemoryDeleted(id);
   const current = getMemories();
   const updated = current.filter((m) => m.id !== id);
   setStorageItem(KEYS.FAVORITE_MEMORIES + '_all', updated);
@@ -194,6 +253,7 @@ export function deleteMemory(id: string): MemoryMilestone[] {
 }
 
 export function resetMemoriesToDefault(): MemoryMilestone[] {
+  setStorageItem(KEYS.DELETED_MEMORIES, []);
   setStorageItem(KEYS.FAVORITE_MEMORIES + '_all', INITIAL_MEMORIES);
   return INITIAL_MEMORIES;
 }

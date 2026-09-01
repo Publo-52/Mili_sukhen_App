@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Search, Sparkles, Heart, Filter, Layers, ArrowUpRight, Plus, Wand2 } from 'lucide-react';
 import { Project, ProjectCategory } from '@/types';
-import { getProjects, saveProject, deleteProject, getFavoriteProjectIds, toggleFavoriteProject } from '@/lib/storage';
+import { getProjects, saveProject, deleteProject, toggleFavoriteProject, getFavoriteProjectIds, getDeletedProjectIds } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { ProjectCard } from './ProjectCard';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -35,12 +35,14 @@ export const ProjectShowcase: React.FC = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
   const loadProjects = useCallback(async () => {
+    const deletedIds = getDeletedProjectIds();
     try {
       const res = await fetch('/api/projects', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data?.projects && data.projects.length > 0) {
-          setProjects(data.projects);
+        if (data?.projects) {
+          const valid = data.projects.filter((p: Project) => !deletedIds.includes(p.id));
+          setProjects(valid);
           return;
         }
       }

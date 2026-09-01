@@ -12,7 +12,7 @@ import {
   Terminal,
 } from 'lucide-react';
 import { TurtleCreation } from '@/types';
-import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation } from '@/lib/storage';
+import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation, getDeletedTurtleIds } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { getOptimizedImageUrl } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -36,12 +36,14 @@ export const TurtleGallery: React.FC = () => {
   const [editingCreation, setEditingCreation] = useState<TurtleCreation | null>(null);
 
   const loadCreations = useCallback(async () => {
+    const deletedIds = getDeletedTurtleIds();
     try {
       const res = await fetch('/api/turtle', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data?.creations && data.creations.length > 0) {
-          setCreations(data.creations);
+        if (data?.creations) {
+          const valid = data.creations.filter((c: TurtleCreation) => !deletedIds.includes(c.id));
+          setCreations(valid);
           return;
         }
       }
