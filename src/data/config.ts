@@ -30,8 +30,6 @@ export const AUTH_USERS = {
     formattedPhone: "+91 97329 34032",
     emails: [
       "mandalsharmili06@gmail.com",
-      "mili",
-      "sharmili",
       "9732934032",
       "+919732934032",
       "+91 97329 34032"
@@ -53,9 +51,6 @@ export const AUTH_USERS = {
     formattedPhone: "+91 98326 95291",
     emails: [
       "dassukhen@gmail.com",
-      "sukhen",
-      "admin",
-      "dassukhen",
       "9832695291",
       "+919832695291",
       "+91 98326 95291"

@@ -93,21 +93,19 @@ export async function POST(request: NextRequest) {
 
     let candidateUser: typeof AUTH_USERS['mili'] | typeof AUTH_USERS['sukhen'] | null = null;
 
-    // Check Sukhen email / username / phone
+    // Check Sukhen email / phone
     const isSukhenEmail =
       AUTH_USERS.sukhen.emails.some((e) => cleanEmail === e.toLowerCase()) ||
-      cleanEmail.includes('sukhen') ||
-      cleanEmail.includes('dassukhen') ||
-      cleanEmail.includes('admin') ||
-      cleanEmail.includes('9832695291');
+      cleanEmail === '9832695291' ||
+      cleanEmail === '+919832695291' ||
+      cleanEmail === 'dassukhen@gmail.com';
 
-    // Check Mili email / username / phone
+    // Check Mili email / phone
     const isMiliEmail =
       AUTH_USERS.mili.emails.some((e) => cleanEmail === e.toLowerCase()) ||
-      cleanEmail.includes('mili') ||
-      cleanEmail.includes('mandal') ||
-      cleanEmail.includes('sharmili') ||
-      cleanEmail.includes('9732934032');
+      cleanEmail === '9732934032' ||
+      cleanEmail === '+919732934032' ||
+      cleanEmail === 'mandalsharmili06@gmail.com';
 
     if (isSukhenEmail) {
       candidateUser = AUTH_USERS.sukhen;

@@ -186,7 +186,7 @@ function LoginContent() {
                       setEmail(e.target.value);
                       setError('');
                     }}
-                    placeholder="Enter your email address"
+                    placeholder="Enter email or phone number"
                     required
                     autoFocus
                     className="w-full px-4 py-3.5 rounded-2xl bg-black/40 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 focus:ring-2 focus:ring-roseGlow-500/20 transition-all"
