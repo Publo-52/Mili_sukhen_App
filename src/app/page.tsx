@@ -146,11 +146,13 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* Footer */}
-      <Footer
-        onReplayIntro={() => setShowIntro(true)}
-        onOpenSurprise={() => setShowSurprise(true)}
-      />
+      {/* Footer: ONLY visible on Home Section */}
+      {activeSection === 'home' && (
+        <Footer
+          onReplayIntro={() => setShowIntro(true)}
+          onOpenSurprise={() => setShowSurprise(true)}
+        />
+      )}
 
       {/* Ambient Audio Player */}
       <AmbientAudioPlayer />
