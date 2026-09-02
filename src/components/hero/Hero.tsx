@@ -52,21 +52,21 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
 
       {/* Main Content */}
       <div className="relative z-10 max-w-3xl mx-auto space-y-5 sm:space-y-6 w-full max-w-full">
-        {/* Mili Starlight Portrait Avatar with 5s Smooth Looping Transitions */}
+        {/* Mili Starlight Portrait Avatar with Seamless Cross-Fade (Zero Black Shadow) */}
         <div
           onClick={() => setAvatarIndex((prev) => (prev + 1) % HERO_AVATAR_IMAGES.length)}
           className="relative mx-auto w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-full p-[2px] bg-gradient-to-tr from-roseGlow-500 via-pink-400 to-purple-500 shadow-glow group cursor-pointer animate-fade-in transition-all duration-300 hover:shadow-[0_0_35px_rgba(244,63,94,0.45)]"
           title="Click to cycle photo"
         >
-          <div className="w-full h-full rounded-full overflow-hidden bg-obsidian-950 border-[1px] border-obsidian-950 relative">
-            <AnimatePresence mode="wait">
+          <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-tr from-[#1a0f28] to-[#12081d] border border-white/10 relative">
+            <AnimatePresence initial={false}>
               <motion.div
                 key={avatarIndex}
-                initial={{ opacity: 0, scale: 1.05 }}
+                initial={{ opacity: 0, scale: 1.03 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full h-full relative"
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.1, ease: [0.4, 0, 0.2, 1] }}
+                className="w-full h-full absolute inset-0"
               >
                 <Image
                   src={HERO_AVATAR_IMAGES[avatarIndex].src}
@@ -79,8 +79,10 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
               </motion.div>
             </AnimatePresence>
           </div>
-          <div className="absolute -bottom-1 -right-1 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-roseGlow-600 text-white flex items-center justify-center shadow-glow text-xs border border-white/20 z-10 transition-transform duration-300 group-hover:scale-110">
-            <Sparkles className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
+
+          {/* Small Sparkles Badge Circle (Slightly smaller as requested) */}
+          <div className="absolute bottom-0 right-0 sm:-bottom-0.5 sm:-right-0.5 w-6 h-6 sm:w-7 sm:h-7 md:w-7.5 md:h-7.5 rounded-full bg-gradient-to-tr from-roseGlow-600 to-pink-500 text-white flex items-center justify-center shadow-glow border border-white/30 z-10 transition-transform duration-300 group-hover:scale-110">
+            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
           </div>
         </div>
 
