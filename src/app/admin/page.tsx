@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 import {
   Shield,
   KeyRound,
@@ -459,7 +460,12 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen bg-obsidian-950 flex flex-col items-center justify-center p-4">
+      <motion.main
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        className="min-h-screen bg-obsidian-950 flex flex-col items-center justify-center p-4"
+      >
         <div className="w-full max-w-md glass-card rounded-3xl p-8 border border-white/10 text-center space-y-6">
           <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 p-0.5 shadow-glow-lg mx-auto border border-white/20 overflow-hidden">
             <div className="w-full h-full rounded-[22px] bg-[#0c0817] flex items-center justify-center overflow-hidden">
@@ -516,12 +522,17 @@ export default function AdminPage() {
             <span>Return to Suksharmi Sanctuary</span>
           </Link>
         </div>
-      </main>
+      </motion.main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-obsidian-950 text-slate-100 pb-20">
+    <motion.main
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
+      className="min-h-screen bg-obsidian-950 text-slate-100 pb-20"
+    >
       {/* Sleek Modern Top Bar */}
       <header className="border-b border-white/10 bg-[#0d091a]/90 backdrop-blur-xl sticky top-0 z-30 px-3 sm:px-8 py-3 sm:py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
@@ -1183,6 +1194,6 @@ export default function AdminPage() {
         }}
         onSave={handleSaveMemoryModal}
       />
-    </main>
+    </motion.main>
   );
 }

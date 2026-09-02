@@ -35,7 +35,7 @@ const EasterEggListener = dynamic(
 );
 
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Eager Parallel Cache Warm-up function (pre-loads all sections & assets upfront)
 const warmUpAllDatasetsAndAssets = () => {
@@ -172,35 +172,82 @@ export default function HomePage() {
         onSelectSection={handleSelectSection}
       />
 
-      {/* Main Content Container with Pre-rendered 0ms Instant Tab Switching */}
+      {/* Main Content Container with Silk-Smooth Animated Transitions */}
       <main className="relative z-10 min-h-[75vh]">
-        {/* 1. Home Sanctuary View */}
-        <div className={`pt-18 sm:pt-22 pb-8 ${isHome ? 'block' : 'hidden'}`}>
-          <Hero
-            onOpenSurprise={() => setShowSurprise(true)}
-            onSelectSection={handleSelectSection}
-          />
-        </div>
+        <AnimatePresence mode="wait">
+          {/* 1. Home Sanctuary View */}
+          {isHome && (
+            <motion.div
+              key="home"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="pt-18 sm:pt-22 pb-8"
+            >
+              <Hero
+                onOpenSurprise={() => setShowSurprise(true)}
+                onSelectSection={handleSelectSection}
+              />
+            </motion.div>
+          )}
 
-        {/* 2. Projects Showcase View */}
-        <div className={`pt-24 sm:pt-28 pb-16 ${activeSection === 'projects' ? 'block' : 'hidden'}`}>
-          <ProjectShowcase />
-        </div>
+          {/* 2. Projects Showcase View */}
+          {activeSection === 'projects' && (
+            <motion.div
+              key="projects"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="pt-24 sm:pt-28 pb-16"
+            >
+              <ProjectShowcase />
+            </motion.div>
+          )}
 
-        {/* 3. Python Turtle Art Gallery View */}
-        <div className={`pt-24 sm:pt-28 pb-16 ${activeSection === 'turtle' ? 'block' : 'hidden'}`}>
-          <TurtleGallery />
-        </div>
+          {/* 3. Python Turtle Art Gallery View */}
+          {activeSection === 'turtle' && (
+            <motion.div
+              key="turtle"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="pt-24 sm:pt-28 pb-16"
+            >
+              <TurtleGallery />
+            </motion.div>
+          )}
 
-        {/* 4. Memories Timeline View */}
-        <div className={`pt-24 sm:pt-28 pb-16 ${activeSection === 'memories' ? 'block' : 'hidden'}`}>
-          <MemoriesTimeline />
-        </div>
+          {/* 4. Memories Timeline View */}
+          {activeSection === 'memories' && (
+            <motion.div
+              key="memories"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="pt-24 sm:pt-28 pb-16"
+            >
+              <MemoriesTimeline />
+            </motion.div>
+          )}
 
-        {/* 5. Love Notes Vault View */}
-        <div className={`pt-24 sm:pt-28 pb-16 ${activeSection === 'love-notes' ? 'block' : 'hidden'}`}>
-          <LoveNotesVault />
-        </div>
+          {/* 5. Love Notes Vault View */}
+          {activeSection === 'love-notes' && (
+            <motion.div
+              key="love-notes"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="pt-24 sm:pt-28 pb-16"
+            >
+              <LoveNotesVault />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Footer: Visible on Home Section */}

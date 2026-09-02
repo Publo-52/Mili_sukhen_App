@@ -74,10 +74,10 @@ export default async function ProjectDetailsPage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-obsidian-950 text-slate-100 selection:bg-roseGlow-500 selection:text-white">
+    <main className="min-h-screen bg-obsidian-950 text-slate-100 selection:bg-roseGlow-500 selection:text-white animate-fadeIn">
       <Navbar />
 
-      <div className="pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-12">
+      <div className="pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-12 animate-fade-in">
         {/* Back Link */}
         <div>
           <Link
