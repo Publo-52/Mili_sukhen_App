@@ -223,15 +223,15 @@ export function createSession(
     }
   }
 
-  // Allow up to maxDevices; if full, remove oldest expired/least active session
-  if (active.length >= AUTH_CONFIG.maxDevices) {
-    const nonExpired = active.filter((s) => !isExpired(s));
-    if (nonExpired.length >= AUTH_CONFIG.maxDevices) {
-      active = nonExpired.slice(1);
-    } else {
-      active = nonExpired;
-    }
+  // Strictly enforce max 3 active devices limit
+  const nonExpired = active.filter((s) => !isExpired(s));
+  if (nonExpired.length >= AUTH_CONFIG.maxDevices) {
+    return {
+      error: `Maximum login limit of ${AUTH_CONFIG.maxDevices} devices reached. Please log out from another device first.`,
+      sessions: nonExpired,
+    };
   }
+  active = nonExpired;
 
   const session: DeviceSession = {
     id: tokenId,

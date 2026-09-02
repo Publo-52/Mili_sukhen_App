@@ -112,18 +112,11 @@ export async function POST(request: NextRequest) {
     } else if (isMiliEmail) {
       candidateUser = AUTH_USERS.mili;
     } else {
-      // If email doesn't match standard prefixes, check if password matches one of the accounts
-      if (cleanPass === 'das@123') {
-        candidateUser = AUTH_USERS.sukhen;
-      } else if (cleanPass === 'mili@123') {
-        candidateUser = AUTH_USERS.mili;
-      } else {
-        recordFailedAttempt(ip);
-        return NextResponse.json(
-          { error: 'Unrecognized email or phone number. Please use your registered credentials.' },
-          { status: 401 }
-        );
-      }
+      recordFailedAttempt(ip);
+      return NextResponse.json(
+        { error: 'Unrecognized email or phone number. Please enter your registered email or phone.' },
+        { status: 401 }
+      );
     }
 
     // Verify Password for the candidate user (exact passcode match)
@@ -132,7 +125,7 @@ export async function POST(request: NextRequest) {
     if (!isPasswordValid) {
       recordFailedAttempt(ip);
       return NextResponse.json(
-        { error: `Incorrect password for ${candidateUser.name}. Please try again.` },
+        { error: `Incorrect password. Please verify and try again.` },
         { status: 401 }
       );
     }

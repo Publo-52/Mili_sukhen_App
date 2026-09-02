@@ -56,24 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Hydrate instantly from localStorage on client mount
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('mili_user');
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        if (parsed && parsed.name) {
-          setIsAuthenticated(true);
-          setUser({
-            name: parsed.name,
-            role: parsed.role || 'mili',
-            avatar: parsed.avatar || (parsed.role === 'sukhen' ? 'S' : 'M'),
-          });
-        }
-      }
-    } catch {}
-  }, []);
-
   const refresh = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me', { cache: 'no-store' });
@@ -101,46 +83,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Check local storage fallback
-      const stored = typeof window !== 'undefined' ? localStorage.getItem('mili_user') : null;
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed && parsed.name) {
-            setIsAuthenticated(true);
-            setUser({
-              name: parsed.name,
-              role: parsed.role || 'mili',
-              avatar: parsed.avatar || (parsed.role === 'sukhen' ? 'S' : 'M'),
-            });
-            if (parsed.role === 'sukhen' || parsed.role === 'mili') {
-              setAdminLoggedIn(true);
-              try {
-                localStorage.setItem('mili_admin_authenticated', 'true');
-              } catch {}
-            }
-            return;
-          }
-        } catch {}
-      }
+      // If server says not authenticated, clear client state completely
+      try {
+        localStorage.removeItem('mili_user');
+        localStorage.removeItem('mili_session_ref');
+        localStorage.removeItem('mili_admin_logged_in');
+        localStorage.removeItem('mili_admin_authenticated');
+      } catch {}
 
+      setAdminLoggedIn(false);
       setIsAuthenticated(false);
       setUser(null);
       setSession(null);
-    } catch {
-      const stored = typeof window !== 'undefined' ? localStorage.getItem('mili_user') : null;
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed && parsed.name) {
-            setIsAuthenticated(true);
-            setUser(parsed);
-            if (parsed.role === 'sukhen' || parsed.role === 'mili') {
-              setAdminLoggedIn(true);
-            }
-          }
-        } catch {}
+
+      // Force redirect to login page if visiting a protected route
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login';
       }
+    } catch {
+      // On network failure or error, also ensure unauthorized access is blocked
+      setIsAuthenticated(false);
+      setUser(null);
+      setSession(null);
     } finally {
       setLoading(false);
     }
@@ -179,10 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
 
-  const isAdmin =
-    user?.role === 'sukhen' ||
-    user?.role === 'mili' ||
-    (typeof window !== 'undefined' && Boolean(localStorage.getItem('mili_admin_authenticated') === 'true'));
+  const isAdmin = user?.role === 'sukhen' || user?.role === 'mili';
   const isMili = user?.role === 'mili';
 
   return (
