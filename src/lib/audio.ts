@@ -121,40 +121,55 @@ class RomanticAudioEngine {
 
   // --- YouTube IFrame API Initialization ---
   private initYouTubeEngine() {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
-    // 1. Create hidden iframe container
-    let container = document.getElementById('youtube-bg-audio-engine');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'youtube-bg-audio-engine';
-      container.style.position = 'fixed';
-      container.style.width = '1px';
-      container.style.height = '1px';
-      container.style.top = '-9999px';
-      container.style.left = '-9999px';
-      container.style.opacity = '0';
-      container.style.pointerEvents = 'none';
-      container.style.zIndex = '-9999';
-      document.body.appendChild(container);
-    }
+    try {
+      if (!document.body) {
+        setTimeout(() => this.initYouTubeEngine(), 500);
+        return;
+      }
 
-    // 2. Load YouTube IFrame Script if not present
-    if (!window.YT && !document.getElementById('yt-iframe-api-script')) {
-      this.isYtLoading = true;
-      const tag = document.createElement('script');
-      tag.id = 'yt-iframe-api-script';
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+      // 1. Create hidden iframe container
+      let container = document.getElementById('youtube-bg-audio-engine');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'youtube-bg-audio-engine';
+        container.style.position = 'fixed';
+        container.style.width = '1px';
+        container.style.height = '1px';
+        container.style.top = '-9999px';
+        container.style.left = '-9999px';
+        container.style.opacity = '0';
+        container.style.pointerEvents = 'none';
+        container.style.zIndex = '-9999';
+        document.body.appendChild(container);
+      }
 
-      const prevCallback = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => {
-        if (prevCallback) prevCallback();
+      // 2. Load YouTube IFrame Script if not present
+      if (!window.YT && !document.getElementById('yt-iframe-api-script')) {
+        this.isYtLoading = true;
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api-script';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        if (firstScriptTag && firstScriptTag.parentNode) {
+          firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        } else if (document.head) {
+          document.head.appendChild(tag);
+        }
+
+        const prevCallback = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = () => {
+          try {
+            if (prevCallback) prevCallback();
+            this.createYouTubePlayer();
+          } catch {}
+        };
+      } else if (window.YT && window.YT.Player) {
         this.createYouTubePlayer();
-      };
-    } else if (window.YT && window.YT.Player) {
-      this.createYouTubePlayer();
+      }
+    } catch (e) {
+      console.warn('YouTube audio engine initialization skipped safely:', e);
     }
   }
 

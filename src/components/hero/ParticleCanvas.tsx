@@ -83,9 +83,8 @@ export const ParticleCanvas: React.FC = () => {
     };
 
     const handleVisibility = () => {
-      if (document.hidden) {
-        cancelAnimationFrame(animationFrameId);
-      } else {
+      cancelAnimationFrame(animationFrameId);
+      if (!document.hidden) {
         animationFrameId = requestAnimationFrame(render);
       }
     };

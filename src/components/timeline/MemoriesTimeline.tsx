@@ -42,7 +42,8 @@ const MediaViewerModal = dynamic(
 );
 
 // Helper to guarantee high-res image poster for Cloudinary videos and images
-function getMediaThumbnail(memory: MemoryItem): string {
+function getMediaThumbnail(memory?: MemoryItem | null): string {
+  if (!memory) return 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop';
   const isVideo = memory.type === 'video';
   if (!isVideo && memory.url) return memory.url;
 
@@ -59,7 +60,7 @@ function getMediaThumbnail(memory: MemoryItem): string {
     }
   }
 
-  return 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop';
+  return memory.url || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop';
 }
 
 type FilterType = 'all' | 'photo' | 'video' | 'favorites';

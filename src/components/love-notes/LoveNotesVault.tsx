@@ -136,9 +136,9 @@ export const LoveNotesVault: React.FC = () => {
       const matchesMood = selectedMood === 'all' || n.moodTag === selectedMood;
       const matchesSearch =
         !searchQuery.trim() ||
-        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        n.fullMessage.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (n.snippet && n.snippet.toLowerCase().includes(searchQuery.toLowerCase()));
+        (n.title?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (n.fullMessage?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (n.snippet?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
       return matchesMood && matchesSearch;
     });
   }, [allNotes, selectedMood, searchQuery]);
