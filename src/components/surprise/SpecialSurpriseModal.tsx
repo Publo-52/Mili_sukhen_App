@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Heart, KeyRound, Unlock, ArrowRight, Stars } from 'lucide-react';
+import { X, KeyRound, Unlock, Stars } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { APP_CONFIG } from '@/data/config';
 
@@ -35,7 +35,11 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanInput = passcode.trim().toLowerCase();
-    if (cleanInput === APP_CONFIG.surprisePasscode.toLowerCase()) {
+    if (
+      cleanInput === 'forever' ||
+      cleanInput === APP_CONFIG.surprisePasscode.toLowerCase() ||
+      cleanInput === 'mili'
+    ) {
       setIsUnlocked(true);
       setError(false);
       // Trigger cinematic confetti burst
@@ -64,39 +68,40 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[999999] bg-[#06040a] flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 pt-12 sm:pt-6 pb-20 sm:pb-6 overflow-y-auto">
-        {/* Modal Content */}
+      <div className="fixed inset-0 z-[999999] bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        {/* Modal Container */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          initial={{ opacity: 0, scale: 0.92, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          transition={{ duration: 0.35 }}
-          className="relative w-full max-w-2xl bg-[#0e091b] rounded-3xl overflow-hidden flex flex-col border border-roseGlow-500/30 shadow-2xl z-[1000000] p-6 sm:p-10 my-auto"
+          exit={{ opacity: 0, scale: 0.92, y: 15 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+          className="relative w-full max-w-lg sm:max-w-xl bg-[#0e091b] rounded-3xl border border-roseGlow-500/30 shadow-2xl p-5 sm:p-8 max-h-[90vh] overflow-y-auto my-auto space-y-4"
         >
           {/* Close button */}
           <button
             onClick={handleResetAndClose}
-            className="absolute top-6 right-6 p-2 rounded-full text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors z-20"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
 
           {!isUnlocked ? (
             /* Passcode Verification Screen */
-            <div className="text-center space-y-6 py-4">
-              <div className="w-16 h-16 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/30 flex items-center justify-center mx-auto text-roseGlow-400 shadow-glow">
-                <KeyRound className="w-8 h-8" />
+            <div className="text-center space-y-5 py-2">
+              <div className="w-14 h-14 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/30 flex items-center justify-center mx-auto text-roseGlow-400 shadow-glow">
+                <KeyRound className="w-7 h-7" />
               </div>
 
-              <div className="space-y-2">
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
+              <div className="space-y-1.5">
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                   A Secret Surprise for Mili
                 </h3>
-                <p className="text-sm text-slate-300 font-light max-w-sm mx-auto">
+                <p className="text-xs sm:text-sm text-slate-300 font-light max-w-sm mx-auto">
                   Enter our special secret word or passcode to unlock what lies behind this door.
                 </p>
-                <p className="text-[11px] text-slate-400 font-mono">
-                  (Hint: Try &apos;forever&apos; or &apos;mili&apos;)
+                <p className="text-[12px] text-roseGlow-300 font-mono pt-1">
+                  Hint: forever
                 </p>
               </div>
 
@@ -114,13 +119,13 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
 
                 {error && (
                   <p className="text-xs text-rose-400 font-mono">
-                    Incorrect secret phrase. Try &apos;forever&apos;
+                    Incorrect secret passcode. Hint: forever
                   </p>
                 )}
 
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-2xl bg-roseGlow-600 hover:bg-roseGlow-500 text-white font-medium text-sm shadow-glow transition-all active:scale-98 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-2xl bg-roseGlow-600 hover:bg-roseGlow-500 text-white font-medium text-sm shadow-glow transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Unlock className="w-4 h-4" />
                   <span>Unlock Surprise</span>
@@ -128,33 +133,33 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
               </form>
             </div>
           ) : (
-            /* Unlocked Cinematic Surprise Content */
+            /* Unlocked Cinematic Surprise Content (Full View, No Cutoff) */
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="space-y-6 py-2"
+              transition={{ duration: 0.4 }}
+              className="space-y-4 sm:space-y-5 py-1"
             >
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-roseGlow-500/20 text-roseGlow-300 text-xs font-mono tracking-widest uppercase">
-                  <Stars className="w-3.5 h-3.5" />
+              <div className="text-center space-y-1.5">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-roseGlow-500/20 text-roseGlow-300 text-xs font-mono tracking-widest uppercase">
+                  <Stars className="w-3.5 h-3.5 text-roseGlow-400" />
                   <span>Unconditional Love</span>
                 </div>
-                <h3 className="text-2xl sm:text-4xl font-serif font-bold text-white tracking-tight">
+                <h3 className="text-xl sm:text-3xl font-serif font-bold text-white tracking-tight">
                   “Wait… there&apos;s one more thing.”
                 </h3>
               </div>
 
-              <div className="glass-card p-6 sm:p-8 rounded-2xl space-y-4 border border-roseGlow-500/30 bg-roseGlow-950/20">
-                <p className="text-base sm:text-lg font-serif italic text-slate-200 leading-relaxed">
+              <div className="glass-card p-5 sm:p-6 rounded-2xl space-y-3.5 border border-roseGlow-500/30 bg-roseGlow-950/20 text-slate-200">
+                <p className="text-sm sm:text-base font-serif italic leading-relaxed">
                   Mili, no matter how many projects I code, or how many designs I sketch, the greatest thing in my life will always be the simple reality of being with you.
                 </p>
-                <p className="text-base sm:text-lg font-serif italic text-slate-200 leading-relaxed">
+                <p className="text-sm sm:text-base font-serif italic leading-relaxed">
                   Thank you for being my constant inspiration, my favorite conversation, and my home. Every line of code in this entire universe belongs to you.
                 </p>
-                <div className="pt-2 text-right">
+                <div className="pt-2 text-right border-t border-white/5">
                   <span className="text-sm font-serif font-bold text-roseGlow-400">
-                    Forever and always yours, Sukhen
+                    Forever and always yours, Sukhen ❤️
                   </span>
                 </div>
               </div>
@@ -162,7 +167,7 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
               <div className="text-center pt-2">
                 <button
                   onClick={handleResetAndClose}
-                  className="px-6 py-2.5 rounded-full glass-card hover:border-white/30 text-xs font-mono uppercase tracking-wider text-slate-300 hover:text-white transition-all"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-roseGlow-600 hover:bg-roseGlow-500 text-white text-xs font-mono uppercase tracking-wider shadow-glow transition-all active:scale-95 cursor-pointer"
                 >
                   Close & Treasure This Memory
                 </button>
