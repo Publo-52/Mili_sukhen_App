@@ -86,18 +86,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Strict prevention of pinch-to-zoom across all mobile & tablet browsers without blocking scroll
-              if (typeof window !== 'undefined') {
-                document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
-                document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
-                document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false });
-              }
-            `,
-          }}
-        />
       </head>
       <body className="antialiased min-h-screen bg-[#06040a] text-slate-100 selection:bg-roseGlow-600 selection:text-white">
         <AuthProvider>
