@@ -4,7 +4,26 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Sparkles, Menu, X, Shield, Film, LogIn, LogOut, User, Music, Volume2, VolumeX } from 'lucide-react';
+import {
+  Heart,
+  Sparkles,
+  Menu,
+  X,
+  Shield,
+  Film,
+  LogIn,
+  LogOut,
+  User,
+  Music,
+  Volume2,
+  VolumeX,
+  Home,
+  Layers,
+  Terminal,
+  Camera,
+  BookOpen,
+  ChevronRight,
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { audioEngine, AudioTrack } from '@/lib/audio';
 
@@ -64,12 +83,17 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  const navLinks: { name: string; href: string; sectionId: SectionType }[] = [
-    { name: 'Home', href: '#home', sectionId: 'home' },
-    { name: 'Projects', href: '#projects', sectionId: 'projects' },
-    { name: 'Python Art', href: '#python-art', sectionId: 'turtle' },
-    { name: 'Memories', href: '#memories', sectionId: 'memories' },
-    { name: 'Love Notes', href: '#love-notes', sectionId: 'love-notes' },
+  const navLinks: {
+    name: string;
+    href: string;
+    sectionId: SectionType;
+    icon: React.ElementType;
+  }[] = [
+    { name: 'Home', href: '#home', sectionId: 'home', icon: Home },
+    { name: 'Projects', href: '#projects', sectionId: 'projects', icon: Layers },
+    { name: 'Python Art', href: '#python-art', sectionId: 'turtle', icon: Terminal },
+    { name: 'Memories', href: '#memories', sectionId: 'memories', icon: Camera },
+    { name: 'Love Notes', href: '#love-notes', sectionId: 'love-notes', icon: BookOpen },
   ];
 
   const handleNavClick = (sectionId: SectionType, e?: React.MouseEvent) => {
@@ -278,52 +302,92 @@ export const Navbar: React.FC<NavbarProps> = ({
       <AnimatePresence>
         {mobileMenuOpen && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop with soft blur */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 z-30 bg-black/75 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-30 bg-black/80 backdrop-blur-md md:hidden"
             />
 
-            {/* Menu Drawer Content */}
+            {/* Menu Drawer Content with Spring Physics */}
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.25 }}
-              className="fixed inset-x-0 top-[70px] z-40 bg-obsidian-950/98 backdrop-blur-2xl p-5 md:hidden space-y-4 max-h-[calc(100dvh-80px)] overflow-y-auto shadow-2xl"
+              initial={{ opacity: 0, y: -16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -16, scale: 0.98 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+              className="fixed inset-x-0 top-[66px] z-40 bg-gradient-to-b from-[#0f091f]/98 via-[#090614]/98 to-[#06040a]/98 backdrop-blur-3xl p-4 sm:p-5 md:hidden space-y-3.5 max-h-[calc(100dvh-75px)] overflow-y-auto shadow-[0_25px_60px_rgba(0,0,0,0.9)] border-b border-white/10 rounded-b-3xl"
             >
-              <div className="flex flex-col gap-1">
+              {/* Navigation Links with Icon Tiles */}
+              <div className="flex flex-col gap-1.5">
                 {navLinks.map((link) => {
                   const isActive = activeSection === link.sectionId;
+                  const Icon = link.icon;
                   return (
                     <button
                       key={link.name}
                       onClick={(e) => handleNavClick(link.sectionId, e)}
-                      className={`px-4 py-3 text-base font-medium rounded-2xl transition-colors flex items-center justify-between text-left ${
+                      className={`w-full px-3.5 py-2.5 rounded-2xl transition-all duration-200 flex items-center justify-between group active:scale-[0.98] cursor-pointer ${
                         isActive
-                          ? 'bg-roseGlow-600/20 text-roseGlow-300 font-bold border border-roseGlow-500/30'
-                          : 'text-slate-200 hover:text-roseGlow-400 hover:bg-white/5 active:bg-white/10'
+                          ? 'bg-gradient-to-r from-roseGlow-500/20 via-purple-600/15 to-transparent border border-roseGlow-500/40 shadow-glow text-white'
+                          : 'hover:bg-white/[0.05] border border-transparent text-slate-300 hover:text-white'
                       }`}
                     >
-                      <span>{link.name}</span>
-                      <span className="text-xs text-roseGlow-500 font-mono">→</span>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                            isActive
+                              ? 'bg-gradient-to-tr from-roseGlow-500 to-purple-600 text-white shadow-glow border border-roseGlow-400/50'
+                              : 'bg-white/[0.04] border border-white/[0.08] text-slate-400 group-hover:text-roseGlow-300 group-hover:border-roseGlow-500/30 group-hover:bg-roseGlow-500/10'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span className={`text-[14px] sm:text-[15px] tracking-wide font-sans ${isActive ? 'font-bold text-white' : 'font-medium text-slate-200'}`}>
+                          {link.name}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {isActive && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-roseGlow-400 shadow-[0_0_8px_#f43f5e] animate-pulse" />
+                        )}
+                        <ChevronRight
+                          className={`w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 ${
+                            isActive ? 'text-roseGlow-400' : 'text-slate-500 group-hover:text-slate-300'
+                          }`}
+                        />
+                      </div>
                     </button>
                   );
                 })}
               </div>
 
-              <div className="pt-3 border-t border-white/10 flex flex-col gap-3">
+              {/* User Profile Card & Actions */}
+              <div className="pt-3 border-t border-white/10 flex flex-col gap-2.5">
                 {isAuthenticated ? (
-                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl shadow-lg">
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${user?.role === 'sukhen' ? 'bg-purple-600 text-white' : 'bg-roseGlow-600 text-white'}`}>
-                        {user?.name?.[0] || 'M'}
+                      <div className="relative">
+                        <div
+                          className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-bold shadow-glow p-0.5 ${
+                            user?.role === 'sukhen'
+                              ? 'bg-gradient-to-tr from-purple-600 to-indigo-500 text-white'
+                              : 'bg-gradient-to-tr from-roseGlow-500 to-pink-500 text-white'
+                          }`}
+                        >
+                          <div className="w-full h-full rounded-[14px] bg-[#0c0817] flex items-center justify-center font-bold">
+                            {user?.name?.[0] || 'M'}
+                          </div>
+                        </div>
+                        <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#0c0817] shadow-sm" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white leading-tight">{user?.name || 'Mili'}</p>
+                        <p className="text-sm font-bold text-white leading-tight flex items-center gap-1.5">
+                          <span>{user?.name || 'Mili'}</span>
+                        </p>
                         <p className="text-[11px] font-mono text-slate-400">
                           {user?.role === 'sukhen' ? 'Creator & Admin' : 'Queen & Admin'}
                         </p>
@@ -334,7 +398,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         setMobileMenuOpen(false);
                         logout();
                       }}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-mono active:scale-95 transition-all"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-mono font-medium active:scale-95 transition-all cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Logout</span>
@@ -344,21 +408,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <Link
                     href="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-center text-sm font-semibold shadow-glow transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-2xl bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-center text-sm font-semibold shadow-glow transition-all flex items-center justify-center gap-2"
                   >
                     <LogIn className="w-4 h-4" />
                     <span>Sign In to Digital Universe</span>
                   </Link>
                 )}
 
-                <div className="flex items-center justify-between pt-1 text-xs font-mono text-slate-400">
+                {/* Bottom Action Pills: Replay Intro & Admin Studio */}
+                <div className="flex items-center justify-between gap-2 pt-0.5">
                   {onReplayIntro && (
                     <button
                       onClick={() => {
                         setMobileMenuOpen(false);
                         onReplayIntro();
                       }}
-                      className="flex items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 hover:text-white transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] text-xs font-mono text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer"
                     >
                       <Film className="w-3.5 h-3.5 text-roseGlow-400" />
                       <span>Replay Intro</span>
@@ -369,7 +434,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <Link
                       href="/admin"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-1.5 p-2 rounded-xl text-purple-300 hover:bg-white/5 hover:text-white transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/25 text-xs font-mono text-purple-300 hover:text-white transition-all active:scale-95 text-center"
                     >
                       <Shield className="w-3.5 h-3.5 text-purple-400" />
                       <span>Admin Studio</span>
