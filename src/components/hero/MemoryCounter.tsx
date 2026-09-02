@@ -59,7 +59,7 @@ export const MemoryCounter: React.FC = () => {
 
     updateTimer();
     const timerInterval = setInterval(updateTimer, 1000);
-    const syncInterval = setInterval(refreshCounts, 8000);
+    const syncInterval = setInterval(refreshCounts, 45000);
 
     const handleSync = () => refreshCounts();
     const handleVisibility = () => {

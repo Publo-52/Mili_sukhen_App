@@ -31,8 +31,8 @@ export function calculateDaysTogether(startDateString: string): {
   const diffMs = Math.max(0, now - start);
 
   const totalDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60));
-  const minutes = Math.floor((diffMs % (1000 * 60)) / (1000 * 60));
+  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
 
   return {
