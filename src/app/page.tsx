@@ -37,7 +37,7 @@ const EasterEggListener = dynamic(
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Eager Parallel Cache Warm-up function (pre-loads all sections & assets upfront)
+// Eager Parallel Cache Warm-up function (pre-loads all sections & assets upfront for 0ms latency)
 const warmUpAllDatasetsAndAssets = () => {
   if (typeof window === 'undefined') return;
 
@@ -62,7 +62,7 @@ const warmUpAllDatasetsAndAssets = () => {
       .catch(() => {});
   });
 
-  // 2. Preload Hero and key media into browser memory cache
+  // 2. Preload Hero, brand logos, and key media into GPU browser memory cache
   const keyImages = [
     '/images/hero/mili_hero_1.png',
     '/images/hero/mili_hero_2.png',
@@ -70,6 +70,8 @@ const warmUpAllDatasetsAndAssets = () => {
     '/images/hero/mili_hero_4.png',
     '/images/hero/mili_hero_5.jpg',
     '/logo.png',
+    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1200&auto=format&fit=crop',
   ];
   keyImages.forEach((src) => {
     const img = new window.Image();
@@ -193,82 +195,45 @@ export default function HomePage() {
         onSelectSection={handleSelectSection}
       />
 
-      {/* Main Content Container with Silk-Smooth Animated Transitions */}
+      {/* Main Content Container with Instant 0ms Pre-rendered Hardware-Accelerated Switching */}
       <main className="relative z-10 min-h-[75vh]">
-        <AnimatePresence mode="wait">
-          {/* 1. Home Sanctuary View */}
-          {isHome && (
-            <motion.div
-              key="home"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="pt-18 sm:pt-22 pb-8"
-            >
-              <Hero
-                onOpenSurprise={() => setShowSurprise(true)}
-                onSelectSection={handleSelectSection}
-              />
-            </motion.div>
-          )}
+        {/* 1. Home Sanctuary View */}
+        <div className={`transition-opacity duration-300 transform-gpu ${isHome ? 'opacity-100 relative' : 'opacity-0 pointer-events-none absolute inset-0 -z-10 hidden'}`}>
+          <div className="pt-18 sm:pt-22 pb-8 animate-fadeIn">
+            <Hero
+              onOpenSurprise={() => setShowSurprise(true)}
+              onSelectSection={handleSelectSection}
+            />
+          </div>
+        </div>
 
-          {/* 2. Projects Showcase View */}
-          {activeSection === 'projects' && (
-            <motion.div
-              key="projects"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="pt-24 sm:pt-28 pb-16"
-            >
-              <ProjectShowcase />
-            </motion.div>
-          )}
+        {/* 2. Projects Showcase View */}
+        <div className={`transition-opacity duration-300 transform-gpu ${activeSection === 'projects' ? 'opacity-100 relative' : 'opacity-0 pointer-events-none absolute inset-0 -z-10 hidden'}`}>
+          <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
+            <ProjectShowcase />
+          </div>
+        </div>
 
-          {/* 3. Python Turtle Art Gallery View */}
-          {activeSection === 'turtle' && (
-            <motion.div
-              key="turtle"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="pt-24 sm:pt-28 pb-16"
-            >
-              <TurtleGallery />
-            </motion.div>
-          )}
+        {/* 3. Python Turtle Art Gallery View */}
+        <div className={`transition-opacity duration-300 transform-gpu ${activeSection === 'turtle' ? 'opacity-100 relative' : 'opacity-0 pointer-events-none absolute inset-0 -z-10 hidden'}`}>
+          <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
+            <TurtleGallery />
+          </div>
+        </div>
 
-          {/* 4. Memories Timeline View */}
-          {activeSection === 'memories' && (
-            <motion.div
-              key="memories"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="pt-24 sm:pt-28 pb-16"
-            >
-              <MemoriesTimeline />
-            </motion.div>
-          )}
+        {/* 4. Memories Timeline View */}
+        <div className={`transition-opacity duration-300 transform-gpu ${activeSection === 'memories' ? 'opacity-100 relative' : 'opacity-0 pointer-events-none absolute inset-0 -z-10 hidden'}`}>
+          <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
+            <MemoriesTimeline />
+          </div>
+        </div>
 
-          {/* 5. Love Notes Vault View */}
-          {activeSection === 'love-notes' && (
-            <motion.div
-              key="love-notes"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="pt-24 sm:pt-28 pb-16"
-            >
-              <LoveNotesVault />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* 5. Love Notes Vault View */}
+        <div className={`transition-opacity duration-300 transform-gpu ${activeSection === 'love-notes' ? 'opacity-100 relative' : 'opacity-0 pointer-events-none absolute inset-0 -z-10 hidden'}`}>
+          <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
+            <LoveNotesVault />
+          </div>
+        </div>
       </main>
 
       {/* Footer: Visible on Home Section */}
