@@ -10,7 +10,6 @@ import {
   SkipForward,
   Volume2,
   VolumeX,
-  Disc,
   X,
   ChevronDown,
   Sparkles,
@@ -112,7 +111,7 @@ export const NavbarMusicControls: React.FC<NavbarMusicControlsProps> = ({ isMobi
           title={isPlaying ? 'Music Playing — Tap to control' : 'Play Romantic Music'}
           aria-label="Romantic Music Controls"
         >
-          <Music className={`w-4 h-4 ${isPlaying ? 'text-roseGlow-400 animate-bounce' : 'text-slate-400'}`} />
+          <Music className={`w-4 h-4 ${isPlaying ? 'text-roseGlow-400' : 'text-slate-400'}`} />
           {isPlaying && (
             <span className="flex items-end gap-0.5 h-3 pr-0.5">
               <span className="w-0.5 bg-roseGlow-400 rounded-full h-full animate-[pulse_0.7s_ease-in-out_infinite]" />
@@ -164,17 +163,12 @@ export const NavbarMusicControls: React.FC<NavbarMusicControlsProps> = ({ isMobi
                   </button>
                 </div>
 
-                {/* Track Info & Vinyl Disc Animation */}
+                {/* Track Info Tile */}
                 <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08]">
-                  <div
-                    className={`relative w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-tr from-roseGlow-600 via-purple-600 to-indigo-600 shadow-glow p-0.5 ${
-                      isPlaying ? 'animate-[spin_4s_linear_infinite]' : ''
-                    }`}
-                  >
-                    <div className="w-full h-full rounded-full bg-[#0c0817] flex items-center justify-center border border-white/20">
-                      <Disc className={`w-6 h-6 ${isPlaying ? 'text-roseGlow-400' : 'text-slate-400'}`} />
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-gradient-to-tr from-roseGlow-600 via-purple-600 to-indigo-600 shadow-glow p-0.5">
+                    <div className="w-full h-full rounded-[14px] bg-[#0c0817] flex items-center justify-center border border-white/10">
+                      <Music className="w-5 h-5 text-roseGlow-400" />
                     </div>
-                    <span className="absolute w-2 h-2 rounded-full bg-roseGlow-400 shadow-sm" />
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -351,15 +345,11 @@ export const NavbarMusicControls: React.FC<NavbarMusicControlsProps> = ({ isMobi
               </span>
             </div>
 
-            {/* Track Info Card */}
+            {/* Track Info Tile */}
             <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08]">
-              <div
-                className={`relative w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-tr from-roseGlow-600 via-purple-600 to-indigo-600 shadow-glow p-0.5 ${
-                  isPlaying ? 'animate-[spin_4s_linear_infinite]' : ''
-                }`}
-              >
-                <div className="w-full h-full rounded-full bg-[#0c0817] flex items-center justify-center">
-                  <Disc className={`w-5 h-5 ${isPlaying ? 'text-roseGlow-400' : 'text-slate-400'}`} />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-tr from-roseGlow-600 via-purple-600 to-indigo-600 shadow-glow p-0.5">
+                <div className="w-full h-full rounded-[10px] bg-[#0c0817] flex items-center justify-center">
+                  <Music className="w-4 h-4 text-roseGlow-400" />
                 </div>
               </div>
 
@@ -488,12 +478,8 @@ export const MobileDrawerMusicCard: React.FC = () => {
     <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-roseGlow-500/30 shadow-lg space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div
-            className={`w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-tr from-roseGlow-600 to-purple-600 text-white shadow-glow ${
-              isPlaying ? 'animate-[spin_4s_linear_infinite]' : ''
-            }`}
-          >
-            <Disc className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-tr from-roseGlow-600 to-purple-600 text-white shadow-glow">
+            <Music className="w-4 h-4 text-white" />
           </div>
           <div className="truncate">
             <p className="text-xs font-bold text-white truncate">{currentTrack.title}</p>
@@ -556,4 +542,3 @@ export const MobileDrawerMusicCard: React.FC = () => {
     </div>
   );
 };
-
