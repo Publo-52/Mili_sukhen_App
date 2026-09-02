@@ -196,42 +196,32 @@ export default function HomePage() {
       {/* Main Content Container with Instant 0ms Smooth Viewport */}
       <main className="relative z-10 min-h-[75vh]">
         {/* 1. Home Sanctuary View */}
-        {isHome && (
-          <div className="pt-18 sm:pt-22 pb-8 animate-fadeIn">
-            <Hero
-              onOpenSurprise={() => setShowSurprise(true)}
-              onSelectSection={handleSelectSection}
-            />
-          </div>
-        )}
+        <div className={isHome ? 'pt-18 sm:pt-22 pb-8 block' : 'hidden'}>
+          <Hero
+            onOpenSurprise={() => setShowSurprise(true)}
+            onSelectSection={handleSelectSection}
+          />
+        </div>
 
         {/* 2. Projects Showcase View */}
-        {activeSection === 'projects' && (
-          <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
-            <ProjectShowcase />
-          </div>
-        )}
+        <div className={activeSection === 'projects' ? 'pt-24 sm:pt-28 pb-16 block' : 'hidden'}>
+          <ProjectShowcase />
+        </div>
 
         {/* 3. Python Turtle Art Gallery View */}
-        {activeSection === 'turtle' && (
-          <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
-            <TurtleGallery />
-          </div>
-        )}
+        <div className={activeSection === 'turtle' ? 'pt-24 sm:pt-28 pb-16 block' : 'hidden'}>
+          <TurtleGallery />
+        </div>
 
         {/* 4. Memories Timeline View */}
-        {activeSection === 'memories' && (
-          <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
-            <MemoriesTimeline />
-          </div>
-        )}
+        <div className={activeSection === 'memories' ? 'pt-24 sm:pt-28 pb-16 block' : 'hidden'}>
+          <MemoriesTimeline />
+        </div>
 
         {/* 5. Love Notes Vault View */}
-        {activeSection === 'love-notes' && (
-          <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
-            <LoveNotesVault />
-          </div>
-        )}
+        <div className={activeSection === 'love-notes' ? 'pt-24 sm:pt-28 pb-16 block' : 'hidden'}>
+          <LoveNotesVault />
+        </div>
       </main>
 
       {/* Footer: Visible on Home Section */}

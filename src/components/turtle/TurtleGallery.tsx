@@ -56,6 +56,12 @@ export const TurtleGallery: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // 0. Instantly load from cache for 0ms latency
+    const cached = getTurtleCreations();
+    if (cached && cached.length > 0) {
+      setCreations(cached);
+    }
+
     loadCreations();
 
     // Supabase Realtime Subscription

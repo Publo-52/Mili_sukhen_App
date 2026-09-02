@@ -95,6 +95,12 @@ export const MemoriesTimeline: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // 0. Instantly populate from cache or default in 0ms (no blank wait!)
+    const cached = getMemories();
+    if (cached && cached.length > 0) {
+      setMemories(cached);
+    }
+
     loadMemories();
     setFavoriteIds(getFavoriteMemoryIds());
 

@@ -55,6 +55,12 @@ export const ProjectShowcase: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // 0. Instantly load from cache for 0ms latency
+    const cached = getProjects();
+    if (cached && cached.length > 0) {
+      setProjects(cached);
+    }
+
     loadProjects();
     setFavoriteIds(getFavoriteProjectIds());
 

@@ -48,14 +48,17 @@ body {
 }
 
 /* 120fps Ultra-Smooth Scroll Engine & GPU Layer Isolation */
-.break-inside-avoid, [class*="aspect-"], .glass-card {
-  content-visibility: auto;
-  contain-intrinsic-size: 260px;
-  transform: translateZ(0);
-  backface-visibility: hidden;
+html {
+  scroll-behavior: smooth;
 }
 
-img {
+.break-inside-avoid, .glass-card {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+img, video {
   transform: translateZ(0);
   backface-visibility: hidden;
 }
