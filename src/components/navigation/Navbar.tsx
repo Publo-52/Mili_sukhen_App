@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { audioEngine, AudioTrack } from '@/lib/audio';
+import { NavbarMusicControls, MobileDrawerMusicCard } from './NavbarMusicControls';
 
 import { SectionType } from '@/types';
 
@@ -167,26 +168,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Action Icons (Desktop) */}
           <div className="hidden md:flex items-center gap-2">
-            {/* Music Toggle Button */}
-            <button
-              onClick={toggleAudio}
-              className={`px-2.5 py-1.5 rounded-full glass-card transition-all flex items-center gap-1.5 cursor-pointer ${
-                isPlayingAudio
-                  ? 'border-roseGlow-500/60 text-roseGlow-300 bg-roseGlow-500/20 shadow-glow'
-                  : 'hover:border-white/30 text-slate-300 hover:text-white'
-              }`}
-              title={isPlayingAudio ? 'Pause Special Song' : 'Play Special Song'}
-              aria-label="Toggle Romantic Music"
-            >
-              <Music className={`w-4 h-4 ${isPlayingAudio ? 'text-roseGlow-400 animate-pulse' : 'text-slate-400'}`} />
-              {isPlayingAudio && (
-                <span className="flex items-end gap-0.5 h-3 pr-0.5">
-                  <span className="w-0.5 bg-roseGlow-400 rounded-full h-full animate-[pulse_0.7s_ease-in-out_infinite]" />
-                  <span className="w-0.5 bg-pink-400 rounded-full h-2/3 animate-[pulse_1.1s_ease-in-out_infinite]" />
-                  <span className="w-0.5 bg-roseGlow-300 rounded-full h-4/5 animate-[pulse_0.9s_ease-in-out_infinite]" />
-                </span>
-              )}
-            </button>
+            {/* Desktop Music Controls */}
+            <NavbarMusicControls />
 
             {/* Surprise Button */}
             {onOpenSurprise && (
@@ -264,19 +247,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Mobile Action Icons (Header Right) */}
           <div className="flex md:hidden items-center gap-1.5">
-            {/* Mobile Music Toggle */}
-            <button
-              onClick={toggleAudio}
-              className={`p-2 rounded-full glass-card transition-all cursor-pointer ${
-                isPlayingAudio
-                  ? 'border-roseGlow-500/60 text-roseGlow-300 bg-roseGlow-500/20 shadow-glow animate-pulse'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-              title={isPlayingAudio ? 'Pause Special Song' : 'Play Special Song'}
-              aria-label="Toggle Romantic Music"
-            >
-              <Music className={`w-4 h-4 ${isPlayingAudio ? 'text-roseGlow-400' : 'text-slate-400'}`} />
-            </button>
+            {/* Mobile Music Controller */}
+            <NavbarMusicControls isMobileOnly />
 
             {onOpenSurprise && (
               <button
@@ -365,8 +337,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 })}
               </div>
 
+              {/* Mobile Drawer Romantic Music Player */}
+              <div className="pt-2">
+                <MobileDrawerMusicCard />
+              </div>
+
               {/* User Profile Card & Actions */}
-              <div className="pt-3 border-t border-white/10 flex flex-col gap-2.5">
+              <div className="pt-2 border-t border-white/10 flex flex-col gap-2.5">
                 {isAuthenticated ? (
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl shadow-lg">
                     <div className="flex items-center gap-3">
