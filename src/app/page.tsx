@@ -41,42 +41,46 @@ import { motion, AnimatePresence } from 'framer-motion';
 const warmUpAllDatasetsAndAssets = () => {
   if (typeof window === 'undefined') return;
 
-  // 1. Parallel API Cache Preload (warm up localStorage & memory)
-  const endpoints = ['/api/projects', '/api/turtle', '/api/love-notes', '/api/memories'];
-  endpoints.forEach((url) => {
-    fetch(url, { cache: 'no-store' })
-      .then(async (res) => {
-        if (res.ok) {
-          const data = await res.json();
-          if (url === '/api/projects' && data.projects) {
-            localStorage.setItem('mili_universe_projects', JSON.stringify(data.projects));
-          } else if (url === '/api/turtle' && data.creations) {
-            localStorage.setItem('mili_custom_turtle', JSON.stringify(data.creations));
-          } else if (url === '/api/love-notes' && data.notes) {
-            localStorage.setItem('mili_universe_love_notes', JSON.stringify(data.notes));
-          } else if (url === '/api/memories' && data.memories) {
-            localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
+  try {
+    // 1. Parallel API Cache Preload (warm up localStorage & memory)
+    const endpoints = ['/api/projects', '/api/turtle', '/api/love-notes', '/api/memories'];
+    endpoints.forEach((url) => {
+      fetch(url, { cache: 'no-store' })
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            if (url === '/api/projects' && data.projects) {
+              localStorage.setItem('mili_universe_projects', JSON.stringify(data.projects));
+            } else if (url === '/api/turtle' && data.creations) {
+              localStorage.setItem('mili_custom_turtle', JSON.stringify(data.creations));
+            } else if (url === '/api/love-notes' && data.notes) {
+              localStorage.setItem('mili_universe_love_notes', JSON.stringify(data.notes));
+            } else if (url === '/api/memories' && data.memories) {
+              localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
+            }
           }
-        }
-      })
-      .catch(() => {});
-  });
+        })
+        .catch(() => {});
+    });
 
-  // 2. Preload Hero, brand logos, and key media into GPU browser memory cache
-  const keyImages = [
-    '/images/hero/mili_hero_1.png',
-    '/images/hero/mili_hero_2.png',
-    '/images/hero/mili_hero_3.jpg',
-    '/images/hero/mili_hero_4.png',
-    '/images/hero/mili_hero_5.jpg',
-    '/logo.png',
-    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1200&auto=format&fit=crop',
-  ];
-  keyImages.forEach((src) => {
-    const img = new window.Image();
-    img.src = src;
-  });
+    // 2. Preload Hero, brand logos, and key media into GPU browser memory cache
+    const keyImages = [
+      '/images/hero/mili_hero_1.png',
+      '/images/hero/mili_hero_2.png',
+      '/images/hero/mili_hero_3.jpg',
+      '/images/hero/mili_hero_4.png',
+      '/images/hero/mili_hero_5.jpg',
+      '/logo.png',
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1200&auto=format&fit=crop',
+    ];
+    keyImages.forEach((src) => {
+      try {
+        const img = new Image();
+        img.src = src;
+      } catch {}
+    });
+  } catch {}
 };
 
 export default function HomePage() {

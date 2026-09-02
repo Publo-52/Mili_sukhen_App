@@ -66,19 +66,9 @@ type FilterType = 'all' | 'photo' | 'video' | 'favorites';
 
 export const MemoriesTimeline: React.FC = () => {
   const { user, isAdmin } = useAuth();
-  const [memories, setMemories] = useState<MemoryItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      return getMemories();
-    }
-    return [];
-  });
+  const [memories, setMemories] = useState<MemoryItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      return getFavoriteMemoryIds();
-    }
-    return [];
-  });
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
   // Modal States
   const [isEditorOpen, setIsEditorOpen] = useState(false);
