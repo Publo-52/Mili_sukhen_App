@@ -68,8 +68,10 @@ export const viewport: Viewport = {
   themeColor: "#06040a",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
+  interactiveWidget: "resizes-visual",
 };
 
 export default function RootLayout({
@@ -84,6 +86,26 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Strict prevention of pinch-to-zoom and multi-touch zoom across all mobile & tablet browsers
+              if (typeof window !== 'undefined') {
+                document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+                document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+                document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false });
+                var lastTouchEnd = 0;
+                document.addEventListener('touchend', function(e) {
+                  var now = Date.now();
+                  if (now - lastTouchEnd <= 300) {
+                    e.preventDefault();
+                  }
+                  lastTouchEnd = now;
+                }, { passive: false });
+              }
+            `,
+          }}
+        />
       </head>
       <body className="antialiased min-h-screen bg-[#06040a] text-slate-100 selection:bg-roseGlow-600 selection:text-white">
         <AuthProvider>
