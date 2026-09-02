@@ -95,13 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticated(false);
       setUser(null);
       setSession(null);
-
-      // Force redirect to login page if visiting a protected route
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
     } catch {
-      // On network failure or error, also ensure unauthorized access is blocked
+      // On network failure or error, ensure state remains safe
       setIsAuthenticated(false);
       setUser(null);
       setSession(null);
