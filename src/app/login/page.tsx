@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
   Eye,
@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   LogIn,
   ArrowLeft,
+  Sparkles,
+  Heart,
 } from 'lucide-react';
 import { AUTH_CONFIG } from '@/data/config';
 
@@ -125,38 +127,52 @@ function LoginContent() {
     email.toLowerCase().includes('sukhen') || email.toLowerCase().includes('das');
 
   return (
-    <main className="min-h-screen bg-[#06040a] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden selection:bg-roseGlow-500 selection:text-white">
-      {/* Ambient background glows */}
+    <main className="min-h-[100dvh] w-full bg-[#06040a] flex flex-col justify-between items-center py-6 sm:py-10 px-4 sm:px-6 relative overflow-hidden selection:bg-roseGlow-500 selection:text-white">
+      {/* ── Rich Ambient Background Lighting ─────────────────────── */}
+      {/* Top Center Glow */}
       <div
-        className={`absolute top-1/4 left-1/2 -translate-x-1/2 w-[650px] h-[650px] rounded-full blur-[140px] pointer-events-none transition-colors duration-700 ${
-          isSukhenTyping ? 'bg-purple-600/15' : 'bg-roseGlow-600/15'
+        className={`absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] sm:w-[800px] h-[500px] rounded-full blur-[140px] pointer-events-none transition-colors duration-700 ${
+          isSukhenTyping ? 'bg-purple-600/20' : 'bg-roseGlow-600/20'
         }`}
       />
-      <div className="absolute bottom-0 right-0 w-[450px] h-[450px] bg-pink-600/10 rounded-full blur-[130px] pointer-events-none" />
 
-      {/* Floating Particles */}
+      {/* Center Aura */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pink-600/10 rounded-full blur-[150px] pointer-events-none" />
+
+      {/* Bottom Subtle Ambient Sheen */}
+      <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[650px] sm:w-[900px] h-[400px] bg-gradient-to-t from-purple-900/25 via-roseGlow-950/20 to-transparent rounded-full blur-[130px] pointer-events-none" />
+
+      {/* Floating Stardust Particles across entire viewport */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        {[...Array(16)].map((_, i) => (
+        {[...Array(24)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-1 h-1 rounded-full bg-roseGlow-400/30 animate-pulse-slow"
+            className="absolute w-1 h-1 rounded-full bg-roseGlow-400/40 animate-pulse-slow"
             style={{
-              left: `${(i * 17) % 100}%`,
-              top: `${(i * 23) % 100}%`,
-              animationDelay: `${(i * 0.4) % 4}s`,
-              animationDuration: `${3 + ((i * 0.7) % 4)}s`,
+              left: `${(i * 13 + 7) % 100}%`,
+              top: `${(i * 19 + 5) % 100}%`,
+              animationDelay: `${(i * 0.3) % 4}s`,
+              animationDuration: `${3 + ((i * 0.5) % 4)}s`,
             }}
           />
         ))}
       </div>
 
-      <div className="relative z-10 w-full max-w-md">
+      {/* Top Header Placeholder / Balance */}
+      <div className="w-full flex items-center justify-center pt-2 opacity-0 select-none pointer-events-none sm:block">
+        <span className="text-[10px] font-mono tracking-widest text-slate-600 uppercase">
+          Suksharmi Universe Gate
+        </span>
+      </div>
+
+      {/* ── Main Center Login Card Container ──────────────────────── */}
+      <div className="relative z-10 w-full max-w-md my-auto py-2">
         {/* ── STEP 1: Email + Password Login Form ─────────────────── */}
         {step === 'enter' && (
-          <div className="space-y-6 animate-fade-in">
-            {/* Header Title */}
-            <div className="text-center space-y-2">
-              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 p-0.5 shadow-glow-lg mx-auto border border-white/20 overflow-hidden">
+          <div className="space-y-5 sm:space-y-6 animate-fade-in">
+            {/* Header Title & Brand Emblem */}
+            <div className="text-center space-y-2.5">
+              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-700 via-roseGlow-600 to-pink-500 p-0.5 shadow-glow-lg mx-auto border border-white/20 overflow-hidden group hover:scale-105 transition-transform">
                 <div className="w-full h-full rounded-[22px] bg-[#0c0817] flex items-center justify-center overflow-hidden">
                   <Image
                     src="/logo.png"
@@ -276,12 +292,15 @@ function LoginContent() {
               </form>
 
               {/* Footer status */}
-              <div className="pt-1 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+              <div className="pt-2 flex items-center justify-between text-[11px] text-slate-400 font-mono border-t border-white/5">
                 <span className="flex items-center gap-1">
                   <Smartphone className="w-3 h-3 text-roseGlow-400" />
                   <span>Max {AUTH_CONFIG.maxDevices} devices</span>
                 </span>
-                <span className="text-slate-500">Secure Session</span>
+                <span className="text-slate-500 flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-emerald-400" />
+                  <span>Encrypted Session</span>
+                </span>
               </div>
             </div>
           </div>
@@ -390,6 +409,18 @@ function LoginContent() {
           </div>
         )}
       </div>
+
+      {/* ── Bottom Brand Romantic Footer ──────────────────────────── */}
+      <footer className="relative z-10 w-full text-center pt-4 pb-2 animate-fadeIn">
+        <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] backdrop-blur-sm shadow-sm text-[11px] font-mono text-slate-400">
+          <Sparkles className="w-3 h-3 text-roseGlow-400" />
+          <span>Designed with infinite love for</span>
+          <span className="text-roseGlow-300 font-semibold flex items-center gap-0.5">
+            Mili <Heart className="w-2.5 h-2.5 fill-roseGlow-500 text-roseGlow-500 inline" />
+          </span>
+          <span className="text-slate-500">• Forever</span>
+        </div>
+      </footer>
     </main>
   );
 }
@@ -398,7 +429,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#06040a] flex items-center justify-center">
+        <div className="min-h-[100dvh] bg-[#06040a] flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-roseGlow-500 border-t-transparent rounded-full animate-spin" />
         </div>
       }
