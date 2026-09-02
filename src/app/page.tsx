@@ -84,24 +84,8 @@ export default function HomePage() {
   const [showIntro, setShowIntro] = useState(false);
   const [showSurprise, setShowSurprise] = useState(false);
 
-  // Synchronously compute initial section to prevent flashing Home when refreshing on another tab
-  const [activeSection, setActiveSection] = useState<SectionType>(() => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash.replace('#', '').toLowerCase();
-      if (hash === 'projects') return 'projects';
-      if (hash === 'python-art' || hash === 'turtle') return 'turtle';
-      if (hash === 'memories') return 'memories';
-      if (hash === 'love-notes') return 'love-notes';
-
-      try {
-        const saved = sessionStorage.getItem('mili_active_tab') as SectionType;
-        if (saved && (saved === 'projects' || saved === 'turtle' || saved === 'memories' || saved === 'love-notes')) {
-          return saved;
-        }
-      } catch {}
-    }
-    return 'home';
-  });
+  // Safe SSR-matching initial activeSection
+  const [activeSection, setActiveSection] = useState<SectionType>('home');
 
   // Eager background preload & Sync with URL Hash on load
   useEffect(() => {
@@ -115,12 +99,22 @@ export default function HomePage() {
     } catch {}
 
     const handleHash = () => {
+      if (typeof window === 'undefined') return;
       const hash = window.location.hash.replace('#', '').toLowerCase();
       if (hash === 'projects') setActiveSection('projects');
       else if (hash === 'python-art' || hash === 'turtle') setActiveSection('turtle');
       else if (hash === 'memories') setActiveSection('memories');
       else if (hash === 'love-notes') setActiveSection('love-notes');
-      else setActiveSection('home');
+      else {
+        try {
+          const saved = sessionStorage.getItem('mili_active_tab') as SectionType;
+          if (saved && (saved === 'projects' || saved === 'turtle' || saved === 'memories' || saved === 'love-notes')) {
+            setActiveSection(saved);
+            return;
+          }
+        } catch {}
+        setActiveSection('home');
+      }
     };
 
     handleHash();
