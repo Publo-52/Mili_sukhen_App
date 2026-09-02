@@ -40,33 +40,32 @@ export default function ErrorPage({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+        <div className="flex flex-col sm:flex-row gap-2.5 justify-center pt-2">
           <button
             onClick={() => {
               try {
-                reset();
-              } catch {
-                window.location.reload();
-              }
+                sessionStorage.clear();
+                localStorage.removeItem('mili_active_tab');
+              } catch {}
+              window.location.reload();
             }}
-            className="w-full sm:w-auto px-6 py-3 rounded-full bg-gradient-to-r from-roseGlow-600 via-pink-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs sm:text-sm font-semibold shadow-glow transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-gradient-to-r from-roseGlow-600 via-pink-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 text-white text-xs font-semibold shadow-glow transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
             <span>Restore Page</span>
           </button>
 
           <Link
-            href="/"
+            href="/login"
             onClick={() => {
               try {
-                sessionStorage.removeItem('mili_active_tab');
+                sessionStorage.clear();
               } catch {}
-              window.location.href = '/';
             }}
-            className="w-full sm:w-auto px-6 py-3 rounded-full glass-card hover:border-white/30 text-slate-200 hover:text-white text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-full glass-card hover:border-roseGlow-500/40 text-slate-200 hover:text-white text-xs font-medium transition-all flex items-center justify-center gap-2"
           >
-            <Home className="w-4 h-4 text-roseGlow-400" />
-            <span>Return Home</span>
+            <Home className="w-3.5 h-3.5 text-roseGlow-400" />
+            <span>Open Login Page</span>
           </Link>
         </div>
 

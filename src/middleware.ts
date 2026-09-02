@@ -24,11 +24,8 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('mili_session')?.value;
 
-  // 1. If already logged in and visiting /login, redirect to home
+  // 1. Always allow direct access to /login page
   if (pathname === '/login') {
-    if (sessionCookie) {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
     return NextResponse.next();
   }
 
