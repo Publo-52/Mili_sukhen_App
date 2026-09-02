@@ -195,45 +195,45 @@ export default function HomePage() {
         onSelectSection={handleSelectSection}
       />
 
-      {/* Main Content Container with Instant 0ms Pre-rendered Hardware-Accelerated Switching */}
+      {/* Main Content Container with Instant 0ms Smooth Viewport */}
       <main className="relative z-10 min-h-[75vh]">
         {/* 1. Home Sanctuary View */}
-        <div className={`transition-opacity duration-300 transform-gpu ${isHome ? 'opacity-100 relative' : 'opacity-0 pointer-events-none absolute inset-0 -z-10 hidden'}`}>
+        {isHome && (
           <div className="pt-18 sm:pt-22 pb-8 animate-fadeIn">
             <Hero
               onOpenSurprise={() => setShowSurprise(true)}
               onSelectSection={handleSelectSection}
             />
           </div>
-        </div>
+        )}
 
         {/* 2. Projects Showcase View */}
-        <div className={`transition-opacity duration-300 transform-gpu ${activeSection === 'projects' ? 'opacity-100 relative' : 'opacity-0 pointer-events-none absolute inset-0 -z-10 hidden'}`}>
+        {activeSection === 'projects' && (
           <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
             <ProjectShowcase />
           </div>
-        </div>
+        )}
 
         {/* 3. Python Turtle Art Gallery View */}
-        <div className={`transition-opacity duration-300 transform-gpu ${activeSection === 'turtle' ? 'opacity-100 relative' : 'opacity-0 pointer-events-none absolute inset-0 -z-10 hidden'}`}>
+        {activeSection === 'turtle' && (
           <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
             <TurtleGallery />
           </div>
-        </div>
+        )}
 
         {/* 4. Memories Timeline View */}
-        <div className={`transition-opacity duration-300 transform-gpu ${activeSection === 'memories' ? 'opacity-100 relative' : 'opacity-0 pointer-events-none absolute inset-0 -z-10 hidden'}`}>
+        {activeSection === 'memories' && (
           <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
             <MemoriesTimeline />
           </div>
-        </div>
+        )}
 
         {/* 5. Love Notes Vault View */}
-        <div className={`transition-opacity duration-300 transform-gpu ${activeSection === 'love-notes' ? 'opacity-100 relative' : 'opacity-0 pointer-events-none absolute inset-0 -z-10 hidden'}`}>
+        {activeSection === 'love-notes' && (
           <div className="pt-24 sm:pt-28 pb-16 animate-fadeIn">
             <LoveNotesVault />
           </div>
-        </div>
+        )}
       </main>
 
       {/* Footer: Visible on Home Section */}

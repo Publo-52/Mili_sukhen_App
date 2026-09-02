@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX, Music, Play, Pause, Sparkles, SkipBack, SkipForward } from 'lucide-react';
 import { audioEngine, AudioTrack } from '@/lib/audio';
