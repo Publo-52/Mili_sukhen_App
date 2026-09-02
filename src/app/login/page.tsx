@@ -23,7 +23,7 @@ interface BlockedSession {
   lastSeenAt: string;
 }
 
-type LoginStep = 'enter' | 'blocked' | 'success';
+type LoginStep = 'enter' | 'blocked';
 
 function LoginContent() {
   const router = useRouter();
@@ -38,13 +38,6 @@ function LoginContent() {
   const [error, setError] = useState('');
   const [step, setStep] = useState<LoginStep>('enter');
   const [blockedSessions, setBlockedSessions] = useState<BlockedSession[]>([]);
-  const [loggedInUser, setLoggedInUser] = useState<{
-    name: string;
-    role: string;
-    avatar: string;
-    title: string;
-    greeting: string;
-  } | null>(null);
 
   // Eagerly prefetch target routes in background for instant 0ms transition
   React.useEffect(() => {
@@ -90,8 +83,6 @@ function LoginContent() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setLoggedInUser(data.user);
-        setStep('success');
         try {
           localStorage.setItem('mili_user', JSON.stringify(data.user));
           if (data.user.role === 'sukhen' || data.user.role === 'mili') {
@@ -103,19 +94,18 @@ function LoginContent() {
           window.dispatchEvent(new Event('auth-changed'));
         } catch {}
 
-        // Smooth Next.js client-side router transition without jarring hard reload
-        setTimeout(() => {
-          router.replace(redirectTarget);
-        }, 500);
+        // Instant direct SPA navigation to Home page (Zero intermediate welcome screen)
+        router.replace(redirectTarget);
       } else if (res.status === 403 && data.code === 'MAX_DEVICES') {
         setBlockedSessions(data.sessions || []);
         setStep('blocked');
+        setIsLoading(false);
       } else {
         setError(data.error || 'Invalid email or password. Please try again.');
+        setIsLoading(false);
       }
     } catch {
       setError('Unable to connect to authentication server. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -368,45 +358,6 @@ function LoginContent() {
               <ArrowLeft className="w-4 h-4" />
               <span>Return to Login</span>
             </button>
-          </div>
-        )}
-
-        {/* ── STEP 3: Login Success ────────────────────────────────── */}
-        {step === 'success' && loggedInUser && (
-          <div className="text-center space-y-5 animate-fade-in">
-            <div
-              className={`inline-flex w-16 h-16 rounded-full bg-gradient-to-tr ${
-                loggedInUser.role === 'sukhen'
-                  ? 'from-purple-600 to-indigo-600'
-                  : 'from-roseGlow-600 to-pink-600'
-              } items-center justify-center text-white text-2xl font-bold shadow-glow-lg mx-auto`}
-            >
-              {loggedInUser.name[0]}
-            </div>
-
-            <div className="space-y-1.5">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-                Welcome, {loggedInUser.name}!
-              </h2>
-              <p className="text-slate-300 font-light text-sm max-w-sm mx-auto">
-                {loggedInUser.greeting}
-              </p>
-              <p className="text-xs text-roseGlow-400 font-mono animate-pulse pt-1">
-                Opening universe portal…
-              </p>
-            </div>
-
-            <div className="flex items-center justify-center gap-2 pt-1">
-              <div className="w-2 h-2 rounded-full bg-roseGlow-500 animate-bounce" />
-              <div
-                className="w-2 h-2 rounded-full bg-pink-400 animate-bounce"
-                style={{ animationDelay: '0.15s' }}
-              />
-              <div
-                className="w-2 h-2 rounded-full bg-purple-400 animate-bounce"
-                style={{ animationDelay: '0.3s' }}
-              />
-            </div>
           </div>
         )}
       </div>
