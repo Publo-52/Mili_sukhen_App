@@ -87,7 +87,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   useEffect(() => {
     if (isVideo && videoRef.current) {
       videoRef.current.currentTime = 0;
-      setIsBuffering(true);
+      setIsBuffering(false);
 
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
@@ -96,8 +96,8 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
             setIsPlaying(true);
             setIsBuffering(false);
           })
-          .catch((error) => {
-            console.warn('Autoplay restricted by browser, user can click to play:', error);
+          .catch(() => {
+            // Autoplay blocked by mobile browser - show play button cleanly
             setIsPlaying(false);
             setIsBuffering(false);
           });
@@ -110,7 +110,10 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     if (videoRef.current.paused) {
       videoRef.current
         .play()
-        .then(() => setIsPlaying(true))
+        .then(() => {
+          setIsPlaying(true);
+          setIsBuffering(false);
+        })
         .catch(() => setIsPlaying(false));
     } else {
       videoRef.current.pause();
@@ -216,36 +219,50 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
             className="relative max-w-5xl max-h-[72vh] w-full h-full flex items-center justify-center rounded-2xl overflow-hidden"
           >
             {isVideo ? (
-              <div className="relative w-full h-full flex items-center justify-center group cursor-pointer" onClick={togglePlay}>
+              <div className="relative w-full h-full flex items-center justify-center group">
                 <video
                   ref={videoRef}
                   src={currentItem.url}
                   poster={posterImage}
                   controls
                   playsInline
-                  autoPlay
                   preload="auto"
+                  muted={isMuted}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
                   onWaiting={() => setIsBuffering(true)}
                   onPlaying={() => {
                     setIsBuffering(false);
                     setIsPlaying(true);
                   }}
-                  onPause={() => setIsPlaying(false)}
-                  className="max-h-full max-w-full rounded-2xl shadow-2xl object-contain"
+                  className="max-h-full max-w-full rounded-2xl shadow-2xl object-contain z-10"
                 />
 
-                {/* Big Center Play/Pause Overlay when paused */}
+                {/* Big Center Play/Pause Button when paused */}
                 {!isPlaying && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none transition-opacity">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-roseGlow-500/90 text-white flex items-center justify-center shadow-2xl border border-white/20 transform hover:scale-110 transition-transform">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (videoRef.current) {
+                        videoRef.current.play().then(() => {
+                          setIsPlaying(true);
+                          setIsBuffering(false);
+                        }).catch(() => {});
+                      }
+                    }}
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center z-20 cursor-pointer transition-opacity"
+                    aria-label="Play video"
+                  >
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-roseGlow-500/90 text-white flex items-center justify-center shadow-2xl border border-white/20 transform hover:scale-110 active:scale-95 transition-transform">
                       <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-white translate-x-1" />
                     </div>
-                  </div>
+                  </button>
                 )}
 
                 {/* Loading Spinner during buffering */}
                 {isBuffering && (
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none z-30">
                     <Loader2 className="w-10 h-10 text-roseGlow-400 animate-spin" />
                   </div>
                 )}
