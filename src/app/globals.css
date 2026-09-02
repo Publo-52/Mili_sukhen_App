@@ -25,7 +25,6 @@ button, a, input, select, textarea, [role="button"] {
 }
 
 html {
-  scroll-behavior: smooth;
   color-scheme: dark;
   background-color: #06040a;
   -webkit-font-smoothing: antialiased;
@@ -46,6 +45,19 @@ body {
   width: 100%;
   position: relative;
   overscroll-behavior-y: auto;
+}
+
+/* 120fps Ultra-Smooth Scroll Engine & GPU Layer Isolation */
+.break-inside-avoid, [class*="aspect-"], .glass-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 260px;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+img {
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* Prevent iOS Safari from auto-zooming on input focus */
