@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   LogIn,
   ArrowLeft,
-  Sparkles,
 } from 'lucide-react';
 import { AUTH_CONFIG } from '@/data/config';
 
@@ -27,9 +26,9 @@ interface BlockedSession {
 type LoginStep = 'enter' | 'blocked' | 'success';
 
 function LoginContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTarget = searchParams?.get('redirect') || '/';
+  const rawRedirect = searchParams?.get('redirect');
+  const redirectTarget = rawRedirect && !rawRedirect.startsWith('/login') ? rawRedirect : '/';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -46,10 +45,23 @@ function LoginContent() {
     greeting: string;
   } | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      setError('Please fill in both email and password.');
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
+    // Read from state or directly from DOM inputs to support autofill & password managers
+    const emailInput = (document.getElementById('login-email') as HTMLInputElement)?.value || email;
+    const passInput = (document.getElementById('login-password') as HTMLInputElement)?.value || password;
+
+    const cleanEmail = (emailInput || '').trim();
+    const cleanPassword = (passInput || '').trim();
+
+    if (!cleanEmail) {
+      setError('Please enter your registered email address or phone number.');
+      return;
+    }
+
+    if (!cleanPassword) {
+      setError('Please enter your password.');
       return;
     }
 
@@ -61,8 +73,8 @@ function LoginContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: email.trim(),
-          password: password.trim(),
+          email: cleanEmail,
+          password: cleanPassword,
         }),
       });
 
@@ -81,9 +93,10 @@ function LoginContent() {
           }
           window.dispatchEvent(new Event('auth-changed'));
         } catch {}
+
         setTimeout(() => {
-          window.location.href = redirectTarget;
-        }, 1000);
+          window.location.replace(redirectTarget);
+        }, 600);
       } else if (res.status === 403 && data.code === 'MAX_DEVICES') {
         setBlockedSessions(data.sessions || []);
         setStep('blocked');
@@ -91,10 +104,21 @@ function LoginContent() {
         setError(data.error || 'Invalid email or password. Please try again.');
       }
     } catch {
-      setError('Unable to reach authentication server. Please check your internet connection and try again.');
+      setError('Unable to connect to authentication server. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fillCredentials = (fillEmail: string, fillPass: string) => {
+    setEmail(fillEmail);
+    setPassword(fillPass);
+    setError('');
+
+    const emailEl = document.getElementById('login-email') as HTMLInputElement;
+    const passEl = document.getElementById('login-password') as HTMLInputElement;
+    if (emailEl) emailEl.value = fillEmail;
+    if (passEl) passEl.value = fillPass;
   };
 
   const formatRelativeTime = (isoString: string) => {
@@ -108,7 +132,8 @@ function LoginContent() {
     return 'Just now';
   };
 
-  const isSukhenTyping = email.toLowerCase().includes('sukhen') || email.toLowerCase().includes('admin');
+  const isSukhenTyping =
+    email.toLowerCase().includes('sukhen') || email.toLowerCase().includes('das');
 
   return (
     <main className="min-h-screen bg-[#06040a] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden selection:bg-roseGlow-500 selection:text-white">
@@ -174,13 +199,18 @@ function LoginContent() {
               <form onSubmit={handleLogin} className="space-y-4">
                 {/* Email Field */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <label
+                    htmlFor="login-email"
+                    className="text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-1.5"
+                  >
                     <Mail className="w-3.5 h-3.5 text-roseGlow-400" />
-                    <span>Email Address</span>
+                    <span>Email Address or Phone</span>
                   </label>
                   <input
                     type="text"
                     id="login-email"
+                    name="email"
+                    autoComplete="username"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
@@ -195,7 +225,10 @@ function LoginContent() {
 
                 {/* Password Field */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <label
+                    htmlFor="login-password"
+                    className="text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-1.5"
+                  >
                     <Lock className="w-3.5 h-3.5 text-roseGlow-400" />
                     <span>Password</span>
                   </label>
@@ -203,6 +236,8 @@ function LoginContent() {
                     <input
                       type={showPassword ? 'text' : 'password'}
                       id="login-password"
+                      name="password"
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => {
                         setPassword(e.target.value);
@@ -224,17 +259,17 @@ function LoginContent() {
 
                   {/* Error Message */}
                   {error && (
-                    <p className="text-xs text-red-400 font-mono flex items-center gap-1.5 pt-1">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 font-mono flex items-start gap-2 animate-fadeIn">
+                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                       <span>{error}</span>
-                    </p>
+                    </div>
                   )}
                 </div>
 
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isLoading || !email.trim() || !password.trim()}
+                  disabled={isLoading}
                   className="w-full py-3.5 rounded-2xl text-white font-semibold text-sm shadow-glow hover:shadow-glow-lg transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-gradient-to-r from-roseGlow-600 to-purple-600 hover:from-roseGlow-500 hover:to-purple-500 cursor-pointer"
                 >
                   {isLoading ? (
@@ -259,11 +294,7 @@ function LoginContent() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      setEmail('mandalsharmili06@gmail.com');
-                      setPassword('mili@123');
-                      setError('');
-                    }}
+                    onClick={() => fillCredentials('mandalsharmili06@gmail.com', 'mili@123')}
                     className="p-2.5 rounded-xl glass-card border border-roseGlow-500/30 hover:border-roseGlow-500/60 bg-roseGlow-500/10 text-left transition-all active:scale-95 cursor-pointer"
                   >
                     <div className="flex items-center gap-1.5 text-xs font-bold text-roseGlow-300">
@@ -275,11 +306,7 @@ function LoginContent() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setEmail('dassukhen@gmail.com');
-                      setPassword('das@123');
-                      setError('');
-                    }}
+                    onClick={() => fillCredentials('dassukhen@gmail.com', 'das@123')}
                     className="p-2.5 rounded-xl glass-card border border-purple-500/30 hover:border-purple-500/60 bg-purple-500/10 text-left transition-all active:scale-95 cursor-pointer"
                   >
                     <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300">
