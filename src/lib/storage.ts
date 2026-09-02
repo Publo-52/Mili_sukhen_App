@@ -262,7 +262,14 @@ export function resetMemoriesToDefault(): MemoryMilestone[] {
 }
 
 export function getFavoriteMemoryIds(): string[] {
-  return getStorageItem<string[]>(KEYS.FAVORITE_MEMORIES, ['mem-sample-1']);
+  const saved = getStorageItem<string[] | null>(KEYS.FAVORITE_MEMORIES, null);
+  if (saved !== null && Array.isArray(saved)) {
+    return saved;
+  }
+  const initialFavs = INITIAL_MEMORIES.filter((m) => m.isFavorite).map((m) => m.id);
+  const defaultList = initialFavs.length > 0 ? initialFavs : ['mem-sample-1'];
+  setStorageItem(KEYS.FAVORITE_MEMORIES, defaultList);
+  return defaultList;
 }
 
 export function toggleFavoriteMemory(id: string): string[] {

@@ -133,22 +133,25 @@ export const MemoriesTimeline: React.FC = () => {
     const handleFocus = () => loadMemories();
     const handleSyncEvent = () => loadMemories();
 
-    window.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('mili-memories-updated', handleSyncEvent);
+    // 3. Favorite state change listener across components
+    const handleFavSync = () => {
+      setFavoriteIds(getFavoriteMemoryIds());
+    };
+    window.addEventListener('mili-memory-fav-changed', handleFavSync);
 
     return () => {
       if (channel && supabase) supabase.removeChannel(channel);
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('mili-memories-updated', handleSyncEvent);
+      window.removeEventListener('mili-memory-fav-changed', handleFavSync);
     };
   }, [loadMemories]);
 
   // Filtered Memories
   const filteredMemories = useMemo(() => {
     return memories.filter((m) => {
-      if (activeFilter === 'favorites') return favoriteIds.includes(m.id) || m.isFavorite;
+      if (activeFilter === 'favorites') return favoriteIds.includes(m.id);
       if (activeFilter === 'photo') return m.type === 'photo';
       if (activeFilter === 'video') return m.type === 'video';
       return true;
@@ -157,7 +160,8 @@ export const MemoriesTimeline: React.FC = () => {
 
   const handleToggleFavorite = (id: string) => {
     const updated = toggleFavoriteMemory(id);
-    setFavoriteIds(updated);
+    setFavoriteIds([...updated]);
+    window.dispatchEvent(new Event('mili-memory-fav-changed'));
   };
 
   const handleSaveMemory = async (memory: MemoryItem) => {
@@ -286,7 +290,7 @@ export const MemoriesTimeline: React.FC = () => {
       ) : (
         <div className="columns-2 md:columns-2 lg:columns-3 gap-3 sm:gap-4 md:gap-6 [column-fill:_balance]">
           {filteredMemories.map((memory, index) => {
-            const isFav = favoriteIds.includes(memory.id) || memory.isFavorite;
+            const isFav = favoriteIds.includes(memory.id);
             const isVideo = isMediaVideo(memory);
 
             const MEMORY_ASPECTS = [
@@ -368,18 +372,21 @@ export const MemoriesTimeline: React.FC = () => {
                       )}
 
                       <button
+                        type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           handleToggleFavorite(memory.id);
                         }}
-                        className={`p-1.5 rounded-full backdrop-blur-md transition-all duration-200 ${
+                        className={`p-1.5 rounded-full backdrop-blur-md transition-all duration-200 z-20 cursor-pointer ${
                           isFav
-                            ? 'bg-roseGlow-600 text-white shadow-glow'
-                            : 'bg-black/40 text-white/80 hover:text-white hover:bg-black/70'
+                            ? 'bg-roseGlow-600 text-white shadow-glow scale-105'
+                            : 'bg-black/50 text-white/80 hover:text-white hover:bg-black/80 hover:scale-105'
                         }`}
-                        aria-label="Favorite"
+                        aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                        title={isFav ? 'Remove from favorites' : 'Add to favorites'}
                       >
-                        <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-white' : ''}`} />
+                        <Heart className={`w-3.5 h-3.5 transition-colors ${isFav ? 'fill-white text-white' : 'text-white'}`} />
                       </button>
                     </div>
                   </div>
