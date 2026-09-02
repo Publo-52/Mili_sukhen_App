@@ -13,36 +13,44 @@ export interface AudioTrack {
 
 export const ROMANTIC_PLAYLIST: AudioTrack[] = [
   {
-    id: 'romantic-melody-1',
+    id: 'suksharmi-melody',
     title: 'Suksharmi Special Melody',
     artist: 'Mili & Sukhen Romance',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Claude_Debussy_-_Suite_bergamasque_-_3._Clair_de_lune.ogg',
+    url: '/audio/suksharmi-melody.wav',
     type: 'stream',
-    durationLabel: '5:04',
+    durationLabel: '0:45',
+  },
+  {
+    id: 'clair-de-lune',
+    title: 'Clair de Lune',
+    artist: 'Claude Debussy (Soft Romantic Piano)',
+    url: '/audio/clair-de-lune.wav',
+    type: 'stream',
+    durationLabel: '0:38',
   },
   {
     id: 'gymnopedie-1',
     title: 'Gymnopédie No. 1',
     artist: 'Erik Satie (Soft Ambient Piano)',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Gymnopedie_No_1.ogg',
+    url: '/audio/gymnopedie-no1.wav',
     type: 'stream',
-    durationLabel: '3:08',
+    durationLabel: '0:32',
   },
   {
     id: 'canon-in-d',
     title: 'Canon in D Romance',
     artist: 'Johann Pachelbel (Acoustic Strings)',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Pachelbel%27s_Canon.ogg',
+    url: '/audio/canon-in-d.wav',
     type: 'stream',
-    durationLabel: '5:41',
+    durationLabel: '0:28',
   },
   {
     id: 'fur-elise',
     title: 'Für Elise (Romantic Piano)',
     artist: 'Ludwig van Beethoven',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/9/93/Bagatelle_in_A_minor%2C_Op._59_%28%22F%C3%BCr_Elise%22%29_by_Ludwig_van_Beethoven_arranged_by_Mark_Avery.ogg',
+    url: '/audio/fur-elise.wav',
     type: 'stream',
-    durationLabel: '3:02',
+    durationLabel: '0:18',
   },
   {
     id: 'ambient-starlight-synth',
@@ -66,7 +74,6 @@ class RomanticAudioEngine {
   
   // HTML5 Audio element
   private audioElement: HTMLAudioElement | null = null;
-  private isAudioElementLoading: boolean = false;
 
   // WebAudio Synth Engine (Offline / Ambient Fallback)
   private ctx: AudioContext | null = null;
@@ -96,7 +103,7 @@ class RomanticAudioEngine {
       this.audioElement = new Audio();
       this.audioElement.preload = 'auto';
       this.audioElement.volume = this.volume;
-      this.audioElement.crossOrigin = 'anonymous';
+      this.audioElement.loop = true;
 
       const track = this.getCurrentTrack();
       if (track.url) {
@@ -109,7 +116,6 @@ class RomanticAudioEngine {
       });
 
       this.audioElement.addEventListener('pause', () => {
-        // Only set playing false if synth isn't running as primary
         if (this.getCurrentTrack().type !== 'synth') {
           this.isPlaying = false;
           this.notify();
@@ -133,7 +139,6 @@ class RomanticAudioEngine {
 
   public subscribe(cb: AudioSubscriber): () => void {
     this.listeners.push(cb);
-    // Notify immediately with current state
     try {
       cb(this.isPlaying, this.getCurrentTrack());
     } catch (e) {
@@ -190,15 +195,15 @@ class RomanticAudioEngine {
 
     if (this.audioElement) {
       try {
-        if (!this.audioElement.src || this.audioElement.src !== track.url) {
-          this.audioElement.src = track.url;
+        const expectedSrc = track.url;
+        if (!this.audioElement.src.endsWith(expectedSrc)) {
+          this.audioElement.src = expectedSrc;
           this.audioElement.load();
         }
         this.audioElement.volume = this.volume;
         await this.audioElement.play();
       } catch (err) {
-        console.warn('HTML5 Audio play failed (e.g. mobile gesture needed), falling back to WebAudio Synth:', err);
-        // Fallback to synth if stream playback is blocked
+        console.warn('HTML5 Audio play error, falling back to WebAudio Synth:', err);
         this.startSynth();
       }
     } else {
