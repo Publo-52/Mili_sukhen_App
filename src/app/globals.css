@@ -31,8 +31,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y;
-  overflow-x: hidden !important;
+  overflow-x: hidden;
   max-width: 100vw;
   width: 100%;
 }
@@ -42,11 +41,11 @@ body {
   background-color: var(--background);
   font-family: var(--font-outfit);
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y;
-  overflow-x: hidden !important;
+  overflow-x: hidden;
   max-width: 100vw;
   width: 100%;
   position: relative;
+  overscroll-behavior-y: auto;
 }
 
 /* Prevent iOS Safari from auto-zooming on input focus */
