@@ -81,7 +81,25 @@ export default function HomePage() {
   const router = useRouter();
   const [showIntro, setShowIntro] = useState(false);
   const [showSurprise, setShowSurprise] = useState(false);
-  const [activeSection, setActiveSection] = useState<SectionType>('home');
+
+  // Synchronously compute initial section to prevent flashing Home when refreshing on another tab
+  const [activeSection, setActiveSection] = useState<SectionType>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      if (hash === 'projects') return 'projects';
+      if (hash === 'python-art' || hash === 'turtle') return 'turtle';
+      if (hash === 'memories') return 'memories';
+      if (hash === 'love-notes') return 'love-notes';
+
+      try {
+        const saved = sessionStorage.getItem('mili_active_tab') as SectionType;
+        if (saved && (saved === 'projects' || saved === 'turtle' || saved === 'memories' || saved === 'love-notes')) {
+          return saved;
+        }
+      } catch {}
+    }
+    return 'home';
+  });
 
   // Eager background preload & Sync with URL Hash on load
   useEffect(() => {
@@ -121,6 +139,9 @@ export default function HomePage() {
         : 'home';
 
     setActiveSection(validSection);
+    try {
+      sessionStorage.setItem('mili_active_tab', validSection);
+    } catch {}
 
     try {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
