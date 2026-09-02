@@ -53,7 +53,7 @@ export const AmbientAudioPlayer: React.FC = () => {
           className="flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-card border border-roseGlow-500/40 hover:border-roseGlow-500/70 text-xs font-mono text-slate-200 shadow-glow transition-all hover:scale-105 animate-pulse"
         >
           <Sparkles className="w-3.5 h-3.5 text-roseGlow-400" />
-          <span>Play Romantic Piano 🎵</span>
+          <span>Play Special Song 🎵</span>
         </button>
       )}
 

@@ -1,15 +1,26 @@
-// Romantic Audio Engine supporting high-quality romantic piano streams with WebAudio fallback
-// 100% mobile and desktop compatible
+// Romantic Audio Engine with Background YouTube Player & High-Quality Fallbacks
+// 100% Mobile, Desktop & Background Playback Compatible
 
 export interface AudioTrack {
   id: string;
   title: string;
   artist: string;
   url: string;
-  type: 'stream' | 'synth';
+  type: 'youtube' | 'stream' | 'synth';
+  youtubeId?: string;
 }
 
+export const MAIN_YOUTUBE_TRACK: AudioTrack = {
+  id: 'romantic-song-1',
+  title: 'Romantic Melody',
+  artist: 'Suksharmi Special',
+  url: 'https://youtu.be/3-buUW3gmtU',
+  type: 'youtube',
+  youtubeId: '3-buUW3gmtU',
+};
+
 export const ROMANTIC_PLAYLIST: AudioTrack[] = [
+  MAIN_YOUTUBE_TRACK,
   {
     id: 'clair-de-lune',
     title: 'Clair de Lune',
@@ -17,154 +28,87 @@ export const ROMANTIC_PLAYLIST: AudioTrack[] = [
     url: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Claude_Debussy_-_Suite_bergamasque_-_3._Clair_de_lune.ogg',
     type: 'stream',
   },
-  {
-    id: 'gymnopedie-1',
-    title: 'Gymnopédie No. 1',
-    artist: 'Erik Satie',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/3/34/Erik_Satie_-_gymnopedie_no_1.ogg',
-    type: 'stream',
-  },
-  {
-    id: 'chopin-nocturne',
-    title: 'Nocturne in E-flat (Op. 9 No. 2)',
-    artist: 'Frédéric Chopin',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Chopin_Nocturne_Op9_No2.ogg',
-    type: 'stream',
-  },
-  {
-    id: 'dreamy-chords',
-    title: 'Celestial Romance',
-    artist: 'Suksharmi Ambient Synth',
-    url: '',
-    type: 'synth',
-  },
 ];
 
-class RomanticAudioEngine {
-  private ctx: AudioContext | null = null;
-  private isPlaying: boolean = false;
-  private gainNode: GainNode | null = null;
-  private timer: NodeJS.Timeout | null = null;
-  private volume: number = 0.45;
-  private currentTrackIndex: number = 0;
-  private audioElement: HTMLAudioElement | null = null;
-  private listeners: ((playing: boolean, track: AudioTrack) => void)[] = [];
+declare global {
+  interface Window {
+    YT?: {
+      Player: new (
+        elementId: string | HTMLElement,
+        options: {
+          height?: string | number;
+          width?: string | number;
+          videoId?: string;
+          playerVars?: Record<string, any>;
+          events?: {
+            onReady?: (event: { target: any }) => void;
+            onStateChange?: (event: { data: number; target: any }) => void;
+            onError?: (event: { data: number }) => void;
+          };
+        }
+      ) => any;
+      PlayerState: {
+        UNSTARTED: number;
+        ENDED: number;
+        PLAYING: number;
+        PAUSED: number;
+        BUFFERING: number;
+        CUED: number;
+      };
+    };
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
 
-  // Romantic Pentatonic Chords Fallback (C Major 9, Fmaj7, Am9, Gsus4)
+class RomanticAudioEngine {
+  private isPlaying: boolean = false;
+  private volume: number = 0.55;
+  private currentTrack: AudioTrack = MAIN_YOUTUBE_TRACK;
+  private listeners: ((playing: boolean, track: AudioTrack) => void)[] = [];
+  
+  // YouTube Player State
+  private ytPlayer: any = null;
+  private isYtReady: boolean = false;
+  private isYtLoading: boolean = false;
+  private pendingPlay: boolean = false;
+
+  // Fallback Audio & Synth Elements
+  private audioElement: HTMLAudioElement | null = null;
+  private ctx: AudioContext | null = null;
+  private gainNode: GainNode | null = null;
+  private synthTimer: NodeJS.Timeout | null = null;
+
   private chordProgressions = [
-    [261.63, 329.63, 392.00, 493.88, 587.33], // Cmaj9
-    [349.23, 440.00, 523.25, 659.25],         // Fmaj7
-    [220.00, 261.63, 329.63, 392.00, 493.88], // Am9
-    [196.00, 261.63, 293.66, 392.00],         // Gsus4
+    [261.63, 329.63, 392.0, 493.88, 587.33], // Cmaj9
+    [349.23, 440.0, 523.25, 659.25], // Fmaj7
+    [220.0, 261.63, 329.63, 392.0, 493.88], // Am9
+    [196.0, 261.63, 293.66, 392.0], // Gsus4
   ];
   private currentChordIndex = 0;
 
   constructor() {
     if (typeof window !== 'undefined') {
-      this.initAudioElement();
+      // Delay initialization slightly to let the DOM settle
+      setTimeout(() => {
+        this.initYouTubeEngine();
+      }, 500);
     }
-  }
-
-  private initAudioElement() {
-    if (this.audioElement || typeof window === 'undefined') return;
-    this.audioElement = new Audio();
-    this.audioElement.preload = 'auto';
-    this.audioElement.volume = this.volume;
-
-    this.audioElement.addEventListener('ended', () => {
-      this.nextTrack();
-    });
-
-    this.audioElement.addEventListener('error', () => {
-      // If streaming error occurs, fallback seamlessly to synth
-      this.playSynth();
-    });
   }
 
   public subscribe(cb: (playing: boolean, track: AudioTrack) => void) {
     this.listeners.push(cb);
-    cb(this.isPlaying, this.getCurrentTrack());
+    cb(this.isPlaying, this.currentTrack);
     return () => {
       this.listeners = this.listeners.filter((l) => l !== cb);
     };
   }
 
   private notify() {
-    const track = this.getCurrentTrack();
-    this.listeners.forEach((l) => l(this.isPlaying, track));
+    this.listeners.forEach((l) => l(this.isPlaying, this.currentTrack));
   }
 
   public getCurrentTrack(): AudioTrack {
-    return ROMANTIC_PLAYLIST[this.currentTrackIndex] || ROMANTIC_PLAYLIST[0];
-  }
-
-  public async play(trackIndex?: number) {
-    if (typeof trackIndex === 'number') {
-      this.currentTrackIndex = (trackIndex + ROMANTIC_PLAYLIST.length) % ROMANTIC_PLAYLIST.length;
-    }
-
-    this.initAudioElement();
-    const track = this.getCurrentTrack();
-    this.isPlaying = true;
-    this.notify();
-
-    if (track.type === 'stream' && track.url && this.audioElement) {
-      try {
-        if (this.audioElement.src !== track.url) {
-          this.audioElement.src = track.url;
-        }
-        this.audioElement.volume = this.volume;
-        await this.audioElement.play();
-        this.stopSynth();
-        return;
-      } catch {
-        // Autoplay policy or format fallback
-        this.playSynth();
-      }
-    } else {
-      if (this.audioElement) {
-        this.audioElement.pause();
-      }
-      this.playSynth();
-    }
-  }
-
-  public pause() {
-    this.isPlaying = false;
-    if (this.audioElement) {
-      this.audioElement.pause();
-    }
-    this.stopSynth();
-    this.notify();
-  }
-
-  public nextTrack() {
-    this.currentTrackIndex = (this.currentTrackIndex + 1) % ROMANTIC_PLAYLIST.length;
-    if (this.isPlaying) {
-      this.play();
-    } else {
-      this.notify();
-    }
-  }
-
-  public prevTrack() {
-    this.currentTrackIndex = (this.currentTrackIndex - 1 + ROMANTIC_PLAYLIST.length) % ROMANTIC_PLAYLIST.length;
-    if (this.isPlaying) {
-      this.play();
-    } else {
-      this.notify();
-    }
-  }
-
-  public setVolume(val: number) {
-    this.volume = Math.max(0, Math.min(1, val));
-    if (this.audioElement) {
-      this.audioElement.volume = this.volume;
-    }
-    if (this.gainNode && this.ctx) {
-      this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
-      this.gainNode.gain.setValueAtTime(this.volume, this.ctx.currentTime);
-    }
+    return this.currentTrack;
   }
 
   public getIsPlaying(): boolean {
@@ -175,11 +119,238 @@ class RomanticAudioEngine {
     return this.volume;
   }
 
-  // --- SYNTHESIZER ENGINE (Romantic Chords) ---
+  // --- YouTube IFrame API Initialization ---
+  private initYouTubeEngine() {
+    if (typeof window === 'undefined') return;
+
+    // 1. Create hidden iframe container
+    let container = document.getElementById('youtube-bg-audio-engine');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'youtube-bg-audio-engine';
+      container.style.position = 'fixed';
+      container.style.width = '1px';
+      container.style.height = '1px';
+      container.style.top = '-9999px';
+      container.style.left = '-9999px';
+      container.style.opacity = '0';
+      container.style.pointerEvents = 'none';
+      container.style.zIndex = '-9999';
+      document.body.appendChild(container);
+    }
+
+    // 2. Load YouTube IFrame Script if not present
+    if (!window.YT && !document.getElementById('yt-iframe-api-script')) {
+      this.isYtLoading = true;
+      const tag = document.createElement('script');
+      tag.id = 'yt-iframe-api-script';
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+
+      const prevCallback = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (prevCallback) prevCallback();
+        this.createYouTubePlayer();
+      };
+    } else if (window.YT && window.YT.Player) {
+      this.createYouTubePlayer();
+    }
+  }
+
+  private createYouTubePlayer() {
+    if (!window.YT || !window.YT.Player || this.ytPlayer) return;
+
+    try {
+      const videoId = this.currentTrack.youtubeId || '3-buUW3gmtU';
+      this.ytPlayer = new window.YT.Player('youtube-bg-audio-engine', {
+        height: '1',
+        width: '1',
+        videoId: videoId,
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          modestbranding: 1,
+          rel: 0,
+          loop: 1,
+          playlist: videoId, // Required for loop to repeat the same video
+          playsinline: 1,
+          enablejsapi: 1,
+          origin: typeof window !== 'undefined' ? window.location.origin : '',
+        },
+        events: {
+          onReady: (event: any) => {
+            this.isYtReady = true;
+            this.isYtLoading = false;
+            try {
+              event.target.setVolume(Math.round(this.volume * 100));
+            } catch {}
+
+            if (this.pendingPlay) {
+              this.pendingPlay = false;
+              this.play();
+            }
+          },
+          onStateChange: (event: any) => {
+            // 1: PLAYING, 2: PAUSED, 0: ENDED, 3: BUFFERING
+            if (event.data === 1) {
+              this.isPlaying = true;
+              this.notify();
+            } else if (event.data === 2) {
+              this.isPlaying = false;
+              this.notify();
+            } else if (event.data === 0) {
+              // Auto-loop: restart track
+              try {
+                event.target.playVideo();
+              } catch {
+                this.isPlaying = false;
+                this.notify();
+              }
+            }
+          },
+          onError: (err: any) => {
+            console.warn('YouTube Player encountered an issue, falling back:', err);
+            this.fallbackToAudioStream();
+          },
+        },
+      });
+    } catch (e) {
+      console.warn('Failed to construct YT.Player:', e);
+      this.isYtReady = false;
+    }
+  }
+
+  public async play() {
+    this.initYouTubeEngine();
+    this.isPlaying = true;
+    this.notify();
+
+    // If YouTube Player is ready, play video
+    if (this.ytPlayer && this.isYtReady && typeof this.ytPlayer.playVideo === 'function') {
+      try {
+        this.ytPlayer.setVolume(Math.round(this.volume * 100));
+        this.ytPlayer.playVideo();
+        return;
+      } catch (e) {
+        console.warn('YouTube playVideo error:', e);
+      }
+    }
+
+    // If YouTube player is still initializing, mark pending
+    this.pendingPlay = true;
+
+    // Safety fallback check after 3.5 seconds if YouTube didn't start
+    setTimeout(() => {
+      if (this.isPlaying && (!this.isYtReady || !this.ytPlayer)) {
+        this.fallbackToAudioStream();
+      }
+    }, 3500);
+  }
+
+  public pause() {
+    this.pendingPlay = false;
+    this.isPlaying = false;
+
+    if (this.ytPlayer && typeof this.ytPlayer.pauseVideo === 'function') {
+      try {
+        this.ytPlayer.pauseVideo();
+      } catch {}
+    }
+
+    if (this.audioElement) {
+      this.audioElement.pause();
+    }
+
+    this.stopSynth();
+    this.notify();
+  }
+
+  public toggle() {
+    if (this.isPlaying) {
+      this.pause();
+    } else {
+      this.play();
+    }
+  }
+
+  public nextTrack() {
+    // Restart or re-trigger playback
+    if (this.ytPlayer && this.isYtReady && typeof this.ytPlayer.seekTo === 'function') {
+      try {
+        this.ytPlayer.seekTo(0, true);
+        this.play();
+      } catch {}
+    }
+  }
+
+  public prevTrack() {
+    if (this.ytPlayer && this.isYtReady && typeof this.ytPlayer.seekTo === 'function') {
+      try {
+        this.ytPlayer.seekTo(0, true);
+        this.play();
+      } catch {}
+    }
+  }
+
+  public setVolume(val: number) {
+    this.volume = Math.max(0, Math.min(1, val));
+
+    if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+      try {
+        this.ytPlayer.setVolume(Math.round(this.volume * 100));
+      } catch {}
+    }
+
+    if (this.audioElement) {
+      this.audioElement.volume = this.volume;
+    }
+
+    if (this.gainNode && this.ctx) {
+      try {
+        this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
+        this.gainNode.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+      } catch {}
+    }
+  }
+
+  // --- Fallback Stream & Synth Engine ---
+  private fallbackToAudioStream() {
+    if (typeof window === 'undefined') return;
+    if (!this.audioElement) {
+      this.audioElement = new Audio();
+      this.audioElement.preload = 'auto';
+      this.audioElement.volume = this.volume;
+      this.audioElement.src =
+        'https://upload.wikimedia.org/wikipedia/commons/e/eb/Claude_Debussy_-_Suite_bergamasque_-_3._Clair_de_lune.ogg';
+      this.audioElement.addEventListener('ended', () => {
+        if (this.isPlaying) this.audioElement?.play();
+      });
+      this.audioElement.addEventListener('error', () => {
+        this.playSynth();
+      });
+    }
+
+    if (this.isPlaying) {
+      this.audioElement
+        .play()
+        .then(() => {
+          this.stopSynth();
+        })
+        .catch(() => {
+          this.playSynth();
+        });
+    }
+  }
+
   private initContext() {
     if (!this.ctx && typeof window !== 'undefined') {
       try {
-        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const AudioCtx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         this.ctx = new AudioCtx();
         this.gainNode = this.ctx.createGain();
         this.gainNode.gain.setValueAtTime(this.volume, this.ctx.currentTime);
@@ -203,8 +374,8 @@ class RomanticAudioEngine {
       }
 
       this.playNextChord();
-      if (this.timer) clearInterval(this.timer);
-      this.timer = setInterval(() => {
+      if (this.synthTimer) clearInterval(this.synthTimer);
+      this.synthTimer = setInterval(() => {
         if (this.isPlaying) {
           this.playNextChord();
         }
@@ -234,7 +405,7 @@ class RomanticAudioEngine {
         osc.frequency.setValueAtTime(freq, now);
         osc.detune.setValueAtTime((Math.random() - 0.5) * 8, now);
 
-        const attack = 1.2 + (i * 0.2);
+        const attack = 1.2 + i * 0.2;
         const duration = 4.0;
 
         oscGain.gain.setValueAtTime(0.0001, now);
@@ -250,9 +421,9 @@ class RomanticAudioEngine {
   }
 
   private stopSynth() {
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
+    if (this.synthTimer) {
+      clearInterval(this.synthTimer);
+      this.synthTimer = null;
     }
     if (this.ctx && this.gainNode) {
       const now = this.ctx.currentTime;
