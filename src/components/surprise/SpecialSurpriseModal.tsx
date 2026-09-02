@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, KeyRound, Unlock, Stars, Sparkles, Heart, RefreshCw } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { X, KeyRound, Unlock, Stars } from 'lucide-react';
 import { APP_CONFIG } from '@/data/config';
 
 interface SpecialSurpriseModalProps {
@@ -93,37 +92,14 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
       cleanInput === APP_CONFIG.surprisePasscode.toLowerCase() ||
       cleanInput === 'mili'
     ) {
-      // Pick a new message index dynamically on each unlock
+      // Rotate to the next unique message each time unlocked
       setMessageIndex((prev) => (prev + 1) % SECRET_SURPRISE_MESSAGES.length);
       setIsUnlocked(true);
       setError(false);
-      // Trigger cinematic confetti burst
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#ff2d55', '#fb7185', '#fde047', '#c084fc'],
-        });
-      } catch (err) {
-        console.log('Confetti error:', err);
-      }
     } else {
       setError(true);
       setTimeout(() => setError(false), 2000);
     }
-  };
-
-  const handleNextMessage = () => {
-    setMessageIndex((prev) => (prev + 1) % SECRET_SURPRISE_MESSAGES.length);
-    try {
-      confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: { y: 0.6 },
-        colors: ['#ff2d55', '#fb7185', '#fde047'],
-      });
-    } catch {}
   };
 
   const handleResetAndClose = () => {
@@ -202,7 +178,7 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
               </form>
             </div>
           ) : (
-            /* Unlocked Cinematic Surprise Content with Dynamic Multi-Message Engine */
+            /* Unlocked Single Secret Message (Fresh message on every unlock) */
             <motion.div
               key={messageIndex}
               initial={{ opacity: 0, scale: 0.96 }}
@@ -234,23 +210,14 @@ export const SpecialSurpriseModal: React.FC<SpecialSurpriseModalProps> = ({ isOp
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={handleNextMessage}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full bg-purple-600/80 hover:bg-purple-500 text-white text-xs font-mono uppercase tracking-wider shadow-glow transition-all active:scale-95 cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
-                  <span>Read Another Note ({messageIndex + 1}/{SECRET_SURPRISE_MESSAGES.length})</span>
-                </button>
-
+              {/* Single Close Button */}
+              <div className="text-center pt-2">
                 <button
                   type="button"
                   onClick={handleResetAndClose}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-full glass-card hover:border-white/30 text-xs font-mono uppercase tracking-wider text-slate-300 hover:text-white transition-all cursor-pointer"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-roseGlow-600 hover:bg-roseGlow-500 text-white text-xs font-mono uppercase tracking-wider shadow-glow transition-all active:scale-95 cursor-pointer"
                 >
-                  Close & Treasure
+                  Close & Treasure This Memory
                 </button>
               </div>
             </motion.div>
