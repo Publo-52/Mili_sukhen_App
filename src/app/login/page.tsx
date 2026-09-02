@@ -110,17 +110,6 @@ function LoginContent() {
     }
   };
 
-  const fillCredentials = (fillEmail: string, fillPass: string) => {
-    setEmail(fillEmail);
-    setPassword(fillPass);
-    setError('');
-
-    const emailEl = document.getElementById('login-email') as HTMLInputElement;
-    const passEl = document.getElementById('login-password') as HTMLInputElement;
-    if (emailEl) emailEl.value = fillEmail;
-    if (passEl) passEl.value = fillPass;
-  };
-
   const formatRelativeTime = (isoString: string) => {
     const diff = Date.now() - new Date(isoString).getTime();
     const mins = Math.floor(diff / 60000);
@@ -285,38 +274,6 @@ function LoginContent() {
                   )}
                 </button>
               </form>
-
-              {/* Quick 1-Tap Fill Buttons */}
-              <div className="pt-3 border-t border-white/5 space-y-2">
-                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400 text-center">
-                  Quick One-Tap Sign In
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fillCredentials('mandalsharmili06@gmail.com', 'mili@123')}
-                    className="p-2.5 rounded-xl glass-card border border-roseGlow-500/30 hover:border-roseGlow-500/60 bg-roseGlow-500/10 text-left transition-all active:scale-95 cursor-pointer"
-                  >
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-roseGlow-300">
-                      <span>❤️</span>
-                      <span>Mili</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 font-mono">Fill Mili login</p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => fillCredentials('dassukhen@gmail.com', 'das@123')}
-                    className="p-2.5 rounded-xl glass-card border border-purple-500/30 hover:border-purple-500/60 bg-purple-500/10 text-left transition-all active:scale-95 cursor-pointer"
-                  >
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300">
-                      <span>✨</span>
-                      <span>Sukhen</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 font-mono">Fill Admin login</p>
-                  </button>
-                </div>
-              </div>
 
               {/* Footer status */}
               <div className="pt-1 flex items-center justify-between text-[11px] text-slate-400 font-mono">
