@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
   Eye,
@@ -26,6 +26,7 @@ interface BlockedSession {
 type LoginStep = 'enter' | 'blocked' | 'success';
 
 function LoginContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const rawRedirect = searchParams?.get('redirect');
   const redirectTarget = rawRedirect && !rawRedirect.startsWith('/login') ? rawRedirect : '/';
@@ -44,6 +45,14 @@ function LoginContent() {
     title: string;
     greeting: string;
   } | null>(null);
+
+  // Eagerly prefetch target routes in background for instant 0ms transition
+  React.useEffect(() => {
+    try {
+      router.prefetch('/');
+      router.prefetch('/admin');
+    } catch {}
+  }, [router]);
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -94,9 +103,10 @@ function LoginContent() {
           window.dispatchEvent(new Event('auth-changed'));
         } catch {}
 
+        // Smooth Next.js client-side router transition without jarring hard reload
         setTimeout(() => {
-          window.location.replace(redirectTarget);
-        }, 600);
+          router.replace(redirectTarget);
+        }, 500);
       } else if (res.status === 403 && data.code === 'MAX_DEVICES') {
         setBlockedSessions(data.sessions || []);
         setStep('blocked');

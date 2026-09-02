@@ -35,6 +35,7 @@ const EasterEggListener = dynamic(
 );
 
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 // Eager Parallel Cache Warm-up function (pre-loads all sections & assets upfront)
 const warmUpAllDatasetsAndAssets = () => {
@@ -143,7 +144,12 @@ export default function HomePage() {
       activeSection !== 'love-notes');
 
   return (
-    <div className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain"
+    >
       {/* Dynamic Stardust & Ambient Particle Layer */}
       <ParticleCanvas />
 
@@ -219,6 +225,6 @@ export default function HomePage() {
         isOpen={showSurprise}
         onClose={() => setShowSurprise(false)}
       />
-    </div>
+    </motion.div>
   );
 }
