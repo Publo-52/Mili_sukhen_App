@@ -37,21 +37,21 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
       <motion.div
         initial={{ opacity: 0, scale: 1.02 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.3 } }}
+        exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.25 } }}
         transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
         className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-[#06040a] px-4 text-center select-none overflow-hidden"
       >
-        {/* Full-Screen 100% Blink-Free Seamless Upward Scrolling Photo Wall */}
+        {/* Full-Screen Pure GPU 100% Zero-Blink Seamless Infinite Upward Scrolling Photo Wall */}
         <PhotoCollageBackground />
 
         {/* Soft Ambient Light Rays */}
         <div className="absolute w-[600px] h-[600px] rounded-full bg-roseGlow-600/15 blur-[130px] pointer-events-none animate-pulse-slow z-0" />
         <div className="absolute w-[450px] h-[450px] rounded-full bg-purple-600/15 blur-[120px] pointer-events-none -top-20 -left-20 z-0" />
 
-        {/* Skip Intro Button */}
+        {/* Professional Translucent Skip Intro Button */}
         <button
           onClick={handleDismiss}
-          className="absolute top-5 right-5 sm:top-6 sm:right-6 text-[11px] sm:text-xs font-mono uppercase tracking-widest text-slate-300 hover:text-white px-3.5 py-1.5 rounded-full border border-white/20 hover:border-roseGlow-500/50 bg-black/40 hover:bg-black/60 backdrop-blur-xl shadow-lg transition-all duration-200 z-20 cursor-pointer"
+          className="absolute top-5 right-5 sm:top-6 sm:right-6 text-[11px] sm:text-xs font-mono uppercase tracking-widest text-slate-200 hover:text-white px-3.5 py-1.5 rounded-full border border-white/20 hover:border-white/40 bg-black/20 hover:bg-black/45 backdrop-blur-md shadow-md transition-all duration-200 z-20 cursor-pointer"
         >
           Skip Intro
         </button>
@@ -73,11 +73,11 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
             </p>
           </div>
 
-          {/* Sleek, Compact Enter Universe CTA Button */}
+          {/* Professional Sleek Translucent Frosted Glass CTA Button */}
           <div className="pt-2">
             <button
               onClick={handleDismiss}
-              className="group relative inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-roseGlow-600 via-roseGlow-500 to-purple-600 text-white font-medium text-xs sm:text-sm shadow-[0_0_25px_rgba(244,63,94,0.5)] hover:shadow-[0_0_40px_rgba(244,63,94,0.8)] transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] cursor-pointer border border-white/20"
+              className="group relative inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-roseGlow-600/75 via-roseGlow-500/70 to-purple-600/75 hover:from-roseGlow-600/90 hover:to-purple-600/90 backdrop-blur-md text-white font-medium text-xs sm:text-sm shadow-[0_0_25px_rgba(244,63,94,0.4)] hover:shadow-[0_0_40px_rgba(244,63,94,0.7)] transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] cursor-pointer border border-white/25"
             >
               <Sparkles className="w-4 h-4 text-amber-200" />
               <span>Enter The Digital Universe</span>
@@ -86,14 +86,14 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
           </div>
         </div>
 
-        {/* Luxuriously Decorated Bottom Pill */}
+        {/* Professional Low-Opacity Translucent Glass Bottom Badge (Allows background photos to show through) */}
         <div className="absolute bottom-4 sm:bottom-6 z-20 flex items-center justify-center">
-          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/55 border border-white/15 backdrop-blur-xl shadow-glow text-[11px] sm:text-xs font-mono tracking-wider">
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/20 border border-white/10 backdrop-blur-md text-[11px] sm:text-xs font-mono tracking-wider shadow-sm">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-200 via-pink-200 to-purple-200 font-semibold">
               Suksharmi Universe
             </span>
             <span className="text-white/30">•</span>
-            <span className="flex items-center gap-1 text-slate-300">
+            <span className="flex items-center gap-1 text-slate-200">
               Crafted with <Heart className="w-3.5 h-3.5 text-roseGlow-400 fill-roseGlow-500 inline animate-pulse" /> by Sukhen
             </span>
           </div>
