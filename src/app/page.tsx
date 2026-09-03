@@ -12,13 +12,12 @@ import { TurtleGallery } from '@/components/turtle/TurtleGallery';
 import { MemoriesTimeline } from '@/components/timeline/MemoriesTimeline';
 import { LoveNotesVault } from '@/components/love-notes/LoveNotesVault';
 
+import { CinematicIntro } from '@/components/hero/CinematicIntro';
+import { INTRO_COLLAGE_PHOTOS } from '@/data/introCollagePhotos';
+
 // Ambient Background Elements loaded asynchronously
 const ParticleCanvas = dynamic(
   () => import('@/components/hero/ParticleCanvas').then((m) => m.ParticleCanvas),
-  { ssr: false }
-);
-const CinematicIntro = dynamic(
-  () => import('@/components/hero/CinematicIntro').then((m) => m.CinematicIntro),
   { ssr: false }
 );
 const SpecialSurpriseModal = dynamic(
@@ -61,7 +60,7 @@ const warmUpAllDatasetsAndAssets = () => {
         .catch(() => {});
     });
 
-    // 2. Preload Hero, brand logos, and key media into GPU browser memory cache
+    // 2. Preload Hero, brand logos, intro photos, and key media into GPU browser memory cache
     const keyImages = [
       '/images/hero/mili_hero_1.png',
       '/images/hero/mili_hero_2.png',
@@ -69,8 +68,7 @@ const warmUpAllDatasetsAndAssets = () => {
       '/images/hero/mili_hero_4.png',
       '/images/hero/mili_hero_5.jpg',
       '/logo.png',
-      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1200&auto=format&fit=crop',
+      ...INTRO_COLLAGE_PHOTOS,
     ];
     keyImages.forEach((src) => {
       try {

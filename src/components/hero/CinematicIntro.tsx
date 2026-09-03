@@ -17,16 +17,10 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
   forceShow = false,
   onClose,
 }) => {
-  const [isVisible, setIsVisible] = useState<boolean>(false);
-  const [mounted, setMounted] = useState<boolean>(false);
+  const [isVisible, setIsVisible] = useState<boolean>(forceShow);
 
   useEffect(() => {
-    setMounted(true);
-    if (forceShow) {
-      setIsVisible(true);
-    } else {
-      setIsVisible(false);
-    }
+    setIsVisible(forceShow);
   }, [forceShow]);
 
   const handleDismiss = () => {
@@ -36,17 +30,17 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
     if (onClose) onClose();
   };
 
-  if (!mounted || !isVisible) return null;
+  if (!isVisible) return null;
 
   return (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0, transition: { duration: 0.5 } }}
-        className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-[#06040a] px-6 text-center select-none overflow-hidden"
+        exit={{ opacity: 0, transition: { duration: 0.25 } }}
+        className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-[#06040a] px-4 text-center select-none overflow-hidden"
       >
-        {/* Full-Screen Seamless Infinite Scrolling Photo Wall (Bottom to Top Stream) */}
+        {/* Full-Screen Hardware-Accelerated Photo Stream (Bottom to Top Loop) */}
         <PhotoCollageBackground />
 
         {/* Soft Ambient Light Rays */}
@@ -56,43 +50,43 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
         {/* Skip Intro Button */}
         <button
           onClick={handleDismiss}
-          className="absolute top-6 right-6 text-xs font-mono uppercase tracking-widest text-slate-300 hover:text-white px-4 py-2 rounded-full border border-white/20 hover:border-roseGlow-500/50 bg-black/40 hover:bg-black/60 backdrop-blur-xl shadow-lg transition-all duration-200 z-20 cursor-pointer"
+          className="absolute top-5 right-5 sm:top-6 sm:right-6 text-[11px] sm:text-xs font-mono uppercase tracking-widest text-slate-300 hover:text-white px-3.5 py-1.5 rounded-full border border-white/20 hover:border-roseGlow-500/50 bg-black/40 hover:bg-black/60 backdrop-blur-xl shadow-lg transition-all duration-200 z-20 cursor-pointer"
         >
           Skip Intro
         </button>
 
-        {/* Constant Centered Floating Intro Content (Logo removed, all elements permanently visible) */}
-        <div className="max-w-xl w-full relative z-10 space-y-4 sm:space-y-6 text-center mx-auto px-4">
+        {/* Floating Centered Content — Gracefully Positioned Slightly Lower */}
+        <div className="max-w-md sm:max-w-lg w-full relative z-10 space-y-3.5 sm:space-y-4 text-center mx-auto px-4 mt-12 sm:mt-16 md:mt-20">
           {/* Main Title: "For Mili…" */}
-          <h1 className="text-4xl sm:text-6xl font-serif font-light text-white tracking-wide drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]">
+          <h1 className="text-3xl sm:text-5xl font-serif font-light text-white tracking-wide drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]">
             For <span className="text-roseGlow-400 font-normal italic drop-shadow-[0_0_20px_rgba(244,63,94,0.8)]">Mili</span>…
           </h1>
 
           {/* Subtitle & Categories */}
-          <div className="space-y-2 sm:space-y-3">
-            <p className="text-lg sm:text-2xl text-slate-100 font-light font-sans max-w-md sm:max-w-lg mx-auto leading-relaxed drop-shadow-[0_4px_14px_rgba(0,0,0,0.95)]">
+          <div className="space-y-1.5 sm:space-y-2">
+            <p className="text-base sm:text-xl text-slate-100 font-light font-sans max-w-sm sm:max-w-md mx-auto leading-relaxed drop-shadow-[0_4px_14px_rgba(0,0,0,0.95)]">
               “A collection of everything I created for you.”
             </p>
-            <p className="text-[11px] sm:text-xs uppercase tracking-[0.25em] text-rose-200 font-mono drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-rose-200/90 font-mono drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
               Websites • Python Art • Memories • Love Notes
             </p>
           </div>
 
-          {/* Constant Enter Universe CTA Button */}
-          <div className="pt-2 sm:pt-4">
+          {/* Sleek, Compact Enter Universe CTA Button */}
+          <div className="pt-2 sm:pt-3">
             <button
               onClick={handleDismiss}
-              className="group relative inline-flex items-center justify-center gap-3 px-8 sm:px-10 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-roseGlow-600 via-roseGlow-500 to-purple-600 text-white font-semibold text-base sm:text-lg shadow-[0_0_35px_rgba(244,63,94,0.6)] hover:shadow-[0_0_50px_rgba(244,63,94,0.8)] transition-all duration-300 hover:scale-[1.04] active:scale-[0.98] cursor-pointer border border-white/25"
+              className="group relative inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-roseGlow-600 via-roseGlow-500 to-purple-600 text-white font-medium text-xs sm:text-sm shadow-[0_0_25px_rgba(244,63,94,0.5)] hover:shadow-[0_0_40px_rgba(244,63,94,0.8)] transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] cursor-pointer border border-white/20"
             >
-              <Sparkles className="w-5 h-5 text-amber-200 animate-spin-slow" />
+              <Sparkles className="w-4 h-4 text-amber-200" />
               <span>Enter The Digital Universe</span>
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
           </div>
         </div>
 
         {/* Ambient bottom indicator */}
-        <div className="absolute bottom-5 sm:bottom-8 text-[10px] sm:text-[11px] text-slate-300/80 font-mono tracking-wider drop-shadow-md">
+        <div className="absolute bottom-4 sm:bottom-6 text-[10px] sm:text-[11px] text-slate-300/80 font-mono tracking-wider drop-shadow-md">
           Suksharmi Universe • Crafted with love by Sukhen
         </div>
       </motion.div>
