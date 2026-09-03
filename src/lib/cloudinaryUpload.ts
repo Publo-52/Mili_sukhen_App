@@ -124,8 +124,14 @@ export async function uploadMediaWithProgress(
 
   const cloudName =
     signData?.cloudName ||
-    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
-    'ss5tzziw';
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+  if (!cloudName) {
+    throw new Error(
+      'Cloudinary Cloud Name is not configured. ' +
+      'Please set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME in your environment variables.'
+    );
+  }
 
   // 3. Direct Cloudinary Upload with Real-time XHR Progress
   const performDirectUpload = (): Promise<any> => {

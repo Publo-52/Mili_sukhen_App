@@ -225,7 +225,7 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode === APP_CONFIG.adminPasscode || passcode === 'mili@123' || passcode === 'das@123') {
+    if (passcode === APP_CONFIG.adminPasscode) {
       setIsAuthenticated(true);
       setAdminLoggedIn(true);
       setLoginError(false);
@@ -501,7 +501,7 @@ export default function AdminPage() {
 
             {loginError && (
               <p className="text-xs text-rose-400 font-mono">
-                Incorrect passcode. (Passcode: das@123 / mili@123)
+                Incorrect passcode. Please verify and try again.
               </p>
             )}
 

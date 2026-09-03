@@ -54,8 +54,9 @@ function getMediaThumbnail(memory?: MemoryItem | null): string {
   if (isVideo && memory.url) {
     if (memory.url.includes('cloudinary.com')) {
       const match = memory.url.match(/\/upload\/(?:v\d+\/)?(.+?)\.[^.]+$/);
-      if (match && match[1]) {
-        return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dc1qqj4m6'}/video/upload/so_0,w_800,c_limit,f_jpg,q_auto/${match[1]}.jpg`;
+      const configuredCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      if (match && match[1] && configuredCloudName) {
+        return `https://res.cloudinary.com/${configuredCloudName}/video/upload/so_0,w_800,c_limit,f_jpg,q_auto/${match[1]}.jpg`;
       }
     }
   }
@@ -85,6 +86,7 @@ export const MemoriesTimeline: React.FC = () => {
         if (data?.memories && Array.isArray(data.memories)) {
           setMemories(data.memories);
           try {
+            localStorage.setItem('mili_universe_memories', JSON.stringify(data.memories));
             localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
           } catch {}
           return;

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ authenticated: false, session: null }, { status: 200 });
   }
 
-  const session = validateSession(token);
+  const session = await validateSession(token);
 
   if (!session) {
     return NextResponse.json({ authenticated: false, session: null }, { status: 200 });

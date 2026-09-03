@@ -1,21 +1,27 @@
 /**
- * Server-side session store using cryptographically signed tokens (HMAC-SHA256).
- * Protects against tampering, session forging, and unauthorized privilege escalation.
- * Supports concurrent device sessions and serverless state synchronization.
+ * Server-side session management backed by Supabase device_sessions.
+ *
+ * Strategy:
+ *   1. Supabase is the authoritative, persistent source of truth.
+ *   2. HMAC-signed stateless token decoding is a self-healing fallback
+ *      (used when Supabase is temporarily unavailable or in local dev
+ *      without a configured Supabase project).
+ *   3. No filesystem dependency — safe for serverless / Vercel deployments.
+ *
+ * All public functions are async.
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
 import crypto from 'crypto';
 import { AUTH_CONFIG } from '@/data/config';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export interface DeviceSession {
-  id: string;            // Unique signed session token
+  id: string;            // Signed session token (primary key)
   userName: string;      // "Mili" or "Sukhen"
-  userRole: 'mili' | 'sukhen' | 'guest'; // Role identifier
-  userEmail?: string;    // Logged in email
-  avatar?: string;       // User avatar emoji/icon
-  deviceName: string;    // Friendly derived device label
+  userRole: 'mili' | 'sukhen' | 'guest';
+  userEmail?: string;    // Logged-in email / phone
+  avatar?: string;       // User avatar character
+  deviceName: string;    // Friendly device label derived from UA
   userAgent: string;     // Raw user-agent string
   ip: string;            // Request IP address
   createdAt: string;     // ISO timestamp of login
@@ -23,39 +29,29 @@ export interface DeviceSession {
   expiresAt: string;     // ISO timestamp of expiry
 }
 
-const SESSIONS_FILE = join(process.cwd(), '.sessions.json');
+// ── Cryptographic helpers ─────────────────────────────────────────────────────
 
-// Cryptographic signature secret
-const SECRET_KEY =
-  process.env.SESSION_SECRET ||
-  process.env.CLOUDINARY_API_SECRET ||
-  'suksharmi_ultra_secure_vault_secret_key_2026_signature';
+const SECRET_KEY = (() => {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'CRITICAL SECURITY CONFIG ERROR: SESSION_SECRET environment variable is not set. ' +
+        'Set a strong random string (≥64 chars) in your production environment.'
+      );
+    }
+    console.warn(
+      '⚠️  [DEV WARNING] SESSION_SECRET is not set. ' +
+      'Using a dev-only fallback. Set SESSION_SECRET in .env.local before deploying.'
+    );
+    return 'dev_only_fallback_not_for_production_use_at_all_32_chars_minimum_';
+  }
+  return secret;
+})();
 
 function createHmacSignature(data: string): string {
   return crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex');
 }
-
-// ── Persistence helpers ──────────────────────────────────────────────────────
-
-function readSessions(): DeviceSession[] {
-  try {
-    if (!existsSync(SESSIONS_FILE)) return [];
-    const raw = readFileSync(SESSIONS_FILE, 'utf-8');
-    return JSON.parse(raw) as DeviceSession[];
-  } catch {
-    return [];
-  }
-}
-
-function writeSessions(sessions: DeviceSession[]): void {
-  try {
-    writeFileSync(SESSIONS_FILE, JSON.stringify(sessions, null, 2), 'utf-8');
-  } catch (e) {
-    console.error('[Sessions] Failed to persist sessions:', e);
-  }
-}
-
-// ── Utilities ────────────────────────────────────────────────────────────────
 
 function encodeSessionToken(payload: {
   id: string;
@@ -82,6 +78,7 @@ function encodeSessionToken(payload: {
     const signature = createHmacSignature(b64);
     return `sess_${b64}.${signature}`;
   } catch {
+    // Extremely unlikely fallback — never leave tokens unsigned
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     return Array.from({ length: 48 }, () =>
       chars[Math.floor(Math.random() * chars.length)]
@@ -130,11 +127,10 @@ function decodeSessionToken(token: string): DeviceSession | null {
 }
 
 function deriveDeviceName(userAgent: string): string {
-  const ua = userAgent.toLowerCase();
+  const ua = (typeof userAgent === 'string' ? userAgent : '').toLowerCase();
   let os = '';
   let browser = '';
 
-  // OS Detection
   if (ua.includes('android')) os = 'Android Phone';
   else if (ua.includes('iphone')) os = 'iPhone';
   else if (ua.includes('ipad')) os = 'iPad';
@@ -142,7 +138,6 @@ function deriveDeviceName(userAgent: string): string {
   else if (ua.includes('mac os') || ua.includes('macintosh')) os = 'Mac';
   else if (ua.includes('linux')) os = 'Linux';
 
-  // Browser Detection
   if (ua.includes('chrome') && !ua.includes('edg')) browser = 'Chrome';
   else if (ua.includes('firefox')) browser = 'Firefox';
   else if (ua.includes('safari') && !ua.includes('chrome')) browser = 'Safari';
@@ -154,30 +149,128 @@ function deriveDeviceName(userAgent: string): string {
   return 'Mobile / Web Browser';
 }
 
-function isExpired(session: DeviceSession): boolean {
-  return new Date(session.expiresAt).getTime() < Date.now();
+// ── Supabase row mapper ───────────────────────────────────────────────────────
+
+function mapRow(row: Record<string, unknown>): DeviceSession {
+  return {
+    id: row.id as string,
+    userName: (row.user_name as string) || 'Mili',
+    userRole: (row.user_role as 'mili' | 'sukhen' | 'guest') || 'mili',
+    userEmail: row.user_email as string | undefined,
+    avatar: row.avatar as string | undefined,
+    deviceName: (row.device_name as string) || 'Device',
+    userAgent: (row.user_agent as string) || '',
+    ip: (row.ip as string) || '127.0.0.1',
+    createdAt: row.created_at as string,
+    lastSeenAt: row.last_seen_at as string,
+    expiresAt: row.expires_at as string,
+  };
 }
 
-function getActiveSessions(): DeviceSession[] {
-  const all = readSessions();
-  // Prune expired sessions automatically
-  const active = all.filter((s) => !isExpired(s));
-  if (active.length !== all.length) writeSessions(active);
-  return active;
+// ── Supabase database operations ──────────────────────────────────────────────
+
+async function dbUpsertSession(session: DeviceSession): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    await supabase.from('device_sessions').upsert([
+      {
+        id: session.id,
+        user_name: session.userName,
+        user_role: session.userRole,
+        user_email: session.userEmail ?? null,
+        avatar: session.avatar ?? null,
+        device_name: session.deviceName,
+        user_agent: session.userAgent,
+        ip: session.ip,
+        created_at: session.createdAt,
+        last_seen_at: session.lastSeenAt,
+        expires_at: session.expiresAt,
+      },
+    ]);
+  } catch (err) {
+    console.warn('[Sessions] Supabase upsert failed:', err);
+  }
 }
 
-// ── Public API ───────────────────────────────────────────────────────────────
+async function dbGetSession(token: string): Promise<DeviceSession | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('device_sessions')
+      .select('*')
+      .eq('id', token)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
+    if (error || !data) return null;
+    return mapRow(data as Record<string, unknown>);
+  } catch {
+    return null;
+  }
+}
+
+async function dbGetAllActiveSessions(): Promise<DeviceSession[]> {
+  if (!isSupabaseConfigured || !supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('device_sessions')
+      .select('*')
+      .gt('expires_at', new Date().toISOString())
+      .order('last_seen_at', { ascending: false });
+    if (error || !data) return [];
+    return (data as Record<string, unknown>[]).map(mapRow);
+  } catch {
+    return [];
+  }
+}
+
+async function dbUpdateLastSeen(token: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    await supabase
+      .from('device_sessions')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('id', token);
+  } catch {
+    // Non-critical — do not propagate
+  }
+}
+
+async function dbDeleteSession(token: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    await supabase.from('device_sessions').delete().eq('id', token);
+  } catch (err) {
+    console.warn('[Sessions] Supabase delete failed:', err);
+  }
+}
+
+async function dbDeleteAllSessions(): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    // Delete all rows (neq '' matches everything since id is never empty)
+    await supabase.from('device_sessions').delete().neq('id', '');
+  } catch (err) {
+    console.warn('[Sessions] Supabase delete-all failed:', err);
+  }
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
 
 /**
- * Attempt to create a new cryptographically signed session for a device.
+ * Create a new cryptographically signed session and persist it to Supabase.
  */
-export function createSession(
+export async function createSession(
   userAgent: string,
   ip: string,
-  userInfo: { userName?: string; userRole?: 'mili' | 'sukhen' | 'guest'; userEmail?: string; avatar?: string } = {},
+  userInfo: {
+    userName?: string;
+    userRole?: 'mili' | 'sukhen' | 'guest';
+    userEmail?: string;
+    avatar?: string;
+  } = {},
   existingSessionId?: string
-): { session: DeviceSession } | { error: string; sessions?: DeviceSession[] } {
-  let active = getActiveSessions();
+): Promise<{ session: DeviceSession } | { error: string; sessions?: DeviceSession[] }> {
+  const activeSessions = await dbGetAllActiveSessions();
 
   const now = new Date();
   const expires = new Date(now.getTime() + AUTH_CONFIG.sessionExpiryMs);
@@ -186,7 +279,9 @@ export function createSession(
   const rawId = crypto.randomBytes(16).toString('hex');
   const userName = userInfo.userName || 'Mili';
   const userRole = userInfo.userRole || 'mili';
-  const userEmail = userInfo.userEmail || (userRole === 'sukhen' ? 'dassukhen@gmail.com' : 'mandalsharmili06@gmail.com');
+  const userEmail =
+    userInfo.userEmail ||
+    (userRole === 'sukhen' ? 'dassukhen@gmail.com' : 'mandalsharmili06@gmail.com');
   const avatar = userInfo.avatar || (userRole === 'sukhen' ? '✨' : '👑');
 
   const tokenId = encodeSessionToken({
@@ -200,10 +295,11 @@ export function createSession(
     expiresAt: expires.toISOString(),
   });
 
-  // If there's an existing session token for this client, update it in place
+  // If the client already has an active session token, refresh it in-place
   if (existingSessionId) {
-    const existingIndex = active.findIndex((s) => s.id === existingSessionId);
+    const existingIndex = activeSessions.findIndex((s) => s.id === existingSessionId);
     if (existingIndex !== -1) {
+      await dbDeleteSession(existingSessionId);
       const updatedSession: DeviceSession = {
         id: tokenId,
         userName,
@@ -217,21 +313,18 @@ export function createSession(
         lastSeenAt: now.toISOString(),
         expiresAt: expires.toISOString(),
       };
-      active[existingIndex] = updatedSession;
-      writeSessions(active);
+      await dbUpsertSession(updatedSession);
       return { session: updatedSession };
     }
   }
 
-  // Strictly enforce max 3 active devices limit
-  const nonExpired = active.filter((s) => !isExpired(s));
-  if (nonExpired.length >= AUTH_CONFIG.maxDevices) {
+  // Strictly enforce maximum simultaneous device limit
+  if (activeSessions.length >= AUTH_CONFIG.maxDevices) {
     return {
       error: `Maximum login limit of ${AUTH_CONFIG.maxDevices} devices reached. Please log out from another device first.`,
-      sessions: nonExpired,
+      sessions: activeSessions,
     };
   }
-  active = nonExpired;
 
   const session: DeviceSession = {
     id: tokenId,
@@ -247,37 +340,41 @@ export function createSession(
     expiresAt: expires.toISOString(),
   };
 
-  writeSessions([...active, session]);
+  await dbUpsertSession(session);
   return { session };
 }
 
 /**
- * Validate a session token. Checks signature and updates lastSeenAt.
+ * Validate a session token.
+ * Supabase is the authoritative check; HMAC decode is a self-healing fallback.
  */
-export function validateSession(token: string): DeviceSession | null {
+export async function validateSession(token: string): Promise<DeviceSession | null> {
   if (!token) return null;
-  const active = getActiveSessions();
-  const idx = active.findIndex((s) => s.id === token);
-  if (idx !== -1) {
-    active[idx].lastSeenAt = new Date().toISOString();
-    writeSessions(active);
-    return active[idx];
+
+  // 1. Authoritative: Supabase lookup (checks expiry in the query)
+  const dbSession = await dbGetSession(token);
+  if (dbSession) {
+    // Fire-and-forget last-seen update (non-blocking)
+    dbUpdateLastSeen(token).catch(() => {});
+    return dbSession;
   }
 
-  // Fallback: decode and verify signature for self-contained stateless tokens
-  const decoded = decodeSessionToken(token);
-  if (decoded) {
-    writeSessions([...active, decoded]);
-    return decoded;
+  // 2. Fallback: decode HMAC-signed stateless token ONLY when Supabase is not configured
+  //    (used in local offline development without Supabase credentials)
+  if (!isSupabaseConfigured) {
+    const decoded = decodeSessionToken(token);
+    if (decoded) {
+      return decoded;
+    }
   }
 
   return null;
 }
 
 /**
- * Validate session from request cookie
+ * Extract and validate a session from an HTTP request's Cookie header.
  */
-export function getSessionFromRequest(request: Request): DeviceSession | null {
+export async function getSessionFromRequest(request: Request): Promise<DeviceSession | null> {
   const cookieHeader = request.headers.get('cookie') || '';
   const match = cookieHeader.match(/mili_session=([^;]+)/);
   if (!match || !match[1]) return null;
@@ -285,31 +382,44 @@ export function getSessionFromRequest(request: Request): DeviceSession | null {
 }
 
 /**
- * Remove a specific session by token (logout).
+ * Remove a specific session (logout from one device).
  */
-export function removeSession(token: string): void {
-  const active = getActiveSessions();
-  writeSessions(active.filter((s) => s.id !== token));
+export async function removeSession(token: string): Promise<void> {
+  await dbDeleteSession(token);
 }
 
 /**
- * Get all active sessions (for admin dashboard).
+ * Get all currently active (non-expired) sessions.
  */
-export function getAllSessions(): DeviceSession[] {
-  return getActiveSessions();
+export async function getAllSessions(): Promise<DeviceSession[]> {
+  return dbGetAllActiveSessions();
 }
 
 /**
- * Force-remove a session by its ID (admin revoke).
+ * Force-revoke a session by its ID (admin action).
  */
-export function revokeSession(sessionId: string): void {
-  const active = getActiveSessions();
-  writeSessions(active.filter((s) => s.id !== sessionId));
+export async function revokeSession(sessionId: string): Promise<void> {
+  await dbDeleteSession(sessionId);
 }
 
 /**
- * Wipe all active sessions (admin force logout all).
+ * Wipe every active session (admin force-logout all devices).
  */
-export function revokeAllSessions(): void {
-  writeSessions([]);
+export async function revokeAllSessions(): Promise<void> {
+  await dbDeleteAllSessions();
+}
+
+/**
+ * Delete all expired sessions from Supabase (housekeeping).
+ */
+export async function cleanupExpiredSessions(): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    await supabase
+      .from('device_sessions')
+      .delete()
+      .lt('expires_at', new Date().toISOString());
+  } catch (err) {
+    console.warn('[Sessions] Cleanup expired sessions failed:', err);
+  }
 }

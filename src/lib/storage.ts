@@ -9,6 +9,7 @@ import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
 const KEYS = {
   PROJECTS: 'mili_universe_projects',
   LOVE_NOTES: 'mili_universe_love_notes',
+  MEMORIES: 'mili_universe_memories',
   FAVORITE_PROJECTS: 'mili_fav_projects',
   FAVORITE_NOTES: 'mili_fav_notes',
   FAVORITE_MEMORIES: 'mili_fav_memories',
@@ -22,6 +23,9 @@ const KEYS = {
   DELETED_NOTES: 'mili_deleted_note_ids',
   DELETED_MEMORIES: 'mili_deleted_memory_ids',
 };
+
+// Legacy key for backward-compatibility migration
+const LEGACY_MEMORIES_ALL_KEY = 'mili_fav_memories_all';
 
 // Safe LocalStorage access
 function getStorageItem<T>(key: string, fallback: T): T {
@@ -130,7 +134,8 @@ export function restoreAllDefaults(): void {
   setStorageItem(KEYS.PROJECTS, INITIAL_PROJECTS);
   setStorageItem(KEYS.CUSTOM_TURTLE, INITIAL_TURTLE_CREATIONS);
   setStorageItem(KEYS.LOVE_NOTES, INITIAL_LOVE_NOTES);
-  setStorageItem(KEYS.FAVORITE_MEMORIES + '_all', INITIAL_MEMORIES);
+  setStorageItem(KEYS.MEMORIES, INITIAL_MEMORIES);
+  setStorageItem(LEGACY_MEMORIES_ALL_KEY, INITIAL_MEMORIES);
 }
 
 // ----------------- Turtle Creations Storage -----------------
@@ -144,7 +149,7 @@ export function saveTurtleCreation(creation: TurtleCreation): TurtleCreation[] {
   setStorageItem(KEYS.DELETED_TURTLE, deletedIds);
 
   const current = getTurtleCreations();
-  const index = current.findIndex((c) => c.id === creation.id);
+  const index = current.findIndex((t) => t.id === creation.id);
   let updated: TurtleCreation[];
   if (index >= 0) {
     updated = [...current];
@@ -159,9 +164,15 @@ export function saveTurtleCreation(creation: TurtleCreation): TurtleCreation[] {
 export function deleteTurtleCreation(id: string): TurtleCreation[] {
   markTurtleDeleted(id);
   const current = getTurtleCreations();
-  const updated = current.filter((c) => c.id !== id);
+  const updated = current.filter((t) => t.id !== id);
   setStorageItem(KEYS.CUSTOM_TURTLE, updated);
   return updated;
+}
+
+export function resetTurtleToDefault(): TurtleCreation[] {
+  setStorageItem(KEYS.DELETED_TURTLE, []);
+  setStorageItem(KEYS.CUSTOM_TURTLE, INITIAL_TURTLE_CREATIONS);
+  return INITIAL_TURTLE_CREATIONS;
 }
 
 // ----------------- Love Notes Storage -----------------
@@ -203,7 +214,7 @@ export function resetLoveNotesToDefault(): LoveNote[] {
 
 // ----------------- Favorites -----------------
 export function getFavoriteProjectIds(): string[] {
-  return getStorageItem<string[]>(KEYS.FAVORITE_PROJECTS, []);
+  return getStorageItem<string[]>(KEYS.FAVORITE_PROJECTS, ['mili-special', 'mili-envelope', 'mili-universe']);
 }
 
 export function toggleFavoriteProject(id: string): string[] {
@@ -226,8 +237,21 @@ export function toggleFavoriteNote(id: string): string[] {
 
 // ----------------- Memories / Photo & Video Storage -----------------
 export function getMemories(): MemoryMilestone[] {
-  const saved = getStorageItem<MemoryMilestone[] | null>(KEYS.FAVORITE_MEMORIES + '_all', null);
-  return saved === null || saved.length === 0 ? INITIAL_MEMORIES : saved;
+  // 1. Check semantically correct new key
+  const savedNew = getStorageItem<MemoryMilestone[] | null>(KEYS.MEMORIES, null);
+  if (savedNew !== null && Array.isArray(savedNew) && savedNew.length > 0) {
+    return savedNew;
+  }
+
+  // 2. If missing or empty in new key, check legacy key (backward-compatibility)
+  const savedLegacy = getStorageItem<MemoryMilestone[] | null>(LEGACY_MEMORIES_ALL_KEY, null);
+  if (savedLegacy !== null && Array.isArray(savedLegacy) && savedLegacy.length > 0) {
+    // 3. Migrate data to new key seamlessly without deleting old data
+    setStorageItem(KEYS.MEMORIES, savedLegacy);
+    return savedLegacy;
+  }
+
+  return INITIAL_MEMORIES;
 }
 
 export function saveMemory(memory: MemoryMilestone): MemoryMilestone[] {
@@ -243,7 +267,8 @@ export function saveMemory(memory: MemoryMilestone): MemoryMilestone[] {
   } else {
     updated = [memory, ...current];
   }
-  setStorageItem(KEYS.FAVORITE_MEMORIES + '_all', updated);
+  setStorageItem(KEYS.MEMORIES, updated);
+  setStorageItem(LEGACY_MEMORIES_ALL_KEY, updated);
   return updated;
 }
 
@@ -251,13 +276,15 @@ export function deleteMemory(id: string): MemoryMilestone[] {
   markMemoryDeleted(id);
   const current = getMemories();
   const updated = current.filter((m) => m.id !== id);
-  setStorageItem(KEYS.FAVORITE_MEMORIES + '_all', updated);
+  setStorageItem(KEYS.MEMORIES, updated);
+  setStorageItem(LEGACY_MEMORIES_ALL_KEY, updated);
   return updated;
 }
 
 export function resetMemoriesToDefault(): MemoryMilestone[] {
   setStorageItem(KEYS.DELETED_MEMORIES, []);
-  setStorageItem(KEYS.FAVORITE_MEMORIES + '_all', INITIAL_MEMORIES);
+  setStorageItem(KEYS.MEMORIES, INITIAL_MEMORIES);
+  setStorageItem(LEGACY_MEMORIES_ALL_KEY, INITIAL_MEMORIES);
   return INITIAL_MEMORIES;
 }
 

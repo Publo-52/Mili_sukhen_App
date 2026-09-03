@@ -53,6 +53,7 @@ const warmUpAllDatasetsAndAssets = () => {
             } else if (url === '/api/love-notes' && data.notes) {
               localStorage.setItem('mili_universe_love_notes', JSON.stringify(data.notes));
             } else if (url === '/api/memories' && data.memories) {
+              localStorage.setItem('mili_universe_memories', JSON.stringify(data.memories));
               localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
             }
           }

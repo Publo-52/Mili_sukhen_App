@@ -9,16 +9,11 @@ import { markMemoryDeletedOnServer, isMemoryDeletedOnServer } from '@/lib/server
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-function isAuthorizedAdmin(request: Request): boolean {
-  const session = getSessionFromRequest(request);
+async function isAuthorizedAdmin(request: Request): Promise<boolean> {
+  const session = await getSessionFromRequest(request);
   if (session?.userRole === 'sukhen' || session?.userRole === 'mili') return true;
   const adminToken = request.headers.get('x-admin-token');
-  return (
-    adminToken === APP_CONFIG.adminPasscode ||
-    adminToken === 'das@123' ||
-    adminToken === 'mili@123' ||
-    adminToken === 'mili'
-  );
+  return adminToken === APP_CONFIG.adminPasscode;
 }
 
 export async function GET() {
@@ -76,7 +71,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    if (!isAuthorizedAdmin(request)) {
+    if (!await isAuthorizedAdmin(request)) {
       return NextResponse.json(
         { error: 'Unauthorized. Only Admins can upload memories.' },
         { status: 403 }
@@ -126,7 +121,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    if (!isAuthorizedAdmin(request)) {
+    if (!await isAuthorizedAdmin(request)) {
       return NextResponse.json(
         { error: 'Unauthorized. Only Admins can delete memories.' },
         { status: 403 }

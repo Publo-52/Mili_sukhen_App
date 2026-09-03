@@ -7,16 +7,11 @@ import { DirectMessage } from '@/types';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-function isAuthorized(request: Request): boolean {
-  const session = getSessionFromRequest(request);
+async function isAuthorized(request: Request): Promise<boolean> {
+  const session = await getSessionFromRequest(request);
   if (session?.userRole === 'sukhen' || session?.userRole === 'mili') return true;
   const adminToken = request.headers.get('x-admin-token');
-  return (
-    adminToken === APP_CONFIG.adminPasscode ||
-    adminToken === 'das@123' ||
-    adminToken === 'mili@123' ||
-    adminToken === 'mili'
-  );
+  return adminToken === APP_CONFIG.adminPasscode;
 }
 
 export async function GET() {
@@ -64,8 +59,43 @@ export async function GET() {
   );
 }
 
+// ── In-process rate-limit store (per IP, max 10 messages / 60 s) ─────────────
+const msgRateMap = new Map<string, { count: number; resetAt: number }>();
+const MSG_RATE_LIMIT = 10;
+const MSG_RATE_WINDOW_MS = 60 * 1000;
+
+function isMessageRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = msgRateMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    msgRateMap.set(ip, { count: 1, resetAt: now + MSG_RATE_WINDOW_MS });
+    return false;
+  }
+  if (entry.count >= MSG_RATE_LIMIT) return true;
+  entry.count++;
+  return false;
+}
+
 export async function POST(request: Request) {
   try {
+    // ── Authentication: must be a logged-in user OR valid admin token ──────
+    if (!await isAuthorized(request)) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Please log in to send a message.' },
+        { status: 401 }
+      );
+    }
+
+    // ── IP-based rate limiting ─────────────────────────────────────────────
+    const forwarded = (request.headers as Headers).get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
+    if (isMessageRateLimited(ip)) {
+      return NextResponse.json(
+        { error: 'Too many messages. Please wait a moment before sending again.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { id, sender, message, mood } = body as {
       id?: string;
@@ -74,16 +104,27 @@ export async function POST(request: Request) {
       mood?: string;
     };
 
-    if (!message || !message.trim()) {
-      return NextResponse.json({ error: 'Message content cannot be empty' }, { status: 400 });
+    // ── Input validation ───────────────────────────────────────────────────
+    const cleanMessage = (message || '').trim();
+    if (!cleanMessage) {
+      return NextResponse.json({ error: 'Message content cannot be empty.' }, { status: 400 });
     }
+    if (cleanMessage.length > 1000) {
+      return NextResponse.json(
+        { error: 'Message is too long. Maximum 1000 characters allowed.' },
+        { status: 400 }
+      );
+    }
+
+    const cleanSender = (sender || 'Mili').trim().slice(0, 50);
+    const cleanMood   = (mood   || '❤️').trim().slice(0, 10);
 
     const messageId = id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const msgRecord: DirectMessage = {
       id: messageId,
-      sender: sender || 'Mili',
-      message: message.trim(),
-      mood: mood || '❤️',
+      sender: cleanSender,
+      message: cleanMessage,
+      mood: cleanMood,
       read: false,
       createdAt: new Date().toISOString(),
     };
@@ -117,7 +158,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    if (!isAuthorized(request)) {
+    if (!await isAuthorized(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -151,7 +192,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    if (!isAuthorized(request)) {
+    if (!await isAuthorized(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

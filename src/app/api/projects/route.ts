@@ -69,21 +69,16 @@ export async function GET() {
   );
 }
 
-function isAuthorizedAdmin(request: Request): boolean {
-  const session = getSessionFromRequest(request);
+async function isAuthorizedAdmin(request: Request): Promise<boolean> {
+  const session = await getSessionFromRequest(request);
   if (session?.userRole === 'sukhen' || session?.userRole === 'mili') return true;
   const adminToken = request.headers.get('x-admin-token');
-  return (
-    adminToken === APP_CONFIG.adminPasscode ||
-    adminToken === 'das@123' ||
-    adminToken === 'mili@123' ||
-    adminToken === 'mili'
-  );
+  return adminToken === APP_CONFIG.adminPasscode;
 }
 
 export async function POST(request: Request) {
   try {
-    if (!isAuthorizedAdmin(request)) {
+    if (!await isAuthorizedAdmin(request)) {
       return NextResponse.json({ error: 'Unauthorized. Only Admins can add or edit projects.' }, { status: 403 });
     }
 
@@ -110,9 +105,10 @@ export async function POST(request: Request) {
           featured: project.featured,
           order_index: project.order || 1,
           theme_gradient: project.themeGradient || null,
+          theme_glow: project.themeGlow || null,
           theme_accent: project.themeAccent || null,
           theme_badge: project.themeBadge || null,
-          themeBorder: project.themeBorder || null,
+          theme_border: project.themeBorder || null,
           theme_text_accent: project.themeTextAccent || null,
           created_at: project.createdAt || new Date().toISOString(),
         },
@@ -131,7 +127,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    if (!isAuthorizedAdmin(request)) {
+    if (!await isAuthorizedAdmin(request)) {
       return NextResponse.json({ error: 'Unauthorized. Only Admins can delete projects.' }, { status: 403 });
     }
 
