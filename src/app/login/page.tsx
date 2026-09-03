@@ -91,6 +91,8 @@ function LoginContent() {
           if (data.sessionId) {
             localStorage.setItem('mili_session_ref', data.sessionId);
           }
+          // Ensure first screen opened after login is always the Home page
+          sessionStorage.setItem('mili_active_tab', 'home');
           window.dispatchEvent(new Event('auth-changed'));
         } catch {}
 
