@@ -362,11 +362,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <AnimatePresence>
                 {musicControlsOpen && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.85, y: -6 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.85, y: -6 }}
+                    initial={{ opacity: 0, scale: 0.85, x: 8 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.85, x: 8 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full right-0 mt-2 flex items-center gap-1 p-1 rounded-full glass-card border border-roseGlow-500/40 bg-obsidian-950/95 shadow-glow backdrop-blur-xl z-50"
+                    className="flex items-center gap-1 p-1 rounded-full glass-card border border-roseGlow-500/40 bg-obsidian-950/95 shadow-glow backdrop-blur-xl z-50"
                   >
                     {/* Previous Track Button */}
                     <button
@@ -417,7 +417,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </motion.div>
                 )}
               </AnimatePresence>
-
               {/* Mobile Song Icon Button */}
               <button
                 onClick={() => setMusicControlsOpen((prev) => !prev)}
@@ -432,6 +431,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Music className={`w-4 h-4 ${isPlayingAudio ? 'text-roseGlow-400' : 'text-slate-400'}`} />
               </button>
             </div>
+
 
             {onOpenSurprise && (
               <button
