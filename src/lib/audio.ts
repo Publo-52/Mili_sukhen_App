@@ -63,7 +63,9 @@ declare global {
 class RomanticAudioEngine {
   private isPlaying: boolean = false;
   private volume: number = 0.55;
-  private currentTrack: AudioTrack = MAIN_YOUTUBE_TRACK;
+  private playlist: AudioTrack[] = [...ROMANTIC_PLAYLIST];
+  private currentTrackIndex: number = 0;
+  private currentTrack: AudioTrack = ROMANTIC_PLAYLIST[0] || MAIN_YOUTUBE_TRACK;
   private listeners: ((playing: boolean, track: AudioTrack) => void)[] = [];
   
   // YouTube Player State
@@ -117,6 +119,17 @@ class RomanticAudioEngine {
 
   public getVolume(): number {
     return this.volume;
+  }
+
+  public getPlaylist(): AudioTrack[] {
+    return this.playlist;
+  }
+
+  public setPlaylist(tracks: AudioTrack[]) {
+    this.playlist = tracks;
+    if (this.currentTrackIndex >= this.playlist.length) {
+      this.currentTrackIndex = 0;
+    }
   }
 
   // --- YouTube IFrame API Initialization ---
@@ -217,12 +230,16 @@ class RomanticAudioEngine {
               this.isPlaying = false;
               this.notify();
             } else if (event.data === 0) {
-              // Auto-loop: restart track
-              try {
-                event.target.playVideo();
-              } catch {
-                this.isPlaying = false;
-                this.notify();
+              // Auto-play next track if playlist has multiple songs, else restart
+              if (this.playlist.length > 1) {
+                this.nextTrack();
+              } else {
+                try {
+                  event.target.playVideo();
+                } catch {
+                  this.isPlaying = false;
+                  this.notify();
+                }
               }
             }
           },
@@ -291,23 +308,63 @@ class RomanticAudioEngine {
     }
   }
 
-  public nextTrack() {
-    // Restart or re-trigger playback
-    if (this.ytPlayer && this.isYtReady && typeof this.ytPlayer.seekTo === 'function') {
-      try {
-        this.ytPlayer.seekTo(0, true);
-        this.play();
-      } catch {}
+  public playTrackIndex(index: number) {
+    if (!this.playlist || this.playlist.length === 0) return;
+    this.currentTrackIndex = (index + this.playlist.length) % this.playlist.length;
+    this.currentTrack = this.playlist[this.currentTrackIndex];
+
+    if (this.audioElement) {
+      this.audioElement.pause();
+    }
+    this.stopSynth();
+
+    this.isPlaying = true;
+    this.notify();
+
+    if (this.currentTrack.type === 'youtube' && this.currentTrack.youtubeId) {
+      if (this.ytPlayer && this.isYtReady && typeof this.ytPlayer.loadVideoById === 'function') {
+        try {
+          this.ytPlayer.loadVideoById(this.currentTrack.youtubeId);
+          this.ytPlayer.setVolume(Math.round(this.volume * 100));
+          this.ytPlayer.playVideo();
+          return;
+        } catch (e) {
+          console.warn('YouTube loadVideoById error:', e);
+        }
+      } else {
+        this.pendingPlay = true;
+        this.initYouTubeEngine();
+      }
+    } else if (this.currentTrack.type === 'stream') {
+      if (this.ytPlayer && typeof this.ytPlayer.pauseVideo === 'function') {
+        try {
+          this.ytPlayer.pauseVideo();
+        } catch {}
+      }
+      this.fallbackToAudioStream(this.currentTrack.url);
     }
   }
 
-  public prevTrack() {
-    if (this.ytPlayer && this.isYtReady && typeof this.ytPlayer.seekTo === 'function') {
+  public nextTrack() {
+    if (this.playlist.length <= 1 && this.ytPlayer && this.isYtReady) {
       try {
         this.ytPlayer.seekTo(0, true);
         this.play();
       } catch {}
+      return;
     }
+    this.playTrackIndex(this.currentTrackIndex + 1);
+  }
+
+  public prevTrack() {
+    if (this.playlist.length <= 1 && this.ytPlayer && this.isYtReady) {
+      try {
+        this.ytPlayer.seekTo(0, true);
+        this.play();
+      } catch {}
+      return;
+    }
+    this.playTrackIndex(this.currentTrackIndex - 1);
   }
 
   public setVolume(val: number) {
@@ -331,23 +388,33 @@ class RomanticAudioEngine {
     }
   }
 
-  // --- Fallback Stream & Synth Engine ---
-  private fallbackToAudioStream() {
+  private fallbackToAudioStream(streamUrl?: string) {
     if (typeof window === 'undefined') return;
+    const url =
+      streamUrl ||
+      (this.currentTrack.type === 'stream'
+        ? this.currentTrack.url
+        : 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Claude_Debussy_-_Suite_bergamasque_-_3._Clair_de_lune.ogg');
+
     if (!this.audioElement) {
       this.audioElement = new Audio();
       this.audioElement.preload = 'auto';
       this.audioElement.volume = this.volume;
-      this.audioElement.src =
-        'https://upload.wikimedia.org/wikipedia/commons/e/eb/Claude_Debussy_-_Suite_bergamasque_-_3._Clair_de_lune.ogg';
       this.audioElement.addEventListener('ended', () => {
-        if (this.isPlaying) this.audioElement?.play();
+        if (this.isPlaying) {
+          if (this.playlist.length > 1) {
+            this.nextTrack();
+          } else {
+            this.audioElement?.play();
+          }
+        }
       });
       this.audioElement.addEventListener('error', () => {
         this.playSynth();
       });
     }
 
+    this.audioElement.src = url;
     if (this.isPlaying) {
       this.audioElement
         .play()

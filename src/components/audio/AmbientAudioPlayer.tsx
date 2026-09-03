@@ -1,122 +1,127 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Music, Play, Pause, Sparkles, SkipBack, SkipForward } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Music, Play, Pause, SkipBack, SkipForward, X } from 'lucide-react';
 import { audioEngine, AudioTrack } from '@/lib/audio';
 
 export const AmbientAudioPlayer: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<AudioTrack>(audioEngine.getCurrentTrack());
-  const [volume, setVolume] = useState(0.45);
-  const [isMuted, setIsMuted] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsubscribe = audioEngine.subscribe((playing, track) => {
       setIsPlaying(playing);
       setCurrentTrack(track);
-      if (playing) setHasInteracted(true);
     });
     return () => unsubscribe();
   }, []);
+
+  // Close when clicked outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const togglePlay = () => {
     if (audioEngine.getIsPlaying()) {
       audioEngine.pause();
     } else {
       audioEngine.play();
-      setHasInteracted(true);
     }
-  };
-
-  const toggleMute = () => {
-    if (isMuted) {
-      audioEngine.setVolume(volume);
-      setIsMuted(false);
-    } else {
-      audioEngine.setVolume(0);
-      setIsMuted(true);
-    }
-  };
-
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    setVolume(val);
-    if (isMuted) setIsMuted(false);
-    audioEngine.setVolume(val);
   };
 
   return (
-    <div className="hidden sm:flex fixed bottom-6 right-6 z-40 items-center gap-2.5">
-      {/* First Time Intro Banner (Hidden once interacted) */}
-      {!hasInteracted && !isPlaying && (
-        <button
-          onClick={togglePlay}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-card border border-roseGlow-500/40 hover:border-roseGlow-500/70 text-xs font-mono text-slate-200 shadow-glow transition-all hover:scale-105 animate-pulse"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-roseGlow-400" />
-          <span>Play Special Song 🎵</span>
-        </button>
-      )}
-
-      {/* Floating Audio Controller */}
-      <div className={`glass-card px-3 py-2 rounded-full flex items-center gap-2 border transition-all duration-300 shadow-2xl ${
-        isPlaying ? 'border-roseGlow-500/50 shadow-glow bg-obsidian-950/95' : 'border-white/10 bg-obsidian-950/80'
-      }`}>
-        <button
-          onClick={() => audioEngine.prevTrack()}
-          className="text-slate-400 hover:text-white p-1 transition-colors"
-          title="Previous Track"
-          aria-label="Previous Track"
-        >
-          <SkipBack className="w-3.5 h-3.5" />
-        </button>
-
-        <button
-          onClick={togglePlay}
-          aria-label={isPlaying ? "Pause ambient sound" : "Play ambient sound"}
-          className={`p-2.5 rounded-full transition-all duration-300 active:scale-90 ${
-            isPlaying ? "bg-gradient-to-r from-roseGlow-600 to-purple-600 text-white shadow-glow animate-pulse" : "bg-white/10 text-slate-300 hover:text-white hover:bg-white/20"
-          }`}
-          title={isPlaying ? `Pause (${currentTrack.title})` : `Play Romantic Music (${currentTrack.title})`}
-        >
-          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
-        </button>
-
-        <button
-          onClick={() => audioEngine.nextTrack()}
-          className="text-slate-400 hover:text-white p-1 transition-colors"
-          title="Next Track"
-          aria-label="Next Track"
-        >
-          <SkipForward className="w-3.5 h-3.5" />
-        </button>
-
-        {isPlaying && (
-          <div className="flex items-center gap-2 pr-1 animate-fadeIn">
-            <span className="text-[10px] font-mono text-roseGlow-300 max-w-[110px] truncate">
-              {currentTrack.title}
-            </span>
+    <div
+      ref={containerRef}
+      className="fixed bottom-6 right-6 z-50 flex items-center gap-2 select-none"
+    >
+      {/* Control Buttons (Shown ONLY when Song Icon is clicked) */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, x: 20 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.8, x: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="flex items-center gap-1.5 p-1.5 rounded-full glass-card border border-roseGlow-500/40 bg-obsidian-950/95 shadow-glow backdrop-blur-xl"
+          >
+            {/* Previous Track Button */}
             <button
-              onClick={toggleMute}
-              className="text-slate-400 hover:text-white transition-colors p-1"
-              aria-label="Toggle mute"
+              onClick={() => audioEngine.prevTrack()}
+              className="p-2.5 rounded-full text-slate-300 hover:text-white hover:bg-white/10 active:scale-90 transition-all duration-200"
+              title="Previous Track"
+              aria-label="Previous Track"
             >
-              {isMuted ? <VolumeX className="w-4 h-4 text-roseGlow-400" /> : <Volume2 className="w-4 h-4" />}
+              <SkipBack className="w-4 h-4" />
             </button>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={isMuted ? 0 : volume}
-              onChange={handleVolumeChange}
-              className="w-14 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-roseGlow-500"
-              aria-label="Volume slider"
-            />
+
+            {/* Play / Pause Button */}
+            <button
+              onClick={togglePlay}
+              className={`p-2.5 rounded-full transition-all duration-200 active:scale-90 shadow-md ${
+                isPlaying
+                  ? 'bg-gradient-to-r from-roseGlow-600 to-purple-600 text-white shadow-glow'
+                  : 'bg-white/10 text-slate-200 hover:text-white hover:bg-white/20'
+              }`}
+              title={isPlaying ? 'Pause' : 'Play'}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+            >
+              {isPlaying ? (
+                <Pause className="w-4 h-4" />
+              ) : (
+                <Play className="w-4 h-4 fill-current ml-0.5" />
+              )}
+            </button>
+
+            {/* Next Track Button */}
+            <button
+              onClick={() => audioEngine.nextTrack()}
+              className="p-2.5 rounded-full text-slate-300 hover:text-white hover:bg-white/10 active:scale-90 transition-all duration-200"
+              title="Next Track"
+              aria-label="Next Track"
+            >
+              <SkipForward className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Song Icon Button (Click to reveal/hide buttons) */}
+      <button
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`p-3 rounded-full glass-card border transition-all duration-300 active:scale-90 shadow-2xl flex items-center justify-center ${
+          isOpen
+            ? 'border-roseGlow-500/70 bg-obsidian-900 text-roseGlow-400 shadow-glow'
+            : isPlaying
+            ? 'border-roseGlow-500/50 bg-obsidian-950/90 text-roseGlow-400 shadow-glow'
+            : 'border-white/15 bg-obsidian-950/80 text-slate-300 hover:text-white hover:border-roseGlow-500/40'
+        }`}
+        title={isOpen ? 'Close Music Controls' : 'Music Player'}
+        aria-label={isOpen ? 'Close Music Controls' : 'Music Player'}
+      >
+        {isOpen ? (
+          <X className="w-5 h-5 text-roseGlow-400" />
+        ) : (
+          <div className="relative flex items-center justify-center">
+            {isPlaying && (
+              <span className="absolute -inset-1 rounded-full bg-roseGlow-500/30 animate-ping" />
+            )}
+            <Music className={`w-5 h-5 ${isPlaying ? 'text-roseGlow-400 animate-pulse' : ''}`} />
           </div>
         )}
-      </div>
+      </button>
     </div>
   );
 };
