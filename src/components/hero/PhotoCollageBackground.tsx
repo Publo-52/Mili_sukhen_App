@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { INTRO_COLLAGE_PHOTOS } from '@/data/introCollagePhotos';
 
 export const PhotoCollageBackground: React.FC = () => {
-  // Ensure we have a dense mosaic grid by repeating or tiling if needed
   const photos = INTRO_COLLAGE_PHOTOS.length > 0 ? INTRO_COLLAGE_PHOTOS : [];
 
   // Group photos into 6 columns for dense multi-column mosaic masonry
@@ -17,27 +16,27 @@ export const PhotoCollageBackground: React.FC = () => {
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
-      {/* 1. Full-Screen Photo Collage Grid with Subtle Ambient Floating Drift */}
+      {/* 1. Full-Screen Bright & Vibrant Photo Collage Grid Wall */}
       <motion.div
-        initial={{ scale: 1.05, opacity: 0 }}
+        initial={{ opacity: 0, scale: 1.02 }}
         animate={{
-          scale: [1.05, 1, 1.03],
-          y: [0, -12, 0],
+          opacity: 1,
+          scale: [1.02, 1, 1.02],
+          y: [0, -10, 0],
         }}
         transition={{
-          duration: 35,
-          repeat: Infinity,
-          repeatType: 'reverse',
-          ease: 'easeInOut',
+          opacity: { duration: 0.5 },
+          scale: { duration: 30, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' },
+          y: { duration: 25, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' },
         }}
-        className="absolute -inset-10 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 sm:gap-3 p-4 opacity-35 sm:opacity-40"
+        className="absolute -inset-6 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 p-2 sm:p-4 opacity-75 sm:opacity-80"
         style={{ willChange: 'transform' }}
       >
         {columns.map((colPhotos, colIndex) => (
           <div
             key={`col-${colIndex}`}
-            className={`flex flex-col gap-2.5 sm:gap-3 ${
-              colIndex % 2 === 1 ? 'pt-6 sm:pt-10' : colIndex % 3 === 2 ? 'pt-3 sm:pt-5' : ''
+            className={`flex flex-col gap-2 sm:gap-3 ${
+              colIndex % 2 === 1 ? 'pt-4 sm:pt-8' : colIndex % 3 === 2 ? 'pt-2 sm:pt-4' : ''
             }`}
           >
             {colPhotos.map((src, imgIndex) => {
@@ -45,47 +44,41 @@ export const PhotoCollageBackground: React.FC = () => {
               const isTall = (colIndex + imgIndex) % 3 === 0;
               const isWide = (colIndex + imgIndex) % 4 === 1;
               const heightClass = isTall
-                ? 'h-44 sm:h-56'
+                ? 'h-48 sm:h-64'
                 : isWide
-                ? 'h-28 sm:h-36'
-                : 'h-36 sm:h-44';
+                ? 'h-32 sm:h-40'
+                : 'h-40 sm:h-52';
 
               return (
-                <motion.div
+                <div
                   key={`${src}-${imgIndex}`}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{
-                    duration: 0.8,
-                    delay: (colIndex * 0.08 + imgIndex * 0.05) % 0.8,
-                  }}
-                  className={`relative w-full ${heightClass} rounded-2xl overflow-hidden border border-white/15 bg-white/5 shadow-[0_8px_20px_rgba(0,0,0,0.6)] backdrop-blur-xs`}
+                  className={`relative w-full ${heightClass} rounded-xl sm:rounded-2xl overflow-hidden border-2 border-white/20 bg-slate-900/80 shadow-[0_8px_25px_rgba(0,0,0,0.7)]`}
                 >
                   <Image
                     src={src}
                     alt="Sukhen & Mili Memory"
                     fill
+                    unoptimized
                     sizes="(max-width: 768px) 33vw, 16vw"
-                    className="object-cover transition-transform duration-700 hover:scale-110 filter brightness-95 contrast-105 saturate-110"
-                    priority={imgIndex < 3}
-                    loading={imgIndex < 3 ? 'eager' : 'lazy'}
+                    className="object-cover filter brightness-100 contrast-105 saturate-110"
+                    priority={imgIndex < 4}
                   />
-                  {/* Subtle glass reflection gradient over each photo */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-white/10" />
-                </motion.div>
+                  {/* Subtle clean glass sheen over each photo tile */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-white/10 pointer-events-none" />
+                </div>
               );
             })}
           </div>
         ))}
       </motion.div>
 
-      {/* 2. Romantic Radial Vignette Overlay (Ensures text in center is super readable and glowing) */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#06040a] via-[#06040a]/70 to-[#06040a]/85" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,4,10,0.45)_0%,rgba(6,4,10,0.85)_65%,#06040a_100%)]" />
+      {/* 2. Soft Ambient Tint & Center Spotlight (Keeps photos brightly visible while focusing on center) */}
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,4,10,0.35)_0%,rgba(6,4,10,0.65)_70%,rgba(6,4,10,0.92)_100%)]" />
 
-      {/* 3. Soft Rose & Purple Ambient Glow Rays */}
-      <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-roseGlow-600/15 blur-[140px] animate-pulse-slow" />
-      <div className="absolute bottom-1/4 right-1/3 w-[500px] h-[500px] rounded-full bg-purple-600/15 blur-[140px] animate-pulse-slow" />
+      {/* 3. Soft Rose & Purple Romantic Glow Accents */}
+      <div className="absolute top-1/4 left-1/4 w-[450px] h-[450px] rounded-full bg-roseGlow-600/20 blur-[130px] animate-pulse-slow" />
+      <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] rounded-full bg-purple-600/20 blur-[130px] animate-pulse-slow" />
     </div>
   );
 };

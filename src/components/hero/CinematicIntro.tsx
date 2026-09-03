@@ -74,7 +74,12 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
           Skip Intro
         </button>
 
-        <div className="max-w-2xl relative z-10 space-y-8">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="max-w-xl sm:max-w-2xl w-full relative z-10 space-y-6 sm:space-y-8 p-6 sm:p-10 rounded-3xl bg-[#06040a]/85 backdrop-blur-xl border border-roseGlow-500/30 shadow-[0_0_60px_rgba(0,0,0,0.9)]"
+        >
           {/* Glowing Brand Logo */}
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
@@ -130,11 +135,11 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6 }}
-              className="pt-6"
+              className="pt-4"
             >
               <button
                 onClick={handleDismiss}
-                className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-roseGlow-600 via-roseGlow-500 to-purple-600 text-white font-medium text-base shadow-glow hover:shadow-glow-lg transition-all duration-300 hover:scale-[1.03] active:scale-[0.98]"
+                className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-roseGlow-600 via-roseGlow-500 to-purple-600 text-white font-medium text-base shadow-glow hover:shadow-glow-lg transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] cursor-pointer"
               >
                 <Sparkles className="w-5 h-5 text-amber-200" />
                 <span>Enter The Digital Universe</span>
@@ -142,7 +147,7 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
               </button>
             </motion.div>
           )}
-        </div>
+        </motion.div>
 
         {/* Ambient bottom indicator */}
         <div className="absolute bottom-8 text-[11px] text-slate-400 font-mono tracking-wider">
