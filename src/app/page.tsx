@@ -25,10 +25,7 @@ const SpecialSurpriseModal = dynamic(
   () => import('@/components/surprise/SpecialSurpriseModal').then((m) => m.SpecialSurpriseModal),
   { ssr: false }
 );
-const AmbientAudioPlayer = dynamic(
-  () => import('@/components/audio/AmbientAudioPlayer').then((m) => m.AmbientAudioPlayer),
-  { ssr: false }
-);
+
 const EasterEggListener = dynamic(
   () => import('@/components/easter-eggs/EasterEggListener').then((m) => m.EasterEggListener),
   { ssr: false }
@@ -232,8 +229,6 @@ export default function HomePage() {
         />
       </div>
 
-      {/* Ambient Audio Player */}
-      <AmbientAudioPlayer />
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav
