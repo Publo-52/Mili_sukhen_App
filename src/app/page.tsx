@@ -170,13 +170,11 @@ export default function HomePage() {
       {/* Dynamic Stardust & Ambient Particle Layer */}
       <ParticleCanvas />
 
-      {/* Cinematic Opening Sequence */}
-      {showIntro && (
-        <CinematicIntro
-          forceShow={showIntro}
-          onClose={() => setShowIntro(false)}
-        />
-      )}
+      {/* Cinematic Opening Sequence — Pre-rendered in background for true 0ms instant open */}
+      <CinematicIntro
+        forceShow={showIntro}
+        onClose={() => setShowIntro(false)}
+      />
 
       {/* Global Interactive Easter Egg Listeners */}
       <EasterEggListener onTriggerSurprise={() => setShowSurprise(true)} />
