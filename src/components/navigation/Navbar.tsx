@@ -356,82 +356,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Mobile Action Icons (Header Right) */}
-          <div className="flex md:hidden items-center gap-1.5">
-            {/* Mobile Music Toggle & Controls */}
-            <div ref={mobileMusicRef} className="relative flex items-center">
-              <AnimatePresence>
-                {musicControlsOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.85, x: 8 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0.85, x: 8 }}
-                    transition={{ duration: 0.15 }}
-                    className="flex items-center gap-1 p-1 rounded-full glass-card border border-roseGlow-500/40 bg-obsidian-950/95 shadow-glow backdrop-blur-xl z-50"
-                  >
-                    {/* Previous Track Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        audioEngine.prevTrack();
-                      }}
-                      className="p-2 rounded-full text-slate-300 hover:text-white active:scale-90 transition-all"
-                      title="Previous Track"
-                      aria-label="Previous Track"
-                    >
-                      <SkipBack className="w-3.5 h-3.5" />
-                    </button>
-
-                    {/* Play / Pause Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleAudio();
-                      }}
-                      className={`p-2 rounded-full transition-all active:scale-90 ${
-                        isPlayingAudio
-                          ? 'bg-gradient-to-r from-roseGlow-600 to-purple-600 text-white shadow-glow'
-                          : 'glass-card text-slate-300 hover:text-white'
-                      }`}
-                      title={isPlayingAudio ? 'Pause' : 'Play'}
-                      aria-label={isPlayingAudio ? 'Pause' : 'Play'}
-                    >
-                      {isPlayingAudio ? (
-                        <Pause className="w-3.5 h-3.5" />
-                      ) : (
-                        <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                      )}
-                    </button>
-
-                    {/* Next Track Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        audioEngine.nextTrack();
-                      }}
-                      className="p-2 rounded-full text-slate-300 hover:text-white active:scale-90 transition-all"
-                      title="Next Track"
-                      aria-label="Next Track"
-                    >
-                      <SkipForward className="w-3.5 h-3.5" />
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              {/* Mobile Song Icon Button */}
-              <button
-                onClick={() => setMusicControlsOpen((prev) => !prev)}
-                className={`p-2 rounded-full glass-card transition-all cursor-pointer ${
-                  musicControlsOpen || isPlayingAudio
-                    ? 'border-roseGlow-500/60 text-roseGlow-300 bg-roseGlow-500/20 shadow-glow animate-pulse'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-                title={musicControlsOpen ? 'Hide Music Controls' : 'Open Music Controls'}
-                aria-label="Toggle Romantic Music"
-              >
-                <Music className={`w-4 h-4 ${isPlayingAudio ? 'text-roseGlow-400' : 'text-slate-400'}`} />
-              </button>
-            </div>
-
+          <div ref={mobileMusicRef} className="relative flex md:hidden items-center gap-1.5">
+            {/* Music Icon Button */}
+            <button
+              onClick={() => setMusicControlsOpen((prev) => !prev)}
+              className={`p-2 rounded-full glass-card transition-all cursor-pointer ${
+                musicControlsOpen || isPlayingAudio
+                  ? 'border-roseGlow-500/60 text-roseGlow-300 bg-roseGlow-500/20 shadow-glow'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+              title={musicControlsOpen ? 'Hide Music Controls' : 'Open Music Controls'}
+              aria-label="Toggle Romantic Music"
+            >
+              <Music className={`w-4 h-4 ${isPlayingAudio ? 'text-roseGlow-400 animate-pulse' : 'text-slate-400'}`} />
+            </button>
 
             {onOpenSurprise && (
               <button
@@ -449,7 +387,55 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
+
+            {/* Music Controls Dropdown — appears below right side, under hamburger */}
+            <AnimatePresence>
+              {musicControlsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.85, y: -8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.85, y: -8 }}
+                  transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+                  className="absolute top-full right-0 mt-2 flex items-center gap-1 p-1.5 rounded-full glass-card border border-roseGlow-500/40 bg-obsidian-950/95 shadow-glow backdrop-blur-xl z-[60]"
+                >
+                  {/* Previous Track */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); audioEngine.prevTrack(); }}
+                    className="p-2 rounded-full text-slate-300 hover:text-white active:scale-90 transition-all"
+                    title="Previous Track"
+                    aria-label="Previous Track"
+                  >
+                    <SkipBack className="w-4 h-4" />
+                  </button>
+
+                  {/* Play / Pause */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleAudio(); }}
+                    className={`p-2 rounded-full transition-all active:scale-90 ${
+                      isPlayingAudio
+                        ? 'bg-gradient-to-r from-roseGlow-600 to-purple-600 text-white shadow-glow'
+                        : 'glass-card text-slate-300 hover:text-white'
+                    }`}
+                    title={isPlayingAudio ? 'Pause' : 'Play'}
+                    aria-label={isPlayingAudio ? 'Pause' : 'Play'}
+                  >
+                    {isPlayingAudio ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
+                  </button>
+
+                  {/* Next Track */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); audioEngine.nextTrack(); }}
+                    className="p-2 rounded-full text-slate-300 hover:text-white active:scale-90 transition-all"
+                    title="Next Track"
+                    aria-label="Next Track"
+                  >
+                    <SkipForward className="w-4 h-4" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+
         </div>
       </header>
 
