@@ -86,6 +86,7 @@ export default function HomePage() {
 
   // Safe SSR-matching initial activeSection
   const [activeSection, setActiveSection] = useState<SectionType>('home');
+  const historyStackRef = React.useRef<SectionType[]>(['home']);
 
   // Eager background preload & Sync with URL Hash on load
   useEffect(() => {
@@ -98,34 +99,46 @@ export default function HomePage() {
       router.prefetch('/login');
     } catch {}
 
-    const handleHash = () => {
-      if (typeof window === 'undefined') return;
-      const hash = window.location.hash.replace('#', '').toLowerCase();
-      if (hash === 'projects') setActiveSection('projects');
-      else if (hash === 'python-art' || hash === 'turtle') setActiveSection('turtle');
-      else if (hash === 'memories') setActiveSection('memories');
-      else if (hash === 'love-notes') setActiveSection('love-notes');
-      else {
-        try {
-          const saved = sessionStorage.getItem('mili_active_tab') as SectionType;
-          if (saved && (saved === 'projects' || saved === 'turtle' || saved === 'memories' || saved === 'love-notes')) {
-            setActiveSection(saved);
-            return;
-          }
-        } catch {}
-        setActiveSection('home');
+    const parseSectionFromHash = (hash: string): SectionType => {
+      const clean = hash.replace('#', '').toLowerCase();
+      if (clean === 'projects') return 'projects';
+      if (clean === 'python-art' || clean === 'turtle') return 'turtle';
+      if (clean === 'memories') return 'memories';
+      if (clean === 'love-notes') return 'love-notes';
+      return 'home';
+    };
+
+    const initialHash = typeof window !== 'undefined' ? window.location.hash : '';
+    if (initialHash) {
+      const initialSec = parseSectionFromHash(initialHash);
+      setActiveSection(initialSec);
+      historyStackRef.current = ['home', initialSec];
+    } else {
+      try {
+        const saved = sessionStorage.getItem('mili_active_tab') as SectionType;
+        if (saved && (saved === 'projects' || saved === 'turtle' || saved === 'memories' || saved === 'love-notes')) {
+          setActiveSection(saved);
+          historyStackRef.current = ['home', saved];
+        }
+      } catch {}
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state && e.state.section) {
+        handleSelectSection(e.state.section, false);
+      } else {
+        const sec = parseSectionFromHash(window.location.hash);
+        handleSelectSection(sec, false);
       }
     };
 
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-
+    window.addEventListener('popstate', handlePopState);
     return () => {
-      window.removeEventListener('hashchange', handleHash);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, [router]);
 
-  const handleSelectSection = (section: SectionType) => {
+  const handleSelectSection = (section: SectionType, pushToHistory = true) => {
     const validSection: SectionType =
       section === 'projects' ||
       section === 'turtle' ||
@@ -146,12 +159,82 @@ export default function HomePage() {
     }
 
     const targetHash = validSection === 'home' ? '' : validSection === 'turtle' ? 'python-art' : validSection;
-    if (targetHash) {
-      window.history.pushState(null, '', `#${targetHash}`);
-    } else {
-      window.history.pushState(null, '', window.location.pathname);
+
+    if (pushToHistory) {
+      // Append to local step stack
+      const currentStack = historyStackRef.current;
+      if (currentStack[currentStack.length - 1] !== validSection) {
+        currentStack.push(validSection);
+      }
+      if (targetHash) {
+        window.history.pushState({ section: validSection }, '', `#${targetHash}`);
+      } else {
+        window.history.pushState({ section: 'home' }, '', window.location.pathname);
+      }
     }
   };
+
+  // Step-wise Back Navigation (Handles swipe back and history step reversal)
+  const navigateStepBack = React.useCallback(() => {
+    // 1. If any modal is open, close modal first
+    if (showSurprise) {
+      setShowSurprise(false);
+      return true;
+    }
+    if (showIntro) {
+      setShowIntro(false);
+      return true;
+    }
+
+    // 2. Step backward through section navigation history stack
+    const stack = historyStackRef.current;
+    if (stack.length > 1) {
+      stack.pop(); // remove current section
+      const previousSection = stack[stack.length - 1] || 'home';
+      handleSelectSection(previousSection, false);
+      return true;
+    } else if (activeSection !== 'home') {
+      handleSelectSection('home', false);
+      return true;
+    }
+
+    return false;
+  }, [activeSection, showSurprise, showIntro]);
+
+  // Mobile Touch Swipe Listener (Left-to-Right swipe to step-wise go back)
+  useEffect(() => {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      const duration = Date.now() - touchStartTime;
+
+      const deltaX = touchEndX - touchStartX;
+      const deltaY = Math.abs(touchEndY - touchStartY);
+
+      // Natural Left-to-Right Swipe Back Gesture (deltaX > 60px, horizontal dominant, < 400ms)
+      if (deltaX > 60 && deltaY < 50 && duration < 400) {
+        navigateStepBack();
+      }
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [navigateStepBack]);
 
   const isHome =
     activeSection === 'home' ||
