@@ -380,13 +380,37 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Sparkles className="w-4 h-4" />
               </button>
             )}
-            <button
+            {/* Animated 3-Line Hamburger Button (Smooth Morph to X) */}
+            <motion.button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-full glass-card text-slate-200"
-              aria-label="Open menu"
+              whileTap={{ scale: 0.9 }}
+              className={`relative w-9 h-9 rounded-full flex flex-col items-center justify-center gap-[4.5px] p-2 transition-all duration-200 cursor-pointer ${
+                mobileMenuOpen
+                  ? 'bg-roseGlow-500/20 text-roseGlow-300 border border-roseGlow-500/50 shadow-glow'
+                  : 'glass-card text-slate-200 hover:text-white hover:border-white/30'
+              }`}
+              title={mobileMenuOpen ? 'Close Menu' : 'Open Menu'}
+              aria-label={mobileMenuOpen ? 'Close Menu' : 'Open Menu'}
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+              {/* Top Line */}
+              <motion.span
+                animate={mobileMenuOpen ? { rotate: 45, y: 6.5 } : { rotate: 0, y: 0 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+                className="w-4 h-[2px] bg-current rounded-full origin-center pointer-events-none"
+              />
+              {/* Middle Line */}
+              <motion.span
+                animate={mobileMenuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className="w-4 h-[2px] bg-current rounded-full origin-center pointer-events-none"
+              />
+              {/* Bottom Line */}
+              <motion.span
+                animate={mobileMenuOpen ? { rotate: -45, y: -6.5 } : { rotate: 0, y: 0 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+                className="w-4 h-[2px] bg-current rounded-full origin-center pointer-events-none"
+              />
+            </motion.button>
 
             {/* Music Controls Dropdown — appears below right side, under hamburger */}
             <AnimatePresence>
@@ -448,63 +472,90 @@ export const Navbar: React.FC<NavbarProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               onClick={() => setMobileMenuOpen(false)}
               className="fixed inset-0 z-30 bg-black/80 backdrop-blur-md md:hidden"
             />
 
-            {/* Menu Drawer Content with Spring Physics */}
+            {/* Menu Drawer Content with Smooth Spring & Staggered Reveal */}
             <motion.div
-              initial={{ opacity: 0, y: -16, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -16, scale: 0.98 }}
-              transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+              initial={{ opacity: 0, y: -20, scale: 0.96, filter: 'blur(8px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -16, scale: 0.97, filter: 'blur(6px)' }}
+              transition={{
+                type: 'spring',
+                damping: 28,
+                stiffness: 280,
+                mass: 0.7,
+              }}
               className="fixed inset-x-0 top-[66px] z-40 bg-gradient-to-b from-[#0f091f]/98 via-[#090614]/98 to-[#06040a]/98 backdrop-blur-3xl p-4 sm:p-5 md:hidden space-y-3.5 max-h-[calc(100dvh-75px)] overflow-y-auto shadow-[0_25px_60px_rgba(0,0,0,0.9)] border-b border-white/10 rounded-b-3xl"
             >
-              {/* Navigation Links with Icon Tiles */}
-              <div className="flex flex-col gap-1.5">
+              {/* Navigation Links with Staggered Slide-In */}
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.04,
+                      delayChildren: 0.05,
+                    },
+                  },
+                }}
+                className="flex flex-col gap-1.5"
+              >
                 {navLinks.map((link) => {
                   const isActive = activeSection === link.sectionId;
                   const Icon = link.icon;
                   return (
-                    <button
+                    <motion.div
                       key={link.name}
-                      onClick={(e) => handleNavClick(link.sectionId, e)}
-                      className={`w-full px-3.5 py-2.5 rounded-2xl transition-all duration-200 flex items-center justify-between group active:scale-[0.98] cursor-pointer ${
-                        isActive
-                          ? 'bg-gradient-to-r from-roseGlow-500/20 via-purple-600/15 to-transparent border border-roseGlow-500/40 shadow-glow text-white'
-                          : 'hover:bg-white/[0.05] border border-transparent text-slate-300 hover:text-white'
-                      }`}
+                      variants={{
+                        hidden: { opacity: 0, x: -12, y: -4 },
+                        visible: { opacity: 1, x: 0, y: 0 },
+                      }}
+                      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                     >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                            isActive
-                              ? 'bg-gradient-to-tr from-roseGlow-500 to-purple-600 text-white shadow-glow border border-roseGlow-400/50'
-                              : 'bg-white/[0.04] border border-white/[0.08] text-slate-400 group-hover:text-roseGlow-300 group-hover:border-roseGlow-500/30 group-hover:bg-roseGlow-500/10'
-                          }`}
-                        >
-                          <Icon className="w-4 h-4" />
+                      <button
+                        onClick={(e) => handleNavClick(link.sectionId, e)}
+                        className={`w-full px-3.5 py-2.5 rounded-2xl transition-all duration-200 flex items-center justify-between group active:scale-[0.98] cursor-pointer ${
+                          isActive
+                            ? 'bg-gradient-to-r from-roseGlow-500/20 via-purple-600/15 to-transparent border border-roseGlow-500/40 shadow-glow text-white'
+                            : 'hover:bg-white/[0.05] border border-transparent text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                              isActive
+                                ? 'bg-gradient-to-tr from-roseGlow-500 to-purple-600 text-white shadow-glow border border-roseGlow-400/50'
+                                : 'bg-white/[0.04] border border-white/[0.08] text-slate-400 group-hover:text-roseGlow-300 group-hover:border-roseGlow-500/30 group-hover:bg-roseGlow-500/10'
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className={`text-[14px] sm:text-[15px] tracking-wide font-sans ${isActive ? 'font-bold text-white' : 'font-medium text-slate-200'}`}>
+                            {link.name}
+                          </span>
                         </div>
-                        <span className={`text-[14px] sm:text-[15px] tracking-wide font-sans ${isActive ? 'font-bold text-white' : 'font-medium text-slate-200'}`}>
-                          {link.name}
-                        </span>
-                      </div>
 
-                      <div className="flex items-center gap-2">
-                        {isActive && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-roseGlow-400 shadow-[0_0_8px_#f43f5e] animate-pulse" />
-                        )}
-                        <ChevronRight
-                          className={`w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 ${
-                            isActive ? 'text-roseGlow-400' : 'text-slate-500 group-hover:text-slate-300'
-                          }`}
-                        />
-                      </div>
-                    </button>
+                        <div className="flex items-center gap-2">
+                          {isActive && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-roseGlow-400 shadow-[0_0_8px_#f43f5e] animate-pulse" />
+                          )}
+                          <ChevronRight
+                            className={`w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 ${
+                              isActive ? 'text-roseGlow-400' : 'text-slate-500 group-hover:text-slate-300'
+                            }`}
+                          />
+                        </div>
+                      </button>
+                    </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
 
               {/* User Profile Card & Actions */}
               <div className="pt-3 border-t border-white/10 flex flex-col gap-2.5">
