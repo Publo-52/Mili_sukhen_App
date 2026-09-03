@@ -380,11 +380,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Sparkles className="w-4 h-4" />
               </button>
             )}
-            {/* Animated 3-Line Hamburger Button (Smooth Morph to X) */}
+            {/* Animated 3-Line Hamburger Button (Instant Morph to X) */}
             <motion.button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              whileTap={{ scale: 0.9 }}
-              className={`relative w-9 h-9 rounded-full flex flex-col items-center justify-center gap-[4.5px] p-2 transition-all duration-200 cursor-pointer ${
+              whileTap={{ scale: 0.88 }}
+              className={`relative w-9 h-9 rounded-full flex flex-col items-center justify-center gap-[4.5px] p-2 transition-colors cursor-pointer select-none ${
                 mobileMenuOpen
                   ? 'bg-roseGlow-500/20 text-roseGlow-300 border border-roseGlow-500/50 shadow-glow'
                   : 'glass-card text-slate-200 hover:text-white hover:border-white/30'
@@ -395,19 +395,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* Top Line */}
               <motion.span
                 animate={mobileMenuOpen ? { rotate: 45, y: 6.5 } : { rotate: 0, y: 0 }}
-                transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+                transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
                 className="w-4 h-[2px] bg-current rounded-full origin-center pointer-events-none"
               />
               {/* Middle Line */}
               <motion.span
                 animate={mobileMenuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
+                transition={{ duration: 0.08, ease: 'easeOut' }}
                 className="w-4 h-[2px] bg-current rounded-full origin-center pointer-events-none"
               />
               {/* Bottom Line */}
               <motion.span
                 animate={mobileMenuOpen ? { rotate: -45, y: -6.5 } : { rotate: 0, y: 0 }}
-                transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+                transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
                 className="w-4 h-[2px] bg-current rounded-full origin-center pointer-events-none"
               />
             </motion.button>
@@ -416,10 +416,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <AnimatePresence>
               {musicControlsOpen && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: -6, filter: 'blur(4px)' }}
-                  animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, scale: 0.9, y: -6, filter: 'blur(4px)' }}
-                  transition={{ type: 'spring', damping: 28, stiffness: 260, mass: 0.8 }}
+                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                  transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
                   className="absolute top-full right-0 mt-2 flex items-center gap-1.5 p-1.5 rounded-full glass-card border border-roseGlow-500/40 bg-obsidian-950/95 shadow-glow backdrop-blur-xl z-[60]"
                 >
                   {/* Previous Track */}
@@ -467,30 +467,29 @@ export const Navbar: React.FC<NavbarProps> = ({
       <AnimatePresence>
         {mobileMenuOpen && (
           <>
-            {/* Backdrop with soft blur */}
+            {/* Backdrop with instant fade */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.12 }}
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 z-30 bg-black/80 backdrop-blur-md md:hidden"
+              className="fixed inset-0 z-30 bg-black/80 backdrop-blur-sm md:hidden"
             />
 
-            {/* Menu Drawer Content with Smooth Spring & Staggered Reveal */}
+            {/* Menu Drawer Content — Instant 0ms Snappy Slide */}
             <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.96, filter: 'blur(8px)' }}
-              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -16, scale: 0.97, filter: 'blur(6px)' }}
+              initial={{ opacity: 0, y: -12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.98 }}
               transition={{
-                type: 'spring',
-                damping: 28,
-                stiffness: 280,
-                mass: 0.7,
+                duration: 0.14,
+                ease: [0.16, 1, 0.3, 1],
               }}
-              className="fixed inset-x-0 top-[66px] z-40 bg-gradient-to-b from-[#0f091f]/98 via-[#090614]/98 to-[#06040a]/98 backdrop-blur-3xl p-4 sm:p-5 md:hidden space-y-3.5 max-h-[calc(100dvh-75px)] overflow-y-auto shadow-[0_25px_60px_rgba(0,0,0,0.9)] border-b border-white/10 rounded-b-3xl"
+              style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
+              className="fixed inset-x-0 top-[66px] z-40 bg-gradient-to-b from-[#0f091f]/98 via-[#090614]/98 to-[#06040a]/98 backdrop-blur-2xl p-4 sm:p-5 md:hidden space-y-3.5 max-h-[calc(100dvh-75px)] overflow-y-auto shadow-[0_25px_60px_rgba(0,0,0,0.9)] border-b border-white/10 rounded-b-3xl"
             >
-              {/* Navigation Links with Staggered Slide-In */}
+              {/* Navigation Links with Fast Staggered Reveal */}
               <motion.div
                 initial="hidden"
                 animate="visible"
@@ -499,8 +498,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   visible: {
                     opacity: 1,
                     transition: {
-                      staggerChildren: 0.04,
-                      delayChildren: 0.05,
+                      staggerChildren: 0.015,
                     },
                   },
                 }}
@@ -513,10 +511,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <motion.div
                       key={link.name}
                       variants={{
-                        hidden: { opacity: 0, x: -12, y: -4 },
-                        visible: { opacity: 1, x: 0, y: 0 },
+                        hidden: { opacity: 0, y: -4 },
+                        visible: { opacity: 1, y: 0 },
                       }}
-                      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                      transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
                     >
                       <button
                         onClick={(e) => handleNavClick(link.sectionId, e)}
