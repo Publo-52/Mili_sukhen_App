@@ -392,11 +392,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             <AnimatePresence>
               {musicControlsOpen && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.85, y: -8 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.85, y: -8 }}
-                  transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-                  className="absolute top-full right-0 mt-2 flex items-center gap-1 p-1.5 rounded-full glass-card border border-roseGlow-500/40 bg-obsidian-950/95 shadow-glow backdrop-blur-xl z-[60]"
+                  initial={{ opacity: 0, scale: 0.9, y: -6, filter: 'blur(4px)' }}
+                  animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, scale: 0.9, y: -6, filter: 'blur(4px)' }}
+                  transition={{ type: 'spring', damping: 28, stiffness: 260, mass: 0.8 }}
+                  className="absolute top-full right-0 mt-2 flex items-center gap-1.5 p-1.5 rounded-full glass-card border border-roseGlow-500/40 bg-obsidian-950/95 shadow-glow backdrop-blur-xl z-[60]"
                 >
                   {/* Previous Track */}
                   <button
