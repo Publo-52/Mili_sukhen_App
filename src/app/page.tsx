@@ -79,10 +79,16 @@ const warmUpAllDatasetsAndAssets = () => {
   } catch {}
 };
 
+import { useModalHistory } from '@/lib/modal-history';
+
 export default function HomePage() {
   const router = useRouter();
   const [showIntro, setShowIntro] = useState(false);
   const [showSurprise, setShowSurprise] = useState(false);
+
+  // Modal History integrations for Surprise and Intro modals
+  useModalHistory(showSurprise, () => setShowSurprise(false), 'surprise-modal');
+  useModalHistory(showIntro, () => setShowIntro(false), 'intro-modal');
 
   // Safe SSR-matching initial activeSection
   const [activeSection, setActiveSection] = useState<SectionType>('home');
@@ -124,6 +130,10 @@ export default function HomePage() {
     }
 
     const handlePopState = (e: PopStateEvent) => {
+      // If a modal was closed via popstate, don't change section
+      if (e.state && e.state.modalOpen) {
+        return;
+      }
       if (e.state && e.state.section) {
         handleSelectSection(e.state.section, false);
       } else {
@@ -221,9 +231,13 @@ export default function HomePage() {
       const deltaX = touchEndX - touchStartX;
       const deltaY = Math.abs(touchEndY - touchStartY);
 
-      // Natural Left-to-Right Swipe Back Gesture (deltaX > 60px, horizontal dominant, < 400ms)
-      if (deltaX > 60 && deltaY < 50 && duration < 400) {
-        navigateStepBack();
+      // Natural Left-to-Right Swipe Back Gesture (deltaX >= 50px, horizontal dominant, < 450ms)
+      if (deltaX > 50 && deltaX > deltaY * 1.3 && duration < 450) {
+        if (typeof window !== 'undefined' && window.history.length > 1) {
+          window.history.back();
+        } else {
+          navigateStepBack();
+        }
       }
     };
 

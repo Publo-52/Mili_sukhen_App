@@ -10,8 +10,9 @@ import { ProjectCard } from './ProjectCard';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 
-const ProjectPreviewModal = dynamic(() => import('./ProjectPreviewModal').then((m) => m.ProjectPreviewModal), { ssr: false });
-const ProjectEditorModal = dynamic(() => import('./ProjectEditorModal').then((m) => m.ProjectEditorModal), { ssr: false });
+import { ProjectPreviewModal } from './ProjectPreviewModal';
+import { ProjectEditorModal } from './ProjectEditorModal';
+import { useModalHistory } from '@/lib/modal-history';
 
 const CATEGORIES: (ProjectCategory | 'All' | 'Favorites')[] = [
   'All',
@@ -36,6 +37,10 @@ export const ProjectShowcase: React.FC = () => {
   // Admin Project Creator / Editor Modal State
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+
+  // Hook into browser history & back swipe for Project Preview
+  useModalHistory(previewProject !== null, () => setPreviewProject(null), 'project-preview');
+  useModalHistory(isEditorOpen, () => setIsEditorOpen(false), 'project-editor');
 
   const loadProjects = useCallback(async () => {
     try {

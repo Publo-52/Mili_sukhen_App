@@ -34,14 +34,9 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 
-const NoteReaderModal = dynamic(
-  () => import('./NoteReaderModal').then((m) => m.NoteReaderModal),
-  { ssr: false }
-);
-const LoveNoteEditorModal = dynamic(
-  () => import('./LoveNoteEditorModal').then((m) => m.LoveNoteEditorModal),
-  { ssr: false }
-);
+import { NoteReaderModal } from './NoteReaderModal';
+import { LoveNoteEditorModal } from './LoveNoteEditorModal';
+import { useModalHistory } from '@/lib/modal-history';
 
 const MOOD_FILTERS = [
   { id: 'all', label: 'All Letters' },
@@ -68,6 +63,10 @@ export const LoveNotesVault: React.FC = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [direction, setDirection] = useState(1);
   const { isAdmin } = useAuth();
+
+  // Hook into browser history & back swipe for Love Note Reader
+  useModalHistory(readingNote !== null, () => setReadingNote(null), 'note-reader');
+  useModalHistory(isEditorOpen, () => setIsEditorOpen(false), 'note-editor');
 
   // Load notes from API / Supabase with local fallback
   const loadNotes = useCallback(async () => {

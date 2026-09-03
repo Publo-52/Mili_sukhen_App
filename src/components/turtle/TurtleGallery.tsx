@@ -18,14 +18,9 @@ import { getOptimizedImageUrl } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 
-const FullscreenLightbox = dynamic(
-  () => import('./FullscreenLightbox').then((m) => m.FullscreenLightbox),
-  { ssr: false }
-);
-const TurtleEditorModal = dynamic(
-  () => import('./TurtleEditorModal').then((m) => m.TurtleEditorModal),
-  { ssr: false }
-);
+import { FullscreenLightbox } from './FullscreenLightbox';
+import { TurtleEditorModal } from './TurtleEditorModal';
+import { useModalHistory } from '@/lib/modal-history';
 
 import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
 
@@ -37,6 +32,10 @@ export const TurtleGallery: React.FC = () => {
   // Admin Modal State
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingCreation, setEditingCreation] = useState<TurtleCreation | null>(null);
+
+  // Hook into browser history & back swipe for Python Turtle Lightbox
+  useModalHistory(selectedCreation !== null, () => setSelectedCreation(null), 'turtle-lightbox');
+  useModalHistory(isEditorOpen, () => setIsEditorOpen(false), 'turtle-editor');
 
   const loadCreations = useCallback(async () => {
     try {

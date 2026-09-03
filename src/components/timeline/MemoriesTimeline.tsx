@@ -32,14 +32,9 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 import { getOptimizedImageUrl, isMediaVideo } from '@/lib/utils';
 
-const MemoryEditorModal = dynamic(
-  () => import('./MemoryEditorModal').then((m) => m.MemoryEditorModal),
-  { ssr: false }
-);
-const MediaViewerModal = dynamic(
-  () => import('./MediaViewerModal').then((m) => m.MediaViewerModal),
-  { ssr: false }
-);
+import { MemoryEditorModal } from './MemoryEditorModal';
+import { MediaViewerModal } from './MediaViewerModal';
+import { useModalHistory } from '@/lib/modal-history';
 
 // Helper to guarantee high-res image poster for Cloudinary videos and images
 function getMediaThumbnail(memory?: MemoryItem | null): string {
@@ -76,6 +71,10 @@ export const MemoriesTimeline: React.FC = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingMemory, setEditingMemory] = useState<MemoryItem | null>(null);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+
+  // Hook into browser history & back swipe for photo viewer
+  useModalHistory(viewerIndex !== null, () => setViewerIndex(null), 'memory-viewer');
+  useModalHistory(isEditorOpen, () => setIsEditorOpen(false), 'memory-editor');
 
   // Load Memories from API / Supabase with local fallback
   const loadMemories = useCallback(async () => {
