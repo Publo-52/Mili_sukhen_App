@@ -7,7 +7,7 @@ import { INTRO_COLLAGE_PHOTOS } from '@/data/introCollagePhotos';
 export const PhotoCollageBackground: React.FC = () => {
   const photos = INTRO_COLLAGE_PHOTOS.length > 0 ? INTRO_COLLAGE_PHOTOS : [];
 
-  // Group photos across 6 multi-stream columns
+  // Group photos across multi-stream columns
   const columnsCount = 6;
   const columns: string[][] = Array.from({ length: columnsCount }, () => []);
   photos.forEach((photo, i) => {
@@ -19,18 +19,18 @@ export const PhotoCollageBackground: React.FC = () => {
 
   // Uniform height per column for 100% mathematical zero-blink seamless looping
   const columnCardHeights = [
+    'h-44 sm:h-56',
+    'h-36 sm:h-48',
     'h-48 sm:h-60',
     'h-40 sm:h-52',
-    'h-52 sm:h-64',
     'h-44 sm:h-56',
-    'h-48 sm:h-60',
-    'h-42 sm:h-54',
+    'h-38 sm:h-50',
   ];
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
-      {/* 1. Hardware-Accelerated 100% Blink-Free Infinite Scrolling Photo Streams */}
-      <div className="absolute -inset-4 sm:-inset-6 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 p-2 sm:p-3 opacity-90">
+      {/* 1. Fully-Contained & Border-Framed Infinite Scrolling Photo Stream (Left & Right Margins Adjusted) */}
+      <div className="absolute inset-0 px-2.5 sm:px-5 md:px-6 py-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 opacity-90">
         {columns.map((colPhotos, colIndex) => {
           // Double duplicate: Set 1 + Set 2 (Identical sets guarantee exact 50% loop boundary without any blink/jump)
           const streamPhotos = [...colPhotos, ...colPhotos];
@@ -68,7 +68,7 @@ export const PhotoCollageBackground: React.FC = () => {
                 {streamPhotos.map((src, imgIndex) => (
                   <div
                     key={`stream-${colIndex}-${imgIndex}-${src}`}
-                    className={`relative w-full ${heightClass} shrink-0 rounded-xl sm:rounded-2xl overflow-hidden border border-white/25 bg-slate-900/80 shadow-[0_6px_20px_rgba(0,0,0,0.6)]`}
+                    className={`relative w-full ${heightClass} shrink-0 rounded-xl sm:rounded-2xl overflow-hidden border-2 border-white/30 bg-slate-900/90 shadow-[0_6px_20px_rgba(0,0,0,0.6)]`}
                     style={{
                       backfaceVisibility: 'hidden',
                       WebkitBackfaceVisibility: 'hidden',
