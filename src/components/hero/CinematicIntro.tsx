@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Heart, ArrowRight } from 'lucide-react';
 import { isIntroSeen, setIntroSeen } from '@/lib/storage';
+import { PhotoCollageBackground } from './PhotoCollageBackground';
 
 interface CinematicIntroProps {
   onComplete?: () => void;
@@ -58,9 +59,12 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
         exit={{ opacity: 0, transition: { duration: 0.6 } }}
         className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-[#06040a] px-6 text-center select-none overflow-hidden"
       >
-        {/* Soft Ambient Light Ray */}
-        <div className="absolute w-[600px] h-[600px] rounded-full bg-roseGlow-600/10 blur-[120px] pointer-events-none animate-pulse-slow" />
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-purple-600/10 blur-[100px] pointer-events-none -top-20 -left-20" />
+        {/* Full-Screen Romantic Photo Collage Grid Background (38+ Photos of Sukhen & Mili) */}
+        <PhotoCollageBackground />
+
+        {/* Soft Ambient Light Rays */}
+        <div className="absolute w-[600px] h-[600px] rounded-full bg-roseGlow-600/10 blur-[120px] pointer-events-none animate-pulse-slow z-0" />
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-purple-600/10 blur-[100px] pointer-events-none -top-20 -left-20 z-0" />
 
         {/* Skip Intro Button */}
         <button
