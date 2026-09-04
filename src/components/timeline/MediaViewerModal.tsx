@@ -31,7 +31,7 @@ interface MediaViewerModalProps {
   isFavorite?: boolean;
 }
 
-// Preloads an image URL in the browser background
+// Silently preloads image into browser cache
 function preloadImage(url: string) {
   if (typeof window === 'undefined' || !url) return;
   const img = new window.Image();
@@ -62,12 +62,11 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
-  // ---------- preload adjacent images ----------
+  // Preload adjacent images for instant navigation
   useEffect(() => {
     if (!isOpen || !memories.length) return;
     const nextIdx = (currentIndex + 1) % memories.length;
     const prevIdx = (currentIndex - 1 + memories.length) % memories.length;
-
     const preload = (item: MemoryItem) => {
       if (!isMediaVideo(item)) {
         preloadImage(getOptimizedImageUrl(item.url, { width: 1600, quality: 90 }));
@@ -77,7 +76,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     preload(memories[prevIdx]);
   }, [currentIndex, isOpen, memories]);
 
-  // Reset loaded state when image changes
+  // Reset image loaded state on navigation
   useEffect(() => {
     if (!isVideo) setImgLoaded(false);
   }, [currentIndex, isVideo]);
@@ -109,7 +108,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, currentIndex, memories.length, isVideo, onClose, onNavigate]);
 
-  // Video auto-play on switch
+  // Video auto-play when switching
   useEffect(() => {
     if (isVideo && videoRef.current) {
       videoRef.current.currentTime = 0;
@@ -131,7 +130,9 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   const togglePlay = () => {
     if (!videoRef.current) return;
     if (videoRef.current.paused) {
-      videoRef.current.play().then(() => { setIsPlaying(true); setIsBuffering(false); }).catch(() => setIsPlaying(false));
+      videoRef.current.play()
+        .then(() => { setIsPlaying(true); setIsBuffering(false); })
+        .catch(() => setIsPlaying(false));
     } else {
       videoRef.current.pause();
       setIsPlaying(false);
@@ -144,7 +145,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     setIsMuted(videoRef.current.muted);
   };
 
-  // Touch / swipe support
+  // Swipe gesture support for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -153,7 +154,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     if (touchStartX.current === null || touchStartY.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     const dy = e.changedTouches[0].clientY - touchStartY.current;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 44) {
       navigate(dx < 0 ? 1 : -1);
     }
     touchStartX.current = null;
@@ -170,9 +171,9 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   const optimizedSrc = getOptimizedImageUrl(currentItem.url, { width: 1600, quality: 90 });
 
   const slideVariants = {
-    enter: (dir: number) => ({ x: dir > 0 ? '30%' : '-30%', opacity: 0, scale: 0.94 }),
-    center: { x: 0, opacity: 1, scale: 1 },
-    exit: (dir: number) => ({ x: dir > 0 ? '-30%' : '30%', opacity: 0, scale: 0.94 }),
+    enter: (dir: number) => ({ x: dir > 0 ? '18%' : '-18%', opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: number) => ({ x: dir > 0 ? '-18%' : '18%', opacity: 0 }),
   };
 
   return createPortal(
@@ -182,35 +183,35 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/98 select-none"
+        transition={{ duration: 0.18 }}
+        className="fixed inset-0 z-[999999] bg-black select-none overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* ── Top Controls Bar ── */}
-        <div className="absolute top-0 left-0 right-0 z-[1000000] px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/30 to-transparent">
-          {/* Counter + Badge */}
+        {/* ── TOP BAR ── */}
+        <div className="absolute top-0 left-0 right-0 z-[1000000] flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 bg-gradient-to-b from-black/75 to-transparent">
+
+          {/* Left: Counter + type badge */}
           <div className="flex items-center gap-2.5">
-            <span className="text-xs font-mono text-white/60 tabular-nums">
+            <span className="text-sm font-semibold text-white tabular-nums tracking-wide">
               {currentIndex + 1}
-              <span className="text-white/30 mx-1">/</span>
-              {memories.length}
+              <span className="text-white/35 font-light mx-1">/</span>
+              <span className="text-white/60 font-normal">{memories.length}</span>
             </span>
-            <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md text-pink-300 font-medium flex items-center gap-1 border border-white/10">
-              {isVideo ? (
-                <><Video className="w-3 h-3 text-purple-400" /><span>Video</span></>
-              ) : (
-                <span>📸 Photo</span>
-              )}
+            <span className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-white/12 backdrop-blur-sm text-white/75 font-medium border border-white/10">
+              {isVideo
+                ? <><Video className="w-3 h-3 text-violet-400" /><span>Video</span></>
+                : <span>📸 Photo</span>
+              }
             </span>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-1.5">
+          {/* Right: Action buttons */}
+          <div className="flex items-center gap-2">
             {isVideo && (
               <button
                 onClick={toggleMute}
-                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all backdrop-blur-md border border-white/10 active:scale-90"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 border border-white/10 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white transition-all duration-150"
                 title={isMuted ? 'Unmute' : 'Mute'}
               >
                 {isMuted ? <VolumeX className="w-4 h-4 text-amber-400" /> : <Volume2 className="w-4 h-4" />}
@@ -220,10 +221,10 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
             {onToggleFavorite && (
               <button
                 onClick={() => onToggleFavorite(currentItem.id)}
-                className="p-2.5 rounded-full bg-white/10 hover:bg-pink-500/30 text-white/80 hover:text-pink-300 transition-all backdrop-blur-md border border-white/10 active:scale-90"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-rose-500/20 active:scale-90 border border-white/10 backdrop-blur-sm flex items-center justify-center text-white/80 transition-all duration-150"
                 title="Favourite"
               >
-                <Heart className={`w-5 h-5 transition-all ${isFavorite ? 'fill-pink-500 text-pink-500 scale-110' : ''}`} />
+                <Heart className={`w-5 h-5 transition-all duration-200 ${isFavorite ? 'fill-rose-500 text-rose-400 scale-110' : 'hover:text-rose-300'}`} />
               </button>
             )}
 
@@ -232,15 +233,15 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               download
-              className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all backdrop-blur-md border border-white/10 active:scale-90"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 border border-white/10 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white transition-all duration-150"
               title="Download"
             >
-              <Download className="w-5 h-5" />
+              <Download className="w-4 h-4 sm:w-5 sm:h-5" />
             </a>
 
             <button
               onClick={onClose}
-              className="p-2.5 rounded-full bg-white/10 hover:bg-rose-500/30 text-white/80 hover:text-rose-300 transition-all backdrop-blur-md border border-white/10 active:scale-90"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-rose-600/30 active:scale-90 border border-white/10 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-rose-300 transition-all duration-150"
               title="Close (Esc)"
             >
               <X className="w-5 h-5" />
@@ -248,19 +249,19 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
           </div>
         </div>
 
-        {/* ── Left Arrow ── */}
+        {/* ── LEFT ARROW ── */}
         {memories.length > 1 && (
           <button
             onClick={() => navigate(-1)}
-            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 p-3 sm:p-4 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-md transition-all duration-150 active:scale-90 shadow-2xl group"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-white/10 hover:bg-white/22 active:scale-90 border border-white/12 backdrop-blur-md flex items-center justify-center text-white shadow-xl transition-all duration-150 group"
             aria-label="Previous"
           >
-            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 group-hover:-translate-x-0.5 transition-transform duration-150" />
+            <ChevronLeft className="w-6 h-6 group-hover:-translate-x-px transition-transform duration-150" />
           </button>
         )}
 
-        {/* ── Media Container ── */}
-        <div className="relative w-full h-full flex flex-col items-center justify-center px-16 sm:px-24 pb-28 sm:pb-32 pt-16 sm:pt-20">
+        {/* ── MEDIA AREA ── */}
+        <div className="absolute inset-0 flex items-center justify-center px-14 sm:px-20 pt-14 sm:pt-16 pb-28 sm:pb-32">
           <AnimatePresence custom={direction} mode="popLayout">
             <motion.div
               key={currentItem.id}
@@ -269,8 +270,8 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ type: 'spring', stiffness: 400, damping: 38, mass: 0.7 }}
-              className="relative w-full h-full flex items-center justify-center rounded-2xl overflow-hidden"
+              transition={{ type: 'spring', stiffness: 350, damping: 35, mass: 0.8 }}
+              className="relative w-full h-full flex items-center justify-center"
             >
               {isVideo ? (
                 <div className="relative w-full h-full flex items-center justify-center">
@@ -286,7 +287,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
                     onPause={() => setIsPlaying(false)}
                     onWaiting={() => setIsBuffering(true)}
                     onPlaying={() => { setIsBuffering(false); setIsPlaying(true); }}
-                    className="max-h-full max-w-full rounded-2xl shadow-2xl object-contain"
+                    className="max-h-full max-w-full rounded-xl shadow-2xl object-contain"
                   />
 
                   {!isPlaying && (
@@ -295,36 +296,41 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
                       onClick={(e) => {
                         e.stopPropagation();
                         if (videoRef.current) {
-                          videoRef.current.play().then(() => { setIsPlaying(true); setIsBuffering(false); }).catch(() => {});
+                          videoRef.current.play()
+                            .then(() => { setIsPlaying(true); setIsBuffering(false); })
+                            .catch(() => {});
                         }
                       }}
-                      className="absolute inset-0 bg-black/30 flex items-center justify-center z-20 cursor-pointer"
+                      className="absolute inset-0 bg-black/25 flex items-center justify-center z-20"
                       aria-label="Play video"
                     >
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-pink-500/90 text-white flex items-center justify-center shadow-2xl border border-white/20 transform hover:scale-110 active:scale-95 transition-transform">
-                        <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-white translate-x-0.5" />
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/25 active:scale-95 transition-all">
+                        <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-white text-white translate-x-0.5" />
                       </div>
                     </button>
                   )}
 
                   {isBuffering && (
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none z-30">
-                      <Loader2 className="w-10 h-10 text-pink-400 animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                      <Loader2 className="w-10 h-10 text-white/60 animate-spin" />
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Blurred background for portrait photos — fills letterbox area */}
+                  {/* Subtle ambient blur fill for letterboxed images */}
                   <div
-                    className="absolute inset-0 bg-center bg-cover blur-2xl opacity-20 scale-110 pointer-events-none"
-                    style={{ backgroundImage: `url(${optimizedSrc})` }}
+                    className="absolute inset-0 bg-center bg-cover opacity-[0.12] scale-110 pointer-events-none"
+                    style={{
+                      backgroundImage: `url(${optimizedSrc})`,
+                      filter: 'blur(28px)',
+                    }}
                   />
 
-                  {/* Skeleton shimmer while loading */}
+                  {/* Loading spinner */}
                   {!imgLoaded && (
                     <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                      <div className="w-12 h-12 rounded-full border-4 border-white/10 border-t-pink-400 animate-spin" />
+                      <Loader2 className="w-9 h-9 text-white/40 animate-spin" />
                     </div>
                   )}
 
@@ -343,64 +349,48 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
           </AnimatePresence>
         </div>
 
-        {/* ── Right Arrow ── */}
+        {/* ── RIGHT ARROW ── */}
         {memories.length > 1 && (
           <button
             onClick={() => navigate(1)}
-            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 p-3 sm:p-4 rounded-full bg-white/10 hover:bg-white/25 text-white border border-white/15 backdrop-blur-md transition-all duration-150 active:scale-90 shadow-2xl group"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-white/10 hover:bg-white/22 active:scale-90 border border-white/12 backdrop-blur-md flex items-center justify-center text-white shadow-xl transition-all duration-150 group"
             aria-label="Next"
           >
-            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-0.5 transition-transform duration-150" />
+            <ChevronRight className="w-6 h-6 group-hover:translate-x-px transition-transform duration-150" />
           </button>
         )}
 
-        {/* ── Bottom Caption Bar ── */}
-        <div className="absolute bottom-0 left-0 right-0 z-40 px-4 pb-5 pt-16 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-          <div className="max-w-3xl mx-auto text-center space-y-1">
-            <h3 className="text-sm sm:text-lg font-semibold text-white tracking-tight leading-snug">
+        {/* ── BOTTOM CAPTION ── */}
+        <div className="absolute bottom-0 left-0 right-0 z-40 px-4 pb-6 pt-20 sm:pb-8 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none">
+          <div className="max-w-2xl mx-auto text-center space-y-1.5">
+
+            <h3 className="text-base sm:text-xl font-bold text-white leading-snug tracking-tight">
               {currentItem.title}
             </h3>
 
             {currentItem.description && (
-              <p className="text-[11px] sm:text-xs text-white/55 font-light max-w-xl mx-auto leading-relaxed">
+              <p className="text-xs sm:text-sm text-white/50 font-light max-w-lg mx-auto leading-relaxed">
                 {currentItem.description}
               </p>
             )}
 
-            <div className="flex items-center justify-center gap-4 pt-0.5">
+            <div className="flex items-center justify-center gap-4 pt-1">
               {currentItem.date && (
-                <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-white/40 font-mono">
-                  <Calendar className="w-3 h-3 text-pink-400/70" />
+                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-white/40 font-mono">
+                  <Calendar className="w-3 h-3 text-rose-400/60 flex-shrink-0" />
                   <span>{currentItem.date}</span>
                 </div>
               )}
               {currentItem.location && (
-                <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-white/40 font-mono">
-                  <MapPin className="w-3 h-3 text-purple-400/70" />
+                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-white/40 font-mono">
+                  <MapPin className="w-3 h-3 text-violet-400/60 flex-shrink-0" />
                   <span>{currentItem.location}</span>
                 </div>
               )}
             </div>
+
           </div>
         </div>
-
-        {/* ── Thumbnail strip (bottom dot indicators) ── */}
-        {memories.length > 1 && memories.length <= 60 && (
-          <div className="absolute bottom-1 left-0 right-0 flex justify-center z-50 pointer-events-none">
-            <div className="flex gap-1 px-4 overflow-hidden max-w-[200px] sm:max-w-sm">
-              {memories.map((_, i) => (
-                <div
-                  key={i}
-                  className={`rounded-full transition-all duration-200 ${
-                    i === currentIndex
-                      ? 'w-4 h-1.5 bg-pink-400'
-                      : 'w-1.5 h-1.5 bg-white/25'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        )}
       </motion.div>
     </AnimatePresence>,
     document.body
