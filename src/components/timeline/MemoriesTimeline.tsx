@@ -306,7 +306,7 @@ export const MemoriesTimeline: React.FC = () => {
             });
 
             return (
-              <div key={memory.id} className="break-inside-avoid mb-3 sm:mb-4 md:mb-6">
+              <div key={memory.id} className="break-inside-avoid mb-3 sm:mb-4 md:mb-6 fast-scroll-item">
                 <div
                   className="group relative flex flex-col cursor-pointer select-none"
                   onClick={() => setViewerIndex(index)}
@@ -320,8 +320,10 @@ export const MemoriesTimeline: React.FC = () => {
                       alt={memory.title}
                       fill
                       sizes="(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw"
-                      className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+                      loading={index < 4 ? 'eager' : 'lazy'}
+                      priority={index < 4}
+                      quality={75}
                     />
 
                     {/* Video Top-Left Badge */}

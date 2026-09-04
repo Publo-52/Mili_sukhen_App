@@ -36,17 +36,17 @@ export const ParticleCanvas: React.FC = () => {
     window.addEventListener('resize', handleResize, { passive: true });
 
     const particles: Particle[] = [];
-    const particleCount = isMobile ? 24 : 45;
+    const particleCount = isMobile ? 12 : 24;
     const hues = [345, 350, 45, 275, 330];
 
     for (let i = 0; i < particleCount; i++) {
-      const baseAlpha = Math.random() * 0.35 + 0.15;
+      const baseAlpha = Math.random() * 0.3 + 0.1;
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        radius: Math.random() * 1.5 + 0.5,
-        vx: (Math.random() - 0.5) * 0.2,
-        vy: -Math.random() * 0.25 - 0.08,
+        radius: Math.random() * 1.2 + 0.5,
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: -Math.random() * 0.2 - 0.05,
         alpha: baseAlpha,
         baseAlpha: baseAlpha,
         hue: hues[i % hues.length],
@@ -54,17 +54,24 @@ export const ParticleCanvas: React.FC = () => {
     }
 
     let angle = 0;
+    let lastTime = 0;
 
-    const render = () => {
+    const render = (time: number) => {
+      // On mobile, throttle to ~30-40fps for battery efficiency & cool phone
+      if (isMobile && time - lastTime < 24) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
+      lastTime = time;
+
       ctx.clearRect(0, 0, width, height);
-
-      angle += 0.008;
+      angle += 0.006;
 
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
-        p.x += p.vx + Math.sin(angle + p.y * 0.01) * 0.08;
+        p.x += p.vx + Math.sin(angle + p.y * 0.01) * 0.06;
         p.y += p.vy;
-        p.alpha = p.baseAlpha + Math.sin(angle * 2 + p.x * 0.01) * 0.1;
+        p.alpha = p.baseAlpha + Math.sin(angle * 2 + p.x * 0.01) * 0.08;
 
         if (p.y < -10) {
           p.y = height + 10;
@@ -74,8 +81,8 @@ export const ParticleCanvas: React.FC = () => {
         if (p.x > width + 10) p.x = -10;
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, 6.283); // Math.PI * 2
-        ctx.fillStyle = `hsla(${p.hue}, 85%, 75%, ${Math.max(0.08, p.alpha)})`;
+        ctx.arc(p.x, p.y, p.radius, 0, 6.283);
+        ctx.fillStyle = `hsla(${p.hue}, 85%, 75%, ${Math.max(0.06, p.alpha)})`;
         ctx.fill();
       }
 
@@ -90,7 +97,7 @@ export const ParticleCanvas: React.FC = () => {
     };
 
     document.addEventListener('visibilitychange', handleVisibility);
-    render();
+    animationFrameId = requestAnimationFrame(render);
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -102,8 +109,7 @@ export const ParticleCanvas: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0 transform-gpu"
-      style={{ willChange: 'transform' }}
+      className="fixed inset-0 pointer-events-none z-0"
       aria-hidden="true"
     />
   );

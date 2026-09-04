@@ -33,12 +33,12 @@ const EasterEggListener = dynamic(
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Eager Parallel Cache Warm-up function (pre-loads all sections & assets upfront for 0ms latency)
+// Eager Parallel Cache Warm-up function (pre-loads key data & assets without blocking main thread)
 const warmUpAllDatasetsAndAssets = () => {
   if (typeof window === 'undefined') return;
 
   try {
-    // 1. Parallel API Cache Preload (warm up localStorage & memory)
+    // 1. Parallel API Cache Preload (warm up localStorage & memory in parallel)
     const endpoints = ['/api/projects', '/api/turtle', '/api/love-notes', '/api/memories'];
     endpoints.forEach((url) => {
       fetch(url, { cache: 'no-store' })
@@ -60,21 +60,33 @@ const warmUpAllDatasetsAndAssets = () => {
         .catch(() => {});
     });
 
-    // 2. Preload Hero, brand logos, intro photos, and key media into GPU browser memory cache
-    const keyImages = [
+    // 2. Preload critical Above-the-Fold Hero images immediately
+    const criticalImages = [
       '/images/hero/mili_hero_1.png',
       '/images/hero/mili_hero_2.png',
-      '/images/hero/mili_hero_3.jpg',
-      '/images/hero/mili_hero_4.png',
-      '/images/hero/mili_hero_5.jpg',
       '/logo.png',
-      ...INTRO_COLLAGE_PHOTOS,
     ];
-    keyImages.forEach((src) => {
+    criticalImages.forEach((src) => {
       try {
         const img = new Image();
         img.src = src;
       } catch {}
+    });
+
+    // 3. Defer background images till browser is idle (zero main-thread blocking)
+    const scheduleIdle = typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback : (cb: any) => setTimeout(cb, 1200);
+    scheduleIdle(() => {
+      const secondaryImages = [
+        '/images/hero/mili_hero_3.jpg',
+        '/images/hero/mili_hero_4.png',
+        '/images/hero/mili_hero_5.jpg',
+      ];
+      secondaryImages.forEach((src) => {
+        try {
+          const img = new Image();
+          img.src = src;
+        } catch {}
+      });
     });
   } catch {}
 };
@@ -287,7 +299,7 @@ export default function HomePage() {
       {/* Main Content Container with Instant 0ms Smooth Viewport */}
       <main className="relative z-10 min-h-[75vh]">
         {/* 1. Home Sanctuary View */}
-        <div className={isHome ? 'pt-18 sm:pt-22 pb-8 block' : 'hidden'}>
+        <div className={isHome ? 'pt-18 sm:pt-22 pb-8 block animate-fade-in gpu-layer instant-section' : 'hidden'}>
           <Hero
             onOpenSurprise={() => setShowSurprise(true)}
             onSelectSection={handleSelectSection}
@@ -295,22 +307,22 @@ export default function HomePage() {
         </div>
 
         {/* 2. Projects Showcase View */}
-        <div className={activeSection === 'projects' ? 'pt-24 sm:pt-28 pb-16 block' : 'hidden'}>
+        <div className={activeSection === 'projects' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in gpu-layer instant-section' : 'hidden'}>
           <ProjectShowcase />
         </div>
 
         {/* 3. Python Turtle Art Gallery View */}
-        <div className={activeSection === 'turtle' ? 'pt-24 sm:pt-28 pb-16 block' : 'hidden'}>
+        <div className={activeSection === 'turtle' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in gpu-layer instant-section' : 'hidden'}>
           <TurtleGallery />
         </div>
 
         {/* 4. Memories Timeline View */}
-        <div className={activeSection === 'memories' ? 'pt-24 sm:pt-28 pb-16 block' : 'hidden'}>
+        <div className={activeSection === 'memories' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in gpu-layer instant-section' : 'hidden'}>
           <MemoriesTimeline />
         </div>
 
         {/* 5. Love Notes Vault View */}
-        <div className={activeSection === 'love-notes' ? 'pt-24 sm:pt-28 pb-16 block' : 'hidden'}>
+        <div className={activeSection === 'love-notes' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in gpu-layer instant-section' : 'hidden'}>
           <LoveNotesVault />
         </div>
       </main>

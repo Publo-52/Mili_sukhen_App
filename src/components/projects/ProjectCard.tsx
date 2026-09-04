@@ -44,7 +44,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
   return (
     <div
-      className="group relative flex flex-col cursor-pointer select-none mb-3 sm:mb-4"
+      className="group relative flex flex-col cursor-pointer select-none mb-3 sm:mb-4 fast-scroll-item"
       onClick={() => onQuickPreview(project)}
     >
       {/* 1. Pinterest Media Container with Overlays */}
@@ -56,8 +56,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           alt={project.title}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw"
-          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-          loading="lazy"
+          className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+          loading={index < 4 ? 'eager' : 'lazy'}
+          priority={index < 4}
+          quality={75}
         />
 
         {/* Subtle Dark Gradient Overlay */}

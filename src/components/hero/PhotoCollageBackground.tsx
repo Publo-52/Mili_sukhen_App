@@ -1,20 +1,26 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { INTRO_COLLAGE_PHOTOS } from '@/data/introCollagePhotos';
 
 export const PhotoCollageBackground: React.FC = () => {
-  const photos = INTRO_COLLAGE_PHOTOS.length > 0 ? INTRO_COLLAGE_PHOTOS : [];
+  // Use a curated set of 20 photos for smooth, high-fps infinite vertical stream without memory bloating
+  const photos = useMemo(() => {
+    if (INTRO_COLLAGE_PHOTOS.length <= 20) return INTRO_COLLAGE_PHOTOS;
+    // Pick evenly distributed photos
+    const step = Math.floor(INTRO_COLLAGE_PHOTOS.length / 20) || 1;
+    return INTRO_COLLAGE_PHOTOS.filter((_, i) => i % step === 0).slice(0, 20);
+  }, []);
 
-  // Group photos across 6 multi-stream columns
-  const columnsCount = 6;
+  // Group photos across 4 multi-stream columns
+  const columnsCount = 4;
   const columns: string[][] = Array.from({ length: columnsCount }, () => []);
   photos.forEach((photo, i) => {
     columns[i % columnsCount].push(photo);
   });
 
   // Speeds in seconds for each column
-  const columnDurations = [46, 54, 40, 50, 44, 52];
+  const columnDurations = [42, 50, 38, 46];
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
@@ -28,24 +34,22 @@ export const PhotoCollageBackground: React.FC = () => {
           }
         }
         .stream-column {
-          will-change: transform;
           backface-visibility: hidden;
           -webkit-backface-visibility: hidden;
           transform: translate3d(0, 0, 0);
         }
       `}</style>
 
-      {/* 1. Fully-Contained & Border-Framed Pure GPU Infinite Scrolling Photo Stream (Zero JS Blinking) */}
-      <div className="absolute inset-0 px-2 sm:px-4 md:px-6 py-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 opacity-95">
+      {/* 1. Fully-Contained & Border-Framed Pure GPU Infinite Scrolling Photo Stream */}
+      <div className="absolute inset-0 px-2 sm:px-4 md:px-6 py-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 opacity-90">
         {columns.map((colPhotos, colIndex) => {
-          // Double duplicate: Set 1 + Set 2 with uniform aspect-[4/5] box for 100% mathematical zero-blink loop
           const streamPhotos = [...colPhotos, ...colPhotos];
           const duration = columnDurations[colIndex % columnDurations.length];
 
           return (
             <div
               key={`col-stream-${colIndex}`}
-              className="overflow-hidden relative h-[150vh]"
+              className="overflow-hidden relative h-[140vh]"
               style={{
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',
@@ -61,22 +65,21 @@ export const PhotoCollageBackground: React.FC = () => {
                 {streamPhotos.map((src, imgIndex) => (
                   <div
                     key={`stream-${colIndex}-${imgIndex}-${src}`}
-                    className="relative w-full aspect-[4/5] shrink-0 rounded-xl sm:rounded-2xl overflow-hidden border-2 border-white/30 bg-slate-900/90 shadow-[0_4px_16px_rgba(0,0,0,0.6)]"
+                    className="relative w-full aspect-[4/5] shrink-0 rounded-xl sm:rounded-2xl overflow-hidden border border-white/20 bg-slate-900/90 shadow-md"
                     style={{
-                      backfaceVisibility: 'hidden',
-                      WebkitBackfaceVisibility: 'hidden',
-                      transform: 'translateZ(0)',
+                      contentVisibility: 'auto',
+                      containIntrinsicSize: '200px',
                     }}
                   >
                     <img
                       src={src}
                       alt="Sukhen & Mili Memory"
-                      loading="eager"
+                      loading={imgIndex < 3 ? 'eager' : 'lazy'}
                       decoding="async"
-                      className="w-full h-full object-cover filter brightness-100 contrast-105 saturate-105 pointer-events-none select-none"
+                      className="w-full h-full object-cover filter brightness-100 contrast-105 pointer-events-none select-none"
                     />
                     {/* Subtle glass sheen overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/15 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-white/10 pointer-events-none" />
                   </div>
                 ))}
               </div>
@@ -85,13 +88,13 @@ export const PhotoCollageBackground: React.FC = () => {
         })}
       </div>
 
-      {/* 2. Soft Ambient Tint (Crystal clear photo view with high text legibility) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#06040a]/35 via-black/20 to-[#06040a]/45 pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.1)_0%,rgba(6,4,10,0.45)_100%)] pointer-events-none" />
+      {/* 2. Soft Ambient Tint */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#06040a]/40 via-black/25 to-[#06040a]/50 pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.1)_0%,rgba(6,4,10,0.5)_100%)] pointer-events-none" />
 
-      {/* 3. Soft Rose & Purple Romantic Ambient Glow Rays */}
-      <div className="absolute top-1/3 left-1/3 w-[450px] h-[450px] rounded-full bg-roseGlow-600/15 blur-[130px] pointer-events-none animate-pulse-slow" />
-      <div className="absolute bottom-1/3 right-1/3 w-[450px] h-[450px] rounded-full bg-purple-600/15 blur-[130px] pointer-events-none animate-pulse-slow" />
+      {/* 3. Soft Rose & Purple Romantic Ambient Glow Rays (Lightweight blur) */}
+      <div className="absolute top-1/3 left-1/3 w-[320px] h-[320px] rounded-full bg-roseGlow-600/10 blur-[60px] pointer-events-none animate-pulse-slow" />
+      <div className="absolute bottom-1/3 right-1/3 w-[320px] h-[320px] rounded-full bg-purple-600/10 blur-[60px] pointer-events-none animate-pulse-slow" />
     </div>
   );
 };

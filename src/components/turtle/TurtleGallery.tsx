@@ -203,7 +203,7 @@ export const TurtleGallery: React.FC = () => {
           const displayImage = getOptimizedImageUrl(creation.artworkImage, { width: 800, quality: 'auto' });
 
           return (
-            <div key={creation.id} className="break-inside-avoid mb-3 sm:mb-4 md:mb-6">
+            <div key={creation.id} className="break-inside-avoid mb-3 sm:mb-4 md:mb-6 fast-scroll-item">
               <div
                 className="group relative flex flex-col cursor-pointer select-none"
                 onClick={() => setSelectedCreation(creation)}
@@ -217,8 +217,10 @@ export const TurtleGallery: React.FC = () => {
                     alt={creation.title}
                     fill
                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw"
-                    className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+                    loading={idx < 4 ? 'eager' : 'lazy'}
+                    priority={idx < 4}
+                    quality={75}
                   />
 
                   {/* Play Overlay on Hover */}
