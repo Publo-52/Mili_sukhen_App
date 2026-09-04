@@ -26,7 +26,15 @@ import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
 
 export const TurtleGallery: React.FC = () => {
   const { isAdmin } = useAuth();
-  const [creations, setCreations] = useState<TurtleCreation[]>(INITIAL_TURTLE_CREATIONS);
+  const [creations, setCreations] = useState<TurtleCreation[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = getTurtleCreations();
+        if (cached && cached.length > 0) return cached;
+      } catch {}
+    }
+    return INITIAL_TURTLE_CREATIONS;
+  });
   const [selectedCreation, setSelectedCreation] = useState<TurtleCreation | null>(null);
 
   // Admin Modal State
@@ -55,12 +63,6 @@ export const TurtleGallery: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // 0. Instantly load from cache for 0ms latency
-    const cached = getTurtleCreations();
-    if (cached && cached.length > 0) {
-      setCreations(cached);
-    }
-
     loadCreations();
 
     // Supabase Realtime Subscription

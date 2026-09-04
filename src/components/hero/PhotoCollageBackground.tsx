@@ -92,9 +92,19 @@ export const PhotoCollageBackground: React.FC = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-[#06040a]/40 via-black/25 to-[#06040a]/50 pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.1)_0%,rgba(6,4,10,0.5)_100%)] pointer-events-none" />
 
-      {/* 3. Soft Rose & Purple Romantic Ambient Glow Rays (Lightweight blur) */}
-      <div className="absolute top-1/3 left-1/3 w-[320px] h-[320px] rounded-full bg-roseGlow-600/10 blur-[60px] pointer-events-none animate-pulse-slow" />
-      <div className="absolute bottom-1/3 right-1/3 w-[320px] h-[320px] rounded-full bg-purple-600/10 blur-[60px] pointer-events-none animate-pulse-slow" />
+      {/* 3. Soft Rose & Purple Romantic Ambient Glow Rays (GPU-Optimized Radial Gradients) */}
+      <div
+        className="absolute top-1/3 left-1/3 w-[320px] h-[320px] rounded-full pointer-events-none animate-pulse-slow"
+        style={{
+          background: 'radial-gradient(circle, rgba(244, 63, 94, 0.12) 0%, transparent 70%)',
+        }}
+      />
+      <div
+        className="absolute bottom-1/3 right-1/3 w-[320px] h-[320px] rounded-full pointer-events-none animate-pulse-slow"
+        style={{
+          background: 'radial-gradient(circle, rgba(147, 51, 234, 0.12) 0%, transparent 70%)',
+        }}
+      />
     </div>
   );
 };

@@ -20,8 +20,13 @@ export const Footer: React.FC<FooterProps> = ({ onReplayIntro, onOpenSurprise })
 
   return (
     <footer className="relative border-t border-white/5 bg-obsidian-950/90 pt-3 pb-16 md:pb-3 px-3 sm:px-6 lg:px-8 text-center overflow-hidden">
-      {/* Subtle background glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[60px] bg-roseGlow-600/5 rounded-full blur-[60px] pointer-events-none" />
+      {/* Subtle background glow (GPU-Optimized Radial Gradient) */}
+      <div
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[60px] rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(244, 63, 94, 0.08) 0%, transparent 70%)',
+        }}
+      />
 
       <div className="max-w-2xl mx-auto space-y-2 relative z-10">
         {/* Compact Logo & Brand */}

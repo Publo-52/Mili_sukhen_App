@@ -151,9 +151,19 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
       id="hero"
       className="relative flex flex-col justify-center items-center pt-24 sm:pt-28 md:pt-32 pb-4 px-3 sm:px-6 lg:px-8 text-center overflow-hidden w-full max-w-full"
     >
-      {/* Soft Romantic Glow Centerpieces */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[550px] h-[320px] sm:h-[550px] bg-roseGlow-600/12 rounded-full blur-[100px] sm:blur-[150px] pointer-events-none" />
-      <div className="absolute top-1/4 right-1/4 w-[250px] sm:w-[350px] h-[250px] sm:h-[350px] bg-purple-600/10 rounded-full blur-[90px] sm:blur-[130px] pointer-events-none" />
+      {/* Soft Romantic Glow Centerpieces (GPU-Accelerated Radial Gradient - Zero Gaussian Blur Cost) */}
+      <div
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[550px] h-[320px] sm:h-[550px] rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(244, 63, 94, 0.13) 0%, rgba(244, 63, 94, 0.04) 45%, transparent 70%)',
+        }}
+      />
+      <div
+        className="absolute top-1/4 right-1/4 w-[250px] sm:w-[350px] h-[250px] sm:h-[350px] rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(147, 51, 234, 0.11) 0%, rgba(147, 51, 234, 0.03) 45%, transparent 70%)',
+        }}
+      />
 
       {/* Main Content */}
       <div className="relative z-10 max-w-3xl mx-auto space-y-5 sm:space-y-6 w-full max-w-full">

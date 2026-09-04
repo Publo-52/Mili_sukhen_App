@@ -28,10 +28,25 @@ import { INITIAL_PROJECTS } from '@/data/projects';
 
 export const ProjectShowcase: React.FC = () => {
   const { user, isAdmin } = useAuth();
-  const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
+  const [projects, setProjects] = useState<Project[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = getProjects();
+        if (cached && cached.length > 0) return cached;
+      } catch {}
+    }
+    return INITIAL_PROJECTS;
+  });
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return getFavoriteProjectIds();
+      } catch {}
+    }
+    return [];
+  });
   const [previewProject, setPreviewProject] = useState<Project | null>(null);
 
   // Admin Project Creator / Editor Modal State
@@ -60,12 +75,6 @@ export const ProjectShowcase: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // 0. Instantly load from cache for 0ms latency
-    const cached = getProjects();
-    if (cached && cached.length > 0) {
-      setProjects(cached);
-    }
-
     loadProjects();
     setFavoriteIds(getFavoriteProjectIds());
 

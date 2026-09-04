@@ -53,16 +53,6 @@ html {
   text-rendering: optimizeSpeed;
 }
 
-.break-inside-avoid, .glass-card {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-img, video {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
 /* Fast Rendering & Virtual Containment for Infinite / Long Lists */
 .fast-scroll-item {
   contain: layout style paint;
@@ -121,28 +111,41 @@ img, video {
 
 /* Luxury Glassmorphic Design System (Lightweight GPU-Optimized) */
 .glass-card {
-  background: rgba(14, 10, 24, 0.78);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(16, 11, 26, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.35);
-  transform: translate3d(0, 0, 0);
+  box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.35);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+@supports (backdrop-filter: blur(6px)) {
+  .glass-card {
+    background: rgba(14, 10, 24, 0.8);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+}
+
+/* Mobile battery & cool-phone optimization: disable heavy backdrop-filter on cards during scroll */
+@media (max-width: 768px) {
+  .glass-card {
+    background: rgba(16, 11, 26, 0.94);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
 .glass-card-hover:hover {
-  background: rgba(22, 14, 38, 0.92);
+  background: rgba(22, 14, 38, 0.94);
   border-color: rgba(244, 63, 94, 0.45);
-  transform: translateY(-2px) translate3d(0, 0, 0);
+  transform: translateY(-2px);
   box-shadow: 0 10px 24px -8px rgba(244, 63, 94, 0.25);
 }
 
 .glass-nav {
-  background: rgba(6, 4, 10, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(6, 4, 10, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.6);
-  transform: translate3d(0, 0, 0);
 }
 
 /* Speed & Rendering Optimizations */

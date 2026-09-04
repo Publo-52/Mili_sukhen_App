@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Code2, Sparkles, BookOpen, Clock, Camera, Film } from 'lucide-react';
 import { calculateDaysTogether } from '@/lib/utils';
@@ -8,12 +8,37 @@ import { APP_CONFIG } from '@/data/config';
 import { getProjects, getTurtleCreations, getLoveNotes, getMemories } from '@/lib/storage';
 
 export const MemoryCounter: React.FC = () => {
-  const [time, setTime] = useState(calculateDaysTogether(APP_CONFIG.anniversaryDate));
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const isInViewportRef = useRef<boolean>(true);
+
+  const [time, setTime] = useState(() => calculateDaysTogether(APP_CONFIG.anniversaryDate));
   const [mounted, setMounted] = useState(false);
-  const [projectCount, setProjectCount] = useState(0);
-  const [turtleCount, setTurtleCount] = useState(0);
-  const [noteCount, setNoteCount] = useState(0);
-  const [memoryCount, setMemoryCount] = useState(0);
+
+  // 0ms Synchronous Baseline from Local Storage (No "..." waiting delay!)
+  const [projectCount, setProjectCount] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      try { return getProjects().length; } catch {}
+    }
+    return 8;
+  });
+  const [turtleCount, setTurtleCount] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      try { return getTurtleCreations().length; } catch {}
+    }
+    return 10;
+  });
+  const [noteCount, setNoteCount] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      try { return getLoveNotes().length; } catch {}
+    }
+    return 12;
+  });
+  const [memoryCount, setMemoryCount] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      try { return getMemories().length; } catch {}
+    }
+    return 24;
+  });
 
   const refreshCounts = useCallback(async () => {
     // 1. Instant local baseline
@@ -53,8 +78,27 @@ export const MemoryCounter: React.FC = () => {
     setMounted(true);
     refreshCounts();
 
+    // Viewport Intersection Observer: only tick seconds when user is viewing the counter
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          isInViewportRef.current = entry.isIntersecting;
+          if (entry.isIntersecting) {
+            setTime(calculateDaysTogether(APP_CONFIG.anniversaryDate));
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
     const updateTimer = () => {
-      setTime(calculateDaysTogether(APP_CONFIG.anniversaryDate));
+      if (isInViewportRef.current && document.visibilityState === 'visible') {
+        setTime(calculateDaysTogether(APP_CONFIG.anniversaryDate));
+      }
     };
 
     updateTimer();
@@ -63,7 +107,10 @@ export const MemoryCounter: React.FC = () => {
 
     const handleSync = () => refreshCounts();
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') refreshCounts();
+      if (document.visibilityState === 'visible') {
+        setTime(calculateDaysTogether(APP_CONFIG.anniversaryDate));
+        refreshCounts();
+      }
     };
 
     window.addEventListener('visibilitychange', handleVisibility);
@@ -74,6 +121,7 @@ export const MemoryCounter: React.FC = () => {
     window.addEventListener('mili-memories-updated', handleSync);
 
     return () => {
+      observer.disconnect();
       clearInterval(timerInterval);
       clearInterval(syncInterval);
       window.removeEventListener('visibilitychange', handleVisibility);
@@ -121,7 +169,7 @@ export const MemoryCounter: React.FC = () => {
   ];
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 py-6 sm:py-8">
+    <div ref={containerRef} className="w-full max-w-6xl mx-auto px-2 sm:px-4 py-6 sm:py-8">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;

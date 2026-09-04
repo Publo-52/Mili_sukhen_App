@@ -63,9 +63,24 @@ type FilterType = 'all' | 'photo' | 'video' | 'favorites';
 
 export const MemoriesTimeline: React.FC = () => {
   const { user, isAdmin } = useAuth();
-  const [memories, setMemories] = useState<MemoryItem[]>([]);
+  const [memories, setMemories] = useState<MemoryItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = getMemories();
+        if (cached && cached.length > 0) return cached;
+      } catch {}
+    }
+    return [];
+  });
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return getFavoriteMemoryIds();
+      } catch {}
+    }
+    return [];
+  });
 
   // Modal States
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -96,12 +111,6 @@ export const MemoriesTimeline: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // 0. Instantly populate from cache or default in 0ms (no blank wait!)
-    const cached = getMemories();
-    if (cached && cached.length > 0) {
-      setMemories(cached);
-    }
-
     loadMemories();
     setFavoriteIds(getFavoriteMemoryIds());
 

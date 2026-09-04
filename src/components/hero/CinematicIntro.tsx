@@ -43,9 +43,19 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
           {/* Full-Screen Pure GPU 100% Zero-Blink Seamless Infinite Upward Scrolling Photo Wall */}
           <PhotoCollageBackground />
 
-          {/* Soft Ambient Light Rays */}
-          <div className="absolute w-[600px] h-[600px] rounded-full bg-roseGlow-600/10 blur-[140px] pointer-events-none animate-pulse-slow z-0" />
-          <div className="absolute w-[450px] h-[450px] rounded-full bg-purple-600/10 blur-[130px] pointer-events-none -top-20 -left-20 z-0" />
+          {/* Soft Ambient Light Rays (GPU-Optimized Radial Gradients) */}
+          <div
+            className="absolute w-[600px] h-[600px] rounded-full pointer-events-none animate-pulse-slow z-0"
+            style={{
+              background: 'radial-gradient(circle, rgba(244, 63, 94, 0.12) 0%, transparent 70%)',
+            }}
+          />
+          <div
+            className="absolute w-[450px] h-[450px] rounded-full pointer-events-none -top-20 -left-20 z-0"
+            style={{
+              background: 'radial-gradient(circle, rgba(147, 51, 234, 0.12) 0%, transparent 70%)',
+            }}
+          />
 
           {/* Ultra-Translucent Crystal Glass Skip Intro Button (High Photo Visibility) */}
           <button
