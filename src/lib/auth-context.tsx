@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleAuthChange = () => refresh();
     window.addEventListener('auth-changed', handleAuthChange);
     window.addEventListener('storage', handleAuthChange);
-    const interval = setInterval(refresh, 60 * 1000);
+    const interval = setInterval(refresh, 25 * 1000);
     return () => {
       window.removeEventListener('auth-changed', handleAuthChange);
       window.removeEventListener('storage', handleAuthChange);

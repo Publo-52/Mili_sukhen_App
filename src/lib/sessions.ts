@@ -235,6 +235,10 @@ async function dbUpdateLastSeen(token: string): Promise<void> {
   }
 }
 
+export async function updateSessionActivity(token: string): Promise<void> {
+  await dbUpdateLastSeen(token);
+}
+
 async function dbDeleteSession(token: string): Promise<void> {
   if (!isSupabaseConfigured || !supabase) return;
   try {
@@ -284,6 +288,11 @@ export async function createSession(
     (userRole === 'sukhen' ? 'dassukhen@gmail.com' : 'mandalsharmili06@gmail.com');
   const avatar = userInfo.avatar || (userRole === 'sukhen' ? '✨' : '👑');
 
+  const existingSession = existingSessionId
+    ? activeSessions.find((s) => s.id === existingSessionId)
+    : undefined;
+  const originalCreatedAt = existingSession?.createdAt || now.toISOString();
+
   const tokenId = encodeSessionToken({
     id: rawId,
     userName,
@@ -291,31 +300,28 @@ export async function createSession(
     userEmail,
     avatar,
     deviceName,
-    createdAt: now.toISOString(),
+    createdAt: originalCreatedAt,
     expiresAt: expires.toISOString(),
   });
 
   // If the client already has an active session token, refresh it in-place
-  if (existingSessionId) {
-    const existingIndex = activeSessions.findIndex((s) => s.id === existingSessionId);
-    if (existingIndex !== -1) {
-      await dbDeleteSession(existingSessionId);
-      const updatedSession: DeviceSession = {
-        id: tokenId,
-        userName,
-        userRole,
-        userEmail,
-        avatar,
-        deviceName,
-        userAgent,
-        ip,
-        createdAt: now.toISOString(),
-        lastSeenAt: now.toISOString(),
-        expiresAt: expires.toISOString(),
-      };
-      await dbUpsertSession(updatedSession);
-      return { session: updatedSession };
-    }
+  if (existingSession && existingSessionId) {
+    await dbDeleteSession(existingSessionId);
+    const updatedSession: DeviceSession = {
+      id: tokenId,
+      userName,
+      userRole,
+      userEmail,
+      avatar,
+      deviceName,
+      userAgent,
+      ip,
+      createdAt: originalCreatedAt,
+      lastSeenAt: now.toISOString(),
+      expiresAt: expires.toISOString(),
+    };
+    await dbUpsertSession(updatedSession);
+    return { session: updatedSession };
   }
 
   // Strictly enforce maximum simultaneous device limit

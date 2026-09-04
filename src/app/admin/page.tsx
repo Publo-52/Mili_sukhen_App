@@ -20,6 +20,7 @@ import {
   WifiOff,
   RefreshCw,
   Clock,
+  Activity,
   Monitor,
   Check,
   Wand2,
@@ -60,7 +61,12 @@ import {
   isAdminLoggedIn,
   setAdminLoggedIn,
 } from '@/lib/storage';
-import { formatDate } from '@/lib/utils';
+import {
+  formatDate,
+  formatDetailedDateTime,
+  formatLiveRelativeTime,
+  getSessionActivityStatus,
+} from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
@@ -110,6 +116,16 @@ export default function AdminPage() {
     expiresAt: string;
   }[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  // Real-time 1-second ticker state for live relative time calculations
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const loadSessions = useCallback(async () => {
     setSessionsLoading(true);
@@ -214,14 +230,50 @@ export default function AdminPage() {
     } catch {
       setMemories(getMemories());
     }
-  }, []);
+
+    // 6. Load Active Device Sessions
+    loadSessions();
+  }, [loadSessions]);
 
   useEffect(() => {
-    if (isAdminLoggedIn()) {
+    if (isAdminLoggedIn() || isAdmin) {
       setIsAuthenticated(true);
       loadData();
     }
-  }, [loadData]);
+  }, [loadData, isAdmin]);
+
+  // Periodic auto-refresh (every 8 seconds) when Sessions tab is active
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (activeTab === 'sessions') {
+      loadSessions();
+      const interval = setInterval(() => {
+        loadSessions();
+      }, 8000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, activeTab, loadSessions]);
+
+  // Supabase Realtime channel subscription for instant cross-device updates
+  useEffect(() => {
+    if (!isAuthenticated || !isSupabaseConfigured || !supabase) return;
+    const client = supabase;
+
+    const channel = client
+      .channel('admin_device_sessions_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'device_sessions' },
+        () => {
+          loadSessions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      client.removeChannel(channel);
+    };
+  }, [isAuthenticated, loadSessions]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -996,11 +1048,18 @@ export default function AdminPage() {
           <div className="space-y-4">
             <div className="p-4 sm:p-5 rounded-2xl glass-card border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2">
+                <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2 flex-wrap">
                   <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
                   <span>Active Device Sessions</span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-normal bg-emerald-500/10 text-emerald-300 border border-emerald-500/25">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                    </span>
+                    <span>Live Auto-Sync Active</span>
+                  </span>
                 </h2>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                <p className="text-xs text-slate-400 font-mono mt-1">
                   {deviceSessions.length} of {AUTH_CONFIG.maxDevices} maximum concurrent devices active
                 </p>
               </div>
@@ -1010,7 +1069,7 @@ export default function AdminPage() {
                   onClick={loadSessions}
                   disabled={sessionsLoading}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-card text-xs font-mono text-slate-300 hover:text-white transition-all disabled:opacity-50 cursor-pointer"
-                  title="Refresh sessions"
+                  title="Refresh sessions now"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${sessionsLoading ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
@@ -1029,7 +1088,7 @@ export default function AdminPage() {
             </div>
 
             {/* Sessions Grid */}
-            {sessionsLoading ? (
+            {sessionsLoading && deviceSessions.length === 0 ? (
               <div className="glass-card p-12 rounded-3xl text-center space-y-3">
                 <div className="w-6 h-6 border-2 border-roseGlow-500 border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-xs font-mono text-slate-400">Loading active sessions…</p>
@@ -1043,21 +1102,32 @@ export default function AdminPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {deviceSessions.map((sess) => {
-                  const isExpired = new Date(sess.expiresAt).getTime() < Date.now();
+                  const activity = getSessionActivityStatus(sess.lastSeenAt, sess.expiresAt, currentTime);
                   const isSukhen = sess.userRole === 'sukhen';
+                  const firstLoginRelative = formatLiveRelativeTime(sess.createdAt, currentTime);
+                  const lastSeenRelative = formatLiveRelativeTime(sess.lastSeenAt, currentTime);
+
                   return (
                     <div
                       key={sess.id}
-                      className={`glass-card rounded-2xl p-4 sm:p-5 border space-y-3 ${
-                        isExpired ? 'border-red-500/30 opacity-60' : 'border-white/10'
+                      className={`glass-card rounded-2xl p-4 sm:p-5 border space-y-3 transition-all ${
+                        activity.state === 'expired'
+                          ? 'border-red-500/30 opacity-60 bg-red-950/10'
+                          : activity.state === 'online'
+                          ? 'border-emerald-500/30 bg-emerald-950/10 shadow-[0_0_20px_rgba(16,185,129,0.06)]'
+                          : 'border-white/10'
                       }`}
                     >
                       {/* User Profile & Role Info */}
                       <div className="flex items-center justify-between pb-2.5 border-b border-white/5">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                            isSukhen ? 'bg-purple-600/30 text-purple-300 border border-purple-500/30' : 'bg-roseGlow-600/30 text-roseGlow-300 border border-roseGlow-500/30'
-                          }`}>
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                              isSukhen
+                                ? 'bg-purple-600/30 text-purple-300 border border-purple-500/30'
+                                : 'bg-roseGlow-600/30 text-roseGlow-300 border border-roseGlow-500/30'
+                            }`}
+                          >
                             {sess.avatar || (isSukhen ? 'S' : 'M')}
                           </div>
                           <div>
@@ -1065,9 +1135,13 @@ export default function AdminPage() {
                               <span className="text-sm font-bold text-white">
                                 {sess.userName}
                               </span>
-                              <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full uppercase tracking-wider ${
-                                isSukhen ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-roseGlow-500/20 text-roseGlow-300 border border-roseGlow-500/30'
-                              }`}>
+                              <span
+                                className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full uppercase tracking-wider ${
+                                  isSukhen
+                                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                    : 'bg-roseGlow-500/20 text-roseGlow-300 border border-roseGlow-500/30'
+                                }`}
+                              >
                                 {isSukhen ? 'Admin' : 'Mili'}
                               </span>
                             </div>
@@ -1077,14 +1151,17 @@ export default function AdminPage() {
                           </div>
                         </div>
 
+                        {/* Live Activity Status Pill */}
                         <span
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-medium ${
-                            isExpired
-                              ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                              : 'bg-green-500/10 text-green-400 border border-green-500/20'
-                          }`}
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-medium flex items-center gap-1.5 ${activity.badgeBg} ${activity.badgeBorder} ${activity.badgeText} border`}
                         >
-                          {isExpired ? 'Expired' : 'Active'}
+                          <span className="relative flex h-1.5 w-1.5">
+                            {activity.state === 'online' && (
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            )}
+                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${activity.dotColor}`} />
+                          </span>
+                          <span>{activity.label}</span>
                         </span>
                       </div>
 
@@ -1109,29 +1186,48 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* Timestamps */}
-                      <div className="space-y-1 text-[10px] font-mono text-slate-400 bg-white/5 rounded-xl p-2.5 border border-white/5">
-                        <div className="flex items-center justify-between">
-                          <span>First Login:</span>
-                          <span className="text-slate-300">
-                            {new Date(sess.createdAt).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
+                      {/* Real-Time Timestamps */}
+                      <div className="space-y-2.5 text-[10px] font-mono bg-white/5 rounded-xl p-2.5 border border-white/5">
+                        {/* First Login (Real-time elapsed & full date) */}
+                        <div>
+                          <div className="flex items-center justify-between text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-blue-400" />
+                              <span>First Login:</span>
+                            </span>
+                            <span className="text-blue-300 font-semibold">
+                              {firstLoginRelative}
+                            </span>
+                          </div>
+                          <p
+                            className="text-[9px] text-slate-500 text-right mt-0.5 truncate"
+                            title={formatDetailedDateTime(sess.createdAt)}
+                          >
+                            {formatDetailedDateTime(sess.createdAt)}
+                          </p>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span>Last Active:</span>
-                          <span className="text-slate-300">
-                            {new Date(sess.lastSeenAt).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
+
+                        <div className="border-t border-white/5 pt-2">
+                          {/* Last Active (Real-time relative & full date) */}
+                          <div className="flex items-center justify-between text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <Activity className="w-3 h-3 text-emerald-400" />
+                              <span>Last Active:</span>
+                            </span>
+                            <span
+                              className={`font-semibold ${
+                                activity.state === 'online' ? 'text-emerald-400' : 'text-slate-200'
+                              }`}
+                            >
+                              {activity.state === 'online' ? '🟢 Online Now' : lastSeenRelative}
+                            </span>
+                          </div>
+                          <p
+                            className="text-[9px] text-slate-500 text-right mt-0.5 truncate"
+                            title={formatDetailedDateTime(sess.lastSeenAt)}
+                          >
+                            {formatDetailedDateTime(sess.lastSeenAt)}
+                          </p>
                         </div>
                       </div>
 

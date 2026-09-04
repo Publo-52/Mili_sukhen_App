@@ -123,3 +123,160 @@ export function getOptimizedImageUrl(
 
   return url;
 }
+
+/**
+ * Accurately formats a date string to a full legible date & time with seconds
+ * e.g. "Sep 4, 2026, 06:45:12 PM"
+ */
+export function formatDetailedDateTime(dateString?: string | null): string {
+  if (!dateString) return '—';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).format(date);
+  } catch {
+    return dateString || '—';
+  }
+}
+
+/**
+ * Formats a timestamp into a live ticking relative description:
+ * e.g. "Just now", "8s ago", "2m 14s ago", "1h 5m ago", "3d ago"
+ */
+export function formatLiveRelativeTime(
+  dateString?: string | null,
+  currentTimestamp: number = Date.now()
+): string {
+  if (!dateString) return '—';
+  try {
+    const time = new Date(dateString).getTime();
+    if (isNaN(time)) return dateString;
+
+    const diffMs = currentTimestamp - time;
+    if (diffMs < 0) return 'Just now';
+
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 5) return 'Just now';
+    if (diffSec < 60) return `${diffSec}s ago`;
+
+    const diffMin = Math.floor(diffSec / 60);
+    const remSec = diffSec % 60;
+    if (diffMin < 5) return `${diffMin}m ${remSec}s ago`;
+    if (diffMin < 60) return `${diffMin}m ago`;
+
+    const diffHours = Math.floor(diffMin / 60);
+    const remMin = diffMin % 60;
+    if (diffHours < 24) {
+      return remMin > 0 ? `${diffHours}h ${remMin}m ago` : `${diffHours}h ago`;
+    }
+
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 30) return `${diffDays}d ago`;
+
+    return formatDate(dateString);
+  } catch {
+    return dateString || '—';
+  }
+}
+
+export type SessionActivityState = 'online' | 'idle' | 'away' | 'expired';
+
+export interface SessionActivityInfo {
+  state: SessionActivityState;
+  label: string;
+  dotColor: string;
+  badgeBg: string;
+  badgeBorder: string;
+  badgeText: string;
+}
+
+/**
+ * Calculates live activity status based on lastSeenAt and expiresAt
+ */
+export function getSessionActivityStatus(
+  lastSeenAt?: string | null,
+  expiresAt?: string | null,
+  currentTimestamp: number = Date.now()
+): SessionActivityInfo {
+  if (!lastSeenAt || !expiresAt) {
+    return {
+      state: 'away',
+      label: 'Offline',
+      dotColor: 'bg-slate-400',
+      badgeBg: 'bg-slate-500/10',
+      badgeBorder: 'border-slate-500/20',
+      badgeText: 'text-slate-400',
+    };
+  }
+
+  const expiryTime = new Date(expiresAt).getTime();
+  if (!isNaN(expiryTime) && expiryTime <= currentTimestamp) {
+    return {
+      state: 'expired',
+      label: 'Expired',
+      dotColor: 'bg-red-500',
+      badgeBg: 'bg-red-500/10',
+      badgeBorder: 'border-red-500/20',
+      badgeText: 'text-red-400',
+    };
+  }
+
+  const seenTime = new Date(lastSeenAt).getTime();
+  if (isNaN(seenTime)) {
+    return {
+      state: 'away',
+      label: 'Offline',
+      dotColor: 'bg-slate-400',
+      badgeBg: 'bg-slate-500/10',
+      badgeBorder: 'border-slate-500/20',
+      badgeText: 'text-slate-400',
+    };
+  }
+
+  const diffMs = Math.max(0, currentTimestamp - seenTime);
+  const diffSec = Math.floor(diffMs / 1000);
+
+  // Online if active within last 2 minutes (120 seconds)
+  if (diffSec <= 120) {
+    return {
+      state: 'online',
+      label: 'Online Now',
+      dotColor: 'bg-emerald-400',
+      badgeBg: 'bg-emerald-500/10',
+      badgeBorder: 'border-emerald-500/25',
+      badgeText: 'text-emerald-400',
+    };
+  }
+
+  // Idle if active within last 15 minutes (900 seconds)
+  if (diffSec <= 900) {
+    return {
+      state: 'idle',
+      label: 'Idle',
+      dotColor: 'bg-amber-400',
+      badgeBg: 'bg-amber-500/10',
+      badgeBorder: 'border-amber-500/25',
+      badgeText: 'text-amber-300',
+    };
+  }
+
+  // Away / Offline but session is still valid
+  return {
+    state: 'away',
+    label: 'Inactive',
+    dotColor: 'bg-slate-400',
+    badgeBg: 'bg-white/5',
+    badgeBorder: 'border-white/10',
+    badgeText: 'text-slate-300',
+  };
+}
+
