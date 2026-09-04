@@ -235,23 +235,35 @@ export function toggleFavoriteNote(id: string): string[] {
   return updated;
 }
 
-// ----------------- Memories / Photo & Video Storage -----------------
 export function getMemories(): MemoryMilestone[] {
+  const deletedIds = new Set(getDeletedMemoryIds());
+
   // 1. Check semantically correct new key
   const savedNew = getStorageItem<MemoryMilestone[] | null>(KEYS.MEMORIES, null);
   if (savedNew !== null && Array.isArray(savedNew) && savedNew.length > 0) {
+    const savedIds = new Set(savedNew.map((m) => m.id));
+    const missingInitial = INITIAL_MEMORIES.filter((m) => !savedIds.has(m.id) && !deletedIds.has(m.id));
+    if (missingInitial.length > 0) {
+      const merged = [...savedNew, ...missingInitial];
+      setStorageItem(KEYS.MEMORIES, merged);
+      setStorageItem(LEGACY_MEMORIES_ALL_KEY, merged);
+      return merged;
+    }
     return savedNew;
   }
 
   // 2. If missing or empty in new key, check legacy key (backward-compatibility)
   const savedLegacy = getStorageItem<MemoryMilestone[] | null>(LEGACY_MEMORIES_ALL_KEY, null);
   if (savedLegacy !== null && Array.isArray(savedLegacy) && savedLegacy.length > 0) {
-    // 3. Migrate data to new key seamlessly without deleting old data
-    setStorageItem(KEYS.MEMORIES, savedLegacy);
-    return savedLegacy;
+    const savedIds = new Set(savedLegacy.map((m) => m.id));
+    const missingInitial = INITIAL_MEMORIES.filter((m) => !savedIds.has(m.id) && !deletedIds.has(m.id));
+    const merged = missingInitial.length > 0 ? [...savedLegacy, ...missingInitial] : savedLegacy;
+    setStorageItem(KEYS.MEMORIES, merged);
+    setStorageItem(LEGACY_MEMORIES_ALL_KEY, merged);
+    return merged;
   }
 
-  return INITIAL_MEMORIES;
+  return INITIAL_MEMORIES.filter((m) => !deletedIds.has(m.id));
 }
 
 export function saveMemory(memory: MemoryMilestone): MemoryMilestone[] {

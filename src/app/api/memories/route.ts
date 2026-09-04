@@ -25,6 +25,7 @@ export async function GET() {
         .order('created_at', { ascending: false });
 
       if (!error && data !== null) {
+        const existingIds = new Set(data.map((m) => m.id));
         const filtered = data
           .filter((m) => !isMemoryDeletedOnServer(m.id))
           .map((m) => ({
@@ -41,8 +42,15 @@ export async function GET() {
             createdAt: m.created_at,
           }));
 
+        // Merge any baseline initial memories that aren't in DB yet and aren't deleted
+        const missingBaseline = INITIAL_MEMORIES.filter(
+          (m) => !existingIds.has(m.id) && !isMemoryDeletedOnServer(m.id)
+        );
+
+        const allCombined = [...filtered, ...missingBaseline];
+
         return NextResponse.json(
-          { memories: filtered },
+          { memories: allCombined },
           {
             headers: {
               'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
