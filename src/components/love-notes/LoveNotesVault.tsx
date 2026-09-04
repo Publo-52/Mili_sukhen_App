@@ -54,7 +54,7 @@ export const LoveNotesVault: React.FC = () => {
   const [allNotes, setAllNotes] = useState<LoveNote[]>(INITIAL_LOVE_NOTES);
   const [selectedMood, setSelectedMood] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'featured' | 'grid'>('grid');
+  const [viewMode, setViewMode] = useState<'featured' | 'grid'>('featured');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
@@ -117,8 +117,13 @@ export const LoveNotesVault: React.FC = () => {
     const handleFocus = () => loadNotes();
     const handleSyncEvent = () => loadNotes();
 
-    window.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
+    const handleHash = () => {
+      if (window.location.hash === '#love-notes') {
+        setViewMode('featured');
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+
     return () => {
       if (channel && supabase) {
         supabase.removeChannel(channel);
@@ -126,6 +131,7 @@ export const LoveNotesVault: React.FC = () => {
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('mili-notes-updated', handleSyncEvent);
+      window.removeEventListener('hashchange', handleHash);
     };
   }, [loadNotes]);
 
@@ -378,14 +384,19 @@ export const LoveNotesVault: React.FC = () => {
               {/* Top Bar inside Card */}
               <div className="flex items-center justify-between gap-2 flex-wrap pb-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-3 py-1 rounded-full text-xs font-mono bg-roseGlow-500/15 text-roseGlow-300 border border-roseGlow-500/30 font-medium">
-                    Letter #{currentIndex + 1} of {filteredNotes.length}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono bg-roseGlow-500/15 text-roseGlow-300 border border-roseGlow-500/30 font-medium shadow-sm">
+                    <Sparkles className="w-3 h-3 text-roseGlow-400" />
+                    <span>
+                      {MOOD_FILTERS.find((m) => m.id === currentNote.moodTag)?.label || '❤️ Deep'}
+                    </span>
                   </span>
 
-                  <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-slate-500" />
-                    <span>{currentNote.date}</span>
-                  </span>
+                  {currentNote.date && (
+                    <span className="text-xs text-slate-400 font-mono flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10">
+                      <Clock className="w-3 h-3 text-slate-400" />
+                      <span>{currentNote.date}</span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Card Actions */}
@@ -610,13 +621,28 @@ export const LoveNotesVault: React.FC = () => {
                     </div>
 
                     <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between">
-                      <button
-                        onClick={() => setReadingNote(note)}
-                        className="inline-flex items-center gap-1 text-xs font-mono text-roseGlow-400 hover:text-roseGlow-300 transition-colors"
-                      >
-                        <span>Read Letter</span>
-                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            const idx = filteredNotes.findIndex((n) => n.id === note.id);
+                            if (idx !== -1) setCurrentIndex(idx);
+                            setViewMode('featured');
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-roseGlow-500/15 hover:bg-roseGlow-500/25 border border-roseGlow-500/30 text-roseGlow-300 text-xs font-mono transition-all hover:scale-105"
+                          title="Open this letter in Spotlight"
+                        >
+                          <Layers className="w-3 h-3 text-roseGlow-400" />
+                          <span>Spotlight</span>
+                        </button>
+
+                        <button
+                          onClick={() => setReadingNote(note)}
+                          className="inline-flex items-center gap-1 text-xs font-mono text-slate-300 hover:text-roseGlow-200 transition-colors"
+                        >
+                          <span>Read</span>
+                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                      </div>
 
                       {isAdmin && (
                         <div className="flex items-center gap-1">

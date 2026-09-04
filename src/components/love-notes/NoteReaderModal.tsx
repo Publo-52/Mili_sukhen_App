@@ -112,9 +112,9 @@ export const NoteReaderModal: React.FC<NoteReaderModalProps> = ({
                 <span>{note.date || 'A heartfelt note'}</span>
               </span>
 
-              {allNotes.length > 0 && currentIndex >= 0 && (
-                <span className="text-xs text-slate-400 font-mono hidden sm:inline">
-                  Letter {currentIndex + 1} of {allNotes.length}
+              {note.moodTag && (
+                <span className="text-xs text-roseGlow-300 font-mono px-2.5 py-0.5 rounded-full bg-roseGlow-500/10 border border-roseGlow-500/20 capitalize flex items-center gap-1">
+                  <span>{note.moodTag}</span>
                 </span>
               )}
             </div>
