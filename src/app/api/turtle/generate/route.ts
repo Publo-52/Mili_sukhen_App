@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest } from '@/lib/sessions';
+import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { TurtleCreation } from '@/types';
-import { APP_CONFIG } from '@/data/config';
 
 // Gallery of templates for generator
 const PYTHON_ART_TEMPLATES = [
@@ -189,14 +188,7 @@ turtle.done()`,
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSessionFromRequest(request);
-    const adminToken = request.headers.get('x-admin-token');
-    const isAdmin =
-      session?.userRole === 'sukhen' ||
-      session?.userRole === 'mili' ||
-      adminToken === APP_CONFIG.adminPasscode;
-
-    if (!isAdmin) {
+    if (!await isAuthorizedAdmin(request)) {
       return NextResponse.json(
         { error: 'Unauthorized. Only Admins (Sukhen & Mili) can auto-generate Python Art.' },
         { status: 403 }

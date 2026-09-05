@@ -131,7 +131,6 @@ export default function AdminPage() {
     setSessionsLoading(true);
     try {
       const res = await fetch('/api/auth/sessions', {
-        headers: { 'x-admin-token': APP_CONFIG.adminPasscode },
         cache: 'no-store',
       });
       if (res.ok) {
@@ -298,7 +297,6 @@ export default function AdminPage() {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': APP_CONFIG.adminPasscode,
         },
         body: JSON.stringify({ sessionId, revokeAll }),
       });
@@ -322,7 +320,6 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': APP_CONFIG.adminPasscode,
         },
         body: JSON.stringify({ project }),
       });
@@ -339,9 +336,6 @@ export default function AdminPage() {
     try {
       await fetch(`/api/projects?id=${id}`, {
         method: 'DELETE',
-        headers: {
-          'x-admin-token': APP_CONFIG.adminPasscode,
-        },
       });
     } catch {}
 
@@ -365,7 +359,6 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': APP_CONFIG.adminPasscode,
         },
         body: JSON.stringify({ creation }),
       });
@@ -381,9 +374,6 @@ export default function AdminPage() {
     try {
       await fetch(`/api/turtle?id=${id}`, {
         method: 'DELETE',
-        headers: {
-          'x-admin-token': APP_CONFIG.adminPasscode,
-        },
       });
     } catch {}
 
@@ -402,7 +392,6 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': APP_CONFIG.adminPasscode,
         },
         body: JSON.stringify({ note }),
       });
@@ -418,9 +407,6 @@ export default function AdminPage() {
     try {
       await fetch(`/api/love-notes?id=${id}`, {
         method: 'DELETE',
-        headers: {
-          'x-admin-token': APP_CONFIG.adminPasscode,
-        },
       });
     } catch {}
 
@@ -444,7 +430,6 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': APP_CONFIG.adminPasscode,
         },
         body: JSON.stringify({ memory }),
       });
@@ -460,9 +445,6 @@ export default function AdminPage() {
     try {
       await fetch(`/api/memories?id=${id}`, {
         method: 'DELETE',
-        headers: {
-          'x-admin-token': APP_CONFIG.adminPasscode,
-        },
       });
     } catch {}
 
@@ -480,9 +462,6 @@ export default function AdminPage() {
     try {
       await fetch('/api/admin/restore', {
         method: 'POST',
-        headers: {
-          'x-admin-token': APP_CONFIG.adminPasscode,
-        },
       });
     } catch {}
 

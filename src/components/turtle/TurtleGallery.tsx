@@ -122,7 +122,6 @@ export const TurtleGallery: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': APP_CONFIG.adminPasscode,
         },
         body: JSON.stringify({ creation }),
       });
@@ -143,9 +142,6 @@ export const TurtleGallery: React.FC = () => {
     try {
       await fetch(`/api/turtle?id=${id}`, {
         method: 'DELETE',
-        headers: {
-          'x-admin-token': APP_CONFIG.adminPasscode,
-        },
       });
     } catch {}
 

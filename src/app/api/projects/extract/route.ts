@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest } from '@/lib/sessions';
-import { APP_CONFIG } from '@/data/config';
+import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { Project, ProjectCategory } from '@/types';
 
 // Theme presets for automatic styling
@@ -190,14 +189,7 @@ function isSafeUrl(urlString: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSessionFromRequest(request);
-    const adminToken = request.headers.get('x-admin-token');
-    const isAdmin =
-      session?.userRole === 'sukhen' ||
-      session?.userRole === 'mili' ||
-      adminToken === APP_CONFIG.adminPasscode;
-
-    if (!isAdmin) {
+    if (!await isAuthorizedAdmin(request)) {
       return NextResponse.json(
         { error: 'Unauthorized. Only Admins (Sukhen & Mili) can auto-extract and create projects.' },
         { status: 403 }

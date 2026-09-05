@@ -182,7 +182,6 @@ export const MemoriesTimeline: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': APP_CONFIG.adminPasscode,
         },
         body: JSON.stringify({ memory }),
       });
@@ -199,9 +198,6 @@ export const MemoriesTimeline: React.FC = () => {
     try {
       await fetch(`/api/memories?id=${id}`, {
         method: 'DELETE',
-        headers: {
-          'x-admin-token': APP_CONFIG.adminPasscode,
-        },
       });
     } catch {}
 

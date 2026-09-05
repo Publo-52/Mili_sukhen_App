@@ -10,11 +10,17 @@ function getSanitizedUrl(): string {
 }
 
 const supabaseUrl = getSanitizedUrl();
-const supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
+const isServer = typeof window === 'undefined';
+
+// On the server, use SUPABASE_SERVICE_ROLE_KEY if provided to bypass RLS securely;
+// On the client (browser), always use the public ANON key.
+const supabaseKey = isServer
+  ? (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim()
+  : (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
-  supabaseAnonKey &&
+  supabaseKey &&
   (supabaseUrl.startsWith('http://') || supabaseUrl.startsWith('https://')) &&
   !supabaseUrl.includes('your-project-id')
 );
@@ -22,7 +28,7 @@ export const isSupabaseConfigured = Boolean(
 function initSupabase(): SupabaseClient | null {
   if (!isSupabaseConfigured) return null;
   try {
-    return createClient(supabaseUrl, supabaseAnonKey, {
+    return createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
       },

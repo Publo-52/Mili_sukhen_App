@@ -243,7 +243,6 @@ export const LoveNotesVault: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': APP_CONFIG.adminPasscode,
         },
         body: JSON.stringify({ note }),
       });
@@ -263,9 +262,6 @@ export const LoveNotesVault: React.FC = () => {
     try {
       await fetch(`/api/love-notes?id=${id}`, {
         method: 'DELETE',
-        headers: {
-          'x-admin-token': APP_CONFIG.adminPasscode,
-        },
       });
     } catch {}
 

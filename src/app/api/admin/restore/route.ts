@@ -5,17 +5,9 @@ import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
 import { INITIAL_LOVE_NOTES } from '@/data/loveNotes';
 import { INITIAL_MEMORIES } from '@/data/memories';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { getSessionFromRequest } from '@/lib/sessions';
-import { APP_CONFIG } from '@/data/config';
+import { isAuthorizedAdmin } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
-
-async function isAuthorizedAdmin(request: Request): Promise<boolean> {
-  const session = await getSessionFromRequest(request);
-  if (session?.userRole === 'sukhen' || session?.userRole === 'mili') return true;
-  const adminToken = request.headers.get('x-admin-token');
-  return adminToken === APP_CONFIG.adminPasscode;
-}
 
 export async function POST(request: Request) {
   try {

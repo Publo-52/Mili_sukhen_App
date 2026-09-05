@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { getSessionFromRequest } from '@/lib/sessions';
-import { APP_CONFIG } from '@/data/config';
+import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { TurtleCreation } from '@/types';
 import { markTurtleDeletedOnServer, isTurtleDeletedOnServer } from '@/lib/server-deleted-tracker';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-async function isAuthorizedAdmin(request: Request): Promise<boolean> {
-  const session = await getSessionFromRequest(request);
-  if (session?.userRole === 'sukhen' || session?.userRole === 'mili') return true;
-  const adminToken = request.headers.get('x-admin-token');
-  return adminToken === APP_CONFIG.adminPasscode;
-}
 
 export async function GET() {
   if (isSupabaseConfigured && supabase) {

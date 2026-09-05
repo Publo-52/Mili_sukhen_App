@@ -3,19 +3,11 @@ import {
   getAllSessions,
   revokeSession,
   revokeAllSessions,
-  getSessionFromRequest,
 } from '@/lib/sessions';
-import { APP_CONFIG } from '@/data/config';
+import { isAuthorizedAdmin } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-async function isAuthorizedAdmin(request: NextRequest): Promise<boolean> {
-  const session = await getSessionFromRequest(request);
-  if (session?.userRole === 'sukhen' || session?.userRole === 'mili') return true;
-  const adminToken = request.headers.get('x-admin-token');
-  return adminToken === APP_CONFIG.adminPasscode;
-}
 
 // GET /api/auth/sessions — list all active sessions
 export async function GET(request: NextRequest) {
@@ -62,7 +54,7 @@ export async function DELETE(request: NextRequest) {
     await revokeSession(sessionId);
     return NextResponse.json({
       success: true,
-      message: `Session ${sessionId.slice(0, 8)}… revoked.`,
+      message: `Session revoked successfully.`,
     });
   }
 

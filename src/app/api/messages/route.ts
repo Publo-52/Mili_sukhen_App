@@ -4,17 +4,19 @@ import { getSessionFromRequest } from '@/lib/sessions';
 import { APP_CONFIG } from '@/data/config';
 import { DirectMessage } from '@/types';
 
+import { isAuthorizedAdmin } from '@/lib/admin-auth';
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-async function isAuthorized(request: Request): Promise<boolean> {
-  const session = await getSessionFromRequest(request);
-  if (session?.userRole === 'sukhen' || session?.userRole === 'mili') return true;
-  const adminToken = request.headers.get('x-admin-token');
-  return adminToken === APP_CONFIG.adminPasscode;
-}
+export async function GET(request: Request) {
+  if (!await isAuthorizedAdmin(request)) {
+    return NextResponse.json(
+      { error: 'Unauthorized. Please log in to view messages.' },
+      { status: 401 }
+    );
+  }
 
-export async function GET() {
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase
@@ -79,7 +81,7 @@ function isMessageRateLimited(ip: string): boolean {
 export async function POST(request: Request) {
   try {
     // ── Authentication: must be a logged-in user OR valid admin token ──────
-    if (!await isAuthorized(request)) {
+    if (!await isAuthorizedAdmin(request)) {
       return NextResponse.json(
         { error: 'Unauthorized. Please log in to send a message.' },
         { status: 401 }
@@ -158,7 +160,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    if (!await isAuthorized(request)) {
+    if (!await isAuthorizedAdmin(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -192,7 +194,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    if (!await isAuthorized(request)) {
+    if (!await isAuthorizedAdmin(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

@@ -6,8 +6,9 @@ export const APP_CONFIG: AppConfig = {
   creatorName: "Sukhen",
   anniversaryDate: "2025-10-14T00:00:00",
   contactVisibility: 'PRIVATE',
-  adminPasscode: process.env.NEXT_PUBLIC_ADMIN_PASSCODE ||
-    (process.env.NODE_ENV === 'production' ? '' : 'das@123'),
+  adminPasscode: typeof window === 'undefined'
+    ? (process.env.ADMIN_PASSCODE || process.env.NEXT_PUBLIC_ADMIN_PASSCODE || (process.env.NODE_ENV === 'production' ? '' : 'das@123'))
+    : '',
   surprisePasscode: "forever",
   socials: {
     creatorPhone: "+91 98326 95291",

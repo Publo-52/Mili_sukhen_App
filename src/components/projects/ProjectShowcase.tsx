@@ -141,7 +141,6 @@ export const ProjectShowcase: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': APP_CONFIG.adminPasscode,
         },
         body: JSON.stringify({ project }),
       });
@@ -163,9 +162,6 @@ export const ProjectShowcase: React.FC = () => {
     try {
       await fetch(`/api/projects?id=${id}`, {
         method: 'DELETE',
-        headers: {
-          'x-admin-token': APP_CONFIG.adminPasscode,
-        },
       });
     } catch {}
 
