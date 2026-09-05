@@ -61,6 +61,40 @@ export async function POST(request: Request) {
             },
           ]);
         }
+        // Re-insert initial love notes
+        for (const n of INITIAL_LOVE_NOTES) {
+          await supabase.from('love_notes').upsert([
+            {
+              id: n.id,
+              title: n.title,
+              snippet: n.snippet,
+              full_message: n.fullMessage,
+              date: n.date,
+              mood_tag: n.moodTag || 'deep',
+              is_favorite: Boolean(n.isFavorite),
+              created_at: new Date().toISOString(),
+            },
+          ]);
+        }
+
+        // Re-insert initial memories
+        for (const m of INITIAL_MEMORIES) {
+          await supabase.from('memories').upsert([
+            {
+              id: m.id,
+              title: m.title,
+              type: m.type || 'photo',
+              url: m.url,
+              thumbnail_url: m.thumbnailUrl || m.url,
+              date: m.date || 'A special moment',
+              location: m.location || '',
+              description: m.description || '',
+              is_favorite: Boolean(m.isFavorite),
+              aspect_ratio: m.aspectRatio || 'landscape',
+              created_at: m.createdAt || new Date().toISOString(),
+            },
+          ]);
+        }
       } catch (err: any) {
         console.warn('Supabase restore notice:', err?.message);
       }
@@ -71,6 +105,8 @@ export async function POST(request: Request) {
       message: 'All original projects, Python art, love notes, and memories have been fully restored.',
       projects: INITIAL_PROJECTS,
       turtleCreations: INITIAL_TURTLE_CREATIONS,
+      loveNotes: INITIAL_LOVE_NOTES,
+      memories: INITIAL_MEMORIES,
     });
   } catch {
     return NextResponse.json({ error: 'Failed to restore default datasets' }, { status: 500 });

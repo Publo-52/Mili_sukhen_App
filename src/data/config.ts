@@ -36,8 +36,8 @@ export const AUTH_USERS = {
       "+91 97329 34032"
     ],
     defaultEmail: "mandalsharmili06@gmail.com",
-    passwords: [process.env.NEXT_PUBLIC_MILI_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'mili@123')],
-    defaultPassword: process.env.NEXT_PUBLIC_MILI_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'mili@123'),
+    passwords: [process.env.MILI_PASSWORD || process.env.NEXT_PUBLIC_MILI_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'mili@123')],
+    defaultPassword: process.env.MILI_PASSWORD || process.env.NEXT_PUBLIC_MILI_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'mili@123'),
     avatar: "M",
     greeting: "Welcome back, Mili! Your Sanctuary & Admin Studio are ready.",
     themeColor: "from-rose-500 to-pink-600",
@@ -57,8 +57,8 @@ export const AUTH_USERS = {
       "+91 98326 95291"
     ],
     defaultEmail: "dassukhen@gmail.com",
-    passwords: [process.env.NEXT_PUBLIC_SUKHEN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'das@123')],
-    defaultPassword: process.env.NEXT_PUBLIC_SUKHEN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'das@123'),
+    passwords: [process.env.SUKHEN_PASSWORD || process.env.NEXT_PUBLIC_SUKHEN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'das@123')],
+    defaultPassword: process.env.SUKHEN_PASSWORD || process.env.NEXT_PUBLIC_SUKHEN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'das@123'),
     avatar: "S",
     greeting: "Welcome back, Sukhen! Creator Studio & Admin active.",
     themeColor: "from-purple-600 to-indigo-600",
@@ -68,7 +68,7 @@ export const AUTH_USERS = {
 
 export const AUTH_CONFIG = {
   /** Default fallback password */
-  password: process.env.NEXT_PUBLIC_MILI_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'mili@123'),
+  password: process.env.MILI_PASSWORD || process.env.NEXT_PUBLIC_MILI_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'mili@123'),
   /** Maximum simultaneous device logins allowed (strictly 3) */
   maxDevices: 3,
   /** Session expiry — 30 days in milliseconds */

@@ -274,14 +274,23 @@ export default function AdminPage() {
     };
   }, [isAuthenticated, loadSessions]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode === APP_CONFIG.adminPasscode) {
-      setIsAuthenticated(true);
-      setAdminLoggedIn(true);
-      setLoginError(false);
-      loadData();
-    } else {
+    try {
+      const res = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode }),
+      });
+      if (res.ok) {
+        setIsAuthenticated(true);
+        setAdminLoggedIn(true);
+        setLoginError(false);
+        loadData();
+      } else {
+        setLoginError(true);
+      }
+    } catch {
       setLoginError(true);
     }
   };
