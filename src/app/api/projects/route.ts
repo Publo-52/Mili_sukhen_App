@@ -3,6 +3,7 @@ import { INITIAL_PROJECTS } from '@/data/projects';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { markProjectDeletedOnServer, isProjectDeletedOnServer } from '@/lib/server-deleted-tracker';
+import { sanitizeText, isSafeExternalUrl } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -81,27 +82,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields (title, url)' }, { status: 400 });
     }
 
+    const cleanTitle = sanitizeText(project.title, 200);
+    const cleanSlug = sanitizeText(project.slug, 200) || `proj-${Date.now()}`;
+    const cleanDesc = sanitizeText(project.description, 1000);
+    const cleanDetailedStory = sanitizeText(project.detailedStory, 10000);
+    const cleanCategory = sanitizeText(project.category, 50) || 'Websites';
+    const cleanUrl = sanitizeText(project.url, 1000);
+    const cleanGithubUrl = project.githubUrl ? sanitizeText(project.githubUrl, 1000) : null;
+    const cleanThumbnail = project.thumbnail ? sanitizeText(project.thumbnail, 1000) : null;
+    const cleanTech = Array.isArray(project.technologies)
+      ? project.technologies.map((t: any) => sanitizeText(String(t), 50)).filter(Boolean)
+      : ['React', 'Next.js', 'Tailwind CSS'];
+
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.from('projects').upsert([
         {
-          id: project.id,
-          title: project.title,
-          slug: project.slug,
-          description: project.description,
-          detailed_story: project.detailedStory,
-          category: project.category,
-          url: project.url,
-          github_url: project.githubUrl,
-          thumbnail: project.thumbnail,
-          technologies: project.technologies,
-          featured: project.featured,
-          order_index: project.order || 1,
-          theme_gradient: project.themeGradient || null,
-          theme_glow: project.themeGlow || null,
-          theme_accent: project.themeAccent || null,
-          theme_badge: project.themeBadge || null,
-          theme_border: project.themeBorder || null,
-          theme_text_accent: project.themeTextAccent || null,
+          id: sanitizeText(project.id, 64) || `proj-${Date.now()}`,
+          title: cleanTitle,
+          slug: cleanSlug,
+          description: cleanDesc,
+          detailed_story: cleanDetailedStory,
+          category: cleanCategory,
+          url: cleanUrl,
+          github_url: cleanGithubUrl,
+          thumbnail: cleanThumbnail,
+          technologies: cleanTech,
+          featured: Boolean(project.featured),
+          order_index: typeof project.order === 'number' ? project.order : 1,
+          theme_gradient: project.themeGradient ? sanitizeText(project.themeGradient, 100) : null,
+          theme_glow: project.themeGlow ? sanitizeText(project.themeGlow, 100) : null,
+          theme_accent: project.themeAccent ? sanitizeText(project.themeAccent, 50) : null,
+          theme_badge: project.themeBadge ? sanitizeText(project.themeBadge, 100) : null,
+          theme_border: project.themeBorder ? sanitizeText(project.themeBorder, 100) : null,
+          theme_text_accent: project.themeTextAccent ? sanitizeText(project.themeTextAccent, 100) : null,
           created_at: project.createdAt || new Date().toISOString(),
         },
       ]);

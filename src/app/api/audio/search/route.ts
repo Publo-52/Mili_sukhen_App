@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { checkRateLimit, getClientIp, sanitizeText } from '@/lib/security';
 
 // Route Handlers do not support next.revalidate — removed (Issue #13).
 // Cache is handled explicitly below via Supabase persistent cache + in-process fallback.
@@ -86,21 +87,24 @@ async function searchWithInvidious(searchQuery: string): Promise<string | null> 
 }
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rateCheck = await checkRateLimit(`audio_search_${ip}`, 30, 60 * 1000);
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many search requests. Please slow down.' }, { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q') || '';
   const title = searchParams.get('title') || '';
   const artist = searchParams.get('artist') || '';
 
-  // ── Query validation ────────────────────────────────────────────────────────
-  const rawQuery = (q || `${title} ${artist}`).trim();
+  // ── Query sanitization & validation ─────────────────────────────────────────
+  const rawQuery = sanitizeText((q || `${title} ${artist}`), 200);
   if (!rawQuery) {
     return NextResponse.json(
       { error: 'Query parameter required. Use ?q=song+name or ?title=...&artist=...' },
       { status: 400 }
     );
-  }
-  if (rawQuery.length > 200) {
-    return NextResponse.json({ error: 'Query too long. Maximum 200 characters.' }, { status: 400 });
   }
 
   const cacheKey = normalizeCacheKey(rawQuery);

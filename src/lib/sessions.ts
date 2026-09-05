@@ -14,6 +14,7 @@
 import crypto from 'crypto';
 import { AUTH_CONFIG } from '@/data/config';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { timingSafeCompare } from '@/lib/security';
 
 export interface DeviceSession {
   id: string;            // Signed session token (primary key)
@@ -92,17 +93,18 @@ function decodeSessionToken(token: string): DeviceSession | null {
     const raw = token.slice(5);
     const parts = raw.split('.');
 
-    let b64 = raw;
-
-    if (parts.length === 2) {
-      const [payloadB64, signature] = parts;
-      const expectedSig = createHmacSignature(payloadB64);
-      if (signature !== expectedSig) {
-        console.warn('[Security Alert] Tampered or invalid session signature detected!');
-        return null;
-      }
-      b64 = payloadB64;
+    // Enforce strict HMAC signed token structure
+    if (parts.length !== 2) {
+      return null;
     }
+
+    const [payloadB64, signature] = parts;
+    const expectedSig = createHmacSignature(payloadB64);
+    if (!timingSafeCompare(signature, expectedSig)) {
+      console.warn('[Security Alert] Tampered or invalid session signature detected!');
+      return null;
+    }
+    const b64 = payloadB64;
 
     const json = Buffer.from(b64, 'base64url').toString('utf-8');
     const p = JSON.parse(json);

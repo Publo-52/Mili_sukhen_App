@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSession } from '@/lib/sessions';
 import { AUTH_USERS, AUTH_CONFIG } from '@/data/config';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { timingSafeCompare } from '@/lib/security';
 
 // ── Lightweight in-memory fallback (local dev / Supabase unavailable) ─────────
 interface InMemoryRecord {
@@ -194,8 +195,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password (exact passcode match)
-    const isPasswordValid = candidateUser.passwords.includes(cleanPass);
+    // Verify password (constant-time cryptographic match to prevent timing attacks)
+    const isPasswordValid = candidateUser.passwords.some((p) => p && timingSafeCompare(cleanPass, p));
 
     if (!isPasswordValid) {
       await recordFailedAttempt(ip, cleanEmail);

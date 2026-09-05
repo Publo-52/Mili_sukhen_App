@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
+import { checkRateLimit, recordFailedAttempt, getClientIp, sanitizeText } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const rateCheck = await checkRateLimit(`cloudinary_sign_${ip}`, 20, 60 * 1000);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 });
+    }
+
     if (!await isAuthorizedAdmin(request)) {
       return NextResponse.json(
         { error: 'Unauthorized. Only logged-in administrators can generate upload signatures.' },
@@ -25,7 +32,7 @@ export async function POST(request: NextRequest) {
       body = {};
     }
 
-    const folder = body.folder || 'mili_universe_memories';
+    const folder = sanitizeText(body.folder || 'mili_universe_memories', 100).replace(/[^a-zA-Z0-9_\-\/]/g, '') || 'mili_universe_memories';
 
     if (!cloudName) {
       return NextResponse.json(

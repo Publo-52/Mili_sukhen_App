@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { MemoryItem } from '@/types';
 import { markMemoryDeletedOnServer, isMemoryDeletedOnServer } from '@/lib/server-deleted-tracker';
+import { sanitizeText } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -88,20 +89,45 @@ export async function POST(request: Request) {
       );
     }
 
+    const cleanTitle = sanitizeText(memory.title, 200);
+    const cleanDesc = sanitizeText(memory.description, 2000);
+    const cleanDate = sanitizeText(memory.date, 50) || 'A special moment';
+    const cleanLocation = sanitizeText(memory.location, 100);
+    const cleanUrl = sanitizeText(memory.url, 1000);
+    const cleanThumbnail = sanitizeText(memory.thumbnailUrl || memory.url, 1000);
+    const cleanType = memory.type === 'video' ? 'video' : 'photo';
+    const rawAspect = sanitizeText(memory.aspectRatio || 'landscape', 20);
+    const cleanAspect: 'portrait' | 'landscape' | 'square' =
+      rawAspect === 'portrait' || rawAspect === 'square' ? rawAspect : 'landscape';
+
+    const cleanMemory: MemoryItem = {
+      id: sanitizeText(memory.id, 64) || `mem-${Date.now()}`,
+      title: cleanTitle,
+      type: cleanType,
+      url: cleanUrl,
+      thumbnailUrl: cleanThumbnail,
+      date: cleanDate,
+      location: cleanLocation,
+      description: cleanDesc,
+      isFavorite: Boolean(memory.isFavorite),
+      aspectRatio: cleanAspect,
+      createdAt: memory.createdAt || new Date().toISOString(),
+    };
+
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.from('memories').upsert([
         {
-          id: memory.id,
-          title: memory.title,
-          type: memory.type || 'photo',
-          url: memory.url,
-          thumbnail_url: memory.thumbnailUrl || memory.url,
-          date: memory.date || 'A special moment',
-          location: memory.location || '',
-          description: memory.description || '',
-          is_favorite: Boolean(memory.isFavorite),
-          aspect_ratio: memory.aspectRatio || 'landscape',
-          created_at: memory.createdAt || new Date().toISOString(),
+          id: cleanMemory.id,
+          title: cleanMemory.title,
+          type: cleanMemory.type,
+          url: cleanMemory.url,
+          thumbnail_url: cleanMemory.thumbnailUrl,
+          date: cleanMemory.date,
+          location: cleanMemory.location,
+          description: cleanMemory.description,
+          is_favorite: cleanMemory.isFavorite,
+          aspect_ratio: cleanMemory.aspectRatio,
+          created_at: cleanMemory.createdAt,
         },
       ]);
 
@@ -110,7 +136,7 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, memory });
+    return NextResponse.json({ success: true, memory: cleanMemory });
   } catch {
     return NextResponse.json(
       { error: 'Failed to save memory' },

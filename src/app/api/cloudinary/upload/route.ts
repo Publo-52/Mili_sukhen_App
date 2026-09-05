@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
+import { checkRateLimit, getClientIp, sanitizeText } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const rateCheck = await checkRateLimit(`cloudinary_upload_${ip}`, 15, 60 * 1000);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: 'Too many upload attempts. Please wait a moment.' }, { status: 429 });
+    }
+
     if (!await isAuthorizedAdmin(request)) {
       return NextResponse.json(
         { error: 'Unauthorized. Only logged-in administrators can upload media.' },
@@ -20,8 +27,10 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const resourceType = (formData.get('resourceType') as string) || 'auto';
-    const folder = (formData.get('folder') as string) || 'mili_universe_memories';
+    const rawResourceType = (formData.get('resourceType') as string) || 'auto';
+    const resourceType = rawResourceType === 'video' ? 'video' : rawResourceType === 'image' ? 'image' : 'auto';
+    const rawFolder = (formData.get('folder') as string) || 'mili_universe_memories';
+    const folder = sanitizeText(rawFolder, 100).replace(/[^a-zA-Z0-9_\-\/]/g, '') || 'mili_universe_memories';
 
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });

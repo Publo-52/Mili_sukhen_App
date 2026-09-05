@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { TurtleCreation } from '@/types';
 import { markTurtleDeletedOnServer, isTurtleDeletedOnServer } from '@/lib/server-deleted-tracker';
+import { sanitizeText } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -81,21 +82,32 @@ export async function POST(request: Request) {
       );
     }
 
+    const cleanTitle = sanitizeText(creation.title, 200);
+    const cleanSlug = sanitizeText(creation.slug, 200) || `turtle-${Date.now()}`;
+    const cleanDesc = sanitizeText(creation.description, 1000);
+    const cleanInspiration = sanitizeText(creation.inspiration, 2000);
+    const cleanCategory = sanitizeText(creation.category, 50) || 'Mathematical Geometry';
+    const cleanScript = sanitizeText(creation.pythonScript, 50000);
+    const cleanImage = creation.artworkImage ? sanitizeText(creation.artworkImage, 1000) : null;
+    const cleanTags = Array.isArray(creation.tags)
+      ? creation.tags.map((t: any) => sanitizeText(String(t), 50)).filter(Boolean)
+      : ['Python Turtle', 'Generative Art'];
+
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.from('turtle_creations').upsert([
         {
-          id: creation.id,
-          title: creation.title,
-          slug: creation.slug,
-          description: creation.description,
-          artwork_image: creation.artworkImage,
-          python_script: creation.pythonScript,
+          id: sanitizeText(creation.id, 64) || `turtle-${Date.now()}`,
+          title: cleanTitle,
+          slug: cleanSlug,
+          description: cleanDesc,
+          artwork_image: cleanImage,
+          python_script: cleanScript,
           created_at: creation.createdAt || new Date().toISOString().split('T')[0],
-          category: creation.category || 'Mathematical',
-          inspiration: creation.inspiration || '',
-          tags: creation.tags || [],
+          category: cleanCategory,
+          inspiration: cleanInspiration,
+          tags: cleanTags,
           featured: Boolean(creation.featured),
-          canvas_drawing_type: creation.canvasDrawingType || 'mandala',
+          canvas_drawing_type: sanitizeText(creation.canvasDrawingType || 'mandala', 50),
         },
       ]);
 

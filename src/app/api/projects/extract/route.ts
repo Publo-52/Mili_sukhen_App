@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { Project, ProjectCategory } from '@/types';
+import { isSafeExternalUrl, sanitizeText } from '@/lib/security';
 
 // Theme presets for automatic styling
 const THEME_PRESETS = [
@@ -209,7 +210,7 @@ export async function POST(request: NextRequest) {
       validUrl = `https://${validUrl}`;
     }
 
-    if (!isSafeUrl(validUrl)) {
+    if (!isSafeExternalUrl(validUrl)) {
       return NextResponse.json({ error: 'Invalid or restricted URL host provided.' }, { status: 400 });
     }
 
@@ -231,26 +232,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract Title
-    const title = extractTitle(html, validUrl);
+    const title = sanitizeText(extractTitle(html, validUrl), 200) || 'Romantic Web Creation';
 
     // Extract Description
-    let description = extractMetaContent(html, 'description');
-    if (!description) {
-      description = `A personalized digital creation built with love and devotion for Mili. Deployed live on Vercel.`;
+    let rawDescription = extractMetaContent(html, 'description');
+    if (!rawDescription) {
+      rawDescription = `A personalized digital creation built with love and devotion for Mili. Deployed live on Vercel.`;
     }
+    const description = sanitizeText(rawDescription, 1000);
 
     // Generate emotional romantic story
     const detailedStory = `I created this project especially for my love, Sharmili. Every line of code, interactive animation, and detail was designed to make her feel cherished and remind her of our unforgettable journey together.`;
 
     // Detect / Generate Thumbnail
     let thumbnail = extractMetaContent(html, 'image');
-    if (!thumbnail) {
+    if (!thumbnail || !isSafeExternalUrl(thumbnail)) {
       // Use dynamic website preview service or fallback
-      thumbnail = `https://image.thum.io/get/width/1200/crop/675/maxAge/24/noanimate/${validUrl}`;
+      thumbnail = `https://image.thum.io/get/width/1200/crop/675/maxAge/24/noanimate/${encodeURIComponent(validUrl)}`;
     }
 
     // Detect Technologies & Category
-    const technologies = detectTechStack(html, validUrl);
+    const rawTech = detectTechStack(html, validUrl);
+    const technologies = rawTech.map((t) => sanitizeText(t, 50)).filter(Boolean);
     const category = detectCategory(title, description, validUrl);
 
     // Pick Theme Preset

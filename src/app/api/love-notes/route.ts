@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { LoveNote } from '@/types';
 import { markNoteDeletedOnServer, isNoteDeletedOnServer } from '@/lib/server-deleted-tracker';
+import { sanitizeText } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -76,17 +77,34 @@ export async function POST(request: Request) {
       );
     }
 
+    const cleanTitle = sanitizeText(note.title, 200);
+    const cleanSnippet = sanitizeText(note.snippet, 300) || cleanTitle.slice(0, 80);
+    const cleanFullMessage = sanitizeText(note.fullMessage, 10000);
+    const cleanDate = sanitizeText(note.date || '', 50) || new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    const cleanMoodTag = sanitizeText(note.moodTag || 'deep', 30);
+    const cleanId = sanitizeText(note.id, 64) || `note-${Date.now()}`;
+
+    const cleanNote: LoveNote = {
+      id: cleanId,
+      title: cleanTitle,
+      snippet: cleanSnippet,
+      fullMessage: cleanFullMessage,
+      date: cleanDate,
+      moodTag: cleanMoodTag,
+      isFavorite: Boolean(note.isFavorite),
+    };
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { error } = await supabase.from('love_notes').upsert([
           {
-            id: note.id,
-            title: note.title,
-            snippet: note.snippet || note.fullMessage.slice(0, 80),
-            full_message: note.fullMessage,
-            date: note.date || new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
-            mood_tag: note.moodTag || 'deep',
-            is_favorite: Boolean(note.isFavorite),
+            id: cleanNote.id,
+            title: cleanNote.title,
+            snippet: cleanNote.snippet,
+            full_message: cleanNote.fullMessage,
+            date: cleanNote.date,
+            mood_tag: cleanNote.moodTag,
+            is_favorite: cleanNote.isFavorite,
             created_at: new Date().toISOString(),
           },
         ]);
@@ -99,7 +117,7 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, note });
+    return NextResponse.json({ success: true, note: cleanNote });
   } catch {
     return NextResponse.json({ error: 'Failed to save love note' }, { status: 500 });
   }

@@ -5,6 +5,7 @@ import { APP_CONFIG } from '@/data/config';
 import { DirectMessage } from '@/types';
 
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
+import { sanitizeText } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -106,22 +107,16 @@ export async function POST(request: Request) {
       mood?: string;
     };
 
-    // ── Input validation ───────────────────────────────────────────────────
-    const cleanMessage = (message || '').trim();
+    // ── Input sanitization & validation ───────────────────────────────────
+    const cleanMessage = sanitizeText(message, 1000);
     if (!cleanMessage) {
       return NextResponse.json({ error: 'Message content cannot be empty.' }, { status: 400 });
     }
-    if (cleanMessage.length > 1000) {
-      return NextResponse.json(
-        { error: 'Message is too long. Maximum 1000 characters allowed.' },
-        { status: 400 }
-      );
-    }
 
-    const cleanSender = (sender || 'Mili').trim().slice(0, 50);
-    const cleanMood   = (mood   || '❤️').trim().slice(0, 10);
+    const cleanSender = sanitizeText(sender || 'Mili', 50) || 'Mili';
+    const cleanMood   = sanitizeText(mood || '❤️', 10) || '❤️';
 
-    const messageId = id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const messageId = id ? sanitizeText(id, 64) : `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const msgRecord: DirectMessage = {
       id: messageId,
       sender: cleanSender,
@@ -175,9 +170,9 @@ export async function PATCH(request: Request) {
       try {
         const updates: any = {};
         if (typeof read === 'boolean') updates.read = read;
-        if (typeof reply === 'string') updates.reply = reply;
+        if (typeof reply === 'string') updates.reply = sanitizeText(reply, 1000);
 
-        const { error } = await supabase.from('messages').update(updates).eq('id', id);
+        const { error } = await supabase.from('messages').update(updates).eq('id', sanitizeText(id, 64));
         if (error) {
           console.warn('Supabase update warning:', error.message);
         }

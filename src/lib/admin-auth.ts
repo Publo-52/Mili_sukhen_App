@@ -1,11 +1,12 @@
 import { getSessionFromRequest } from '@/lib/sessions';
+import { timingSafeCompare } from '@/lib/security';
 
 /**
  * Robust server-side admin authorization helper.
  *
  * Checks:
  * 1. Valid, cryptographically signed HttpOnly session cookie (userRole: 'sukhen' | 'mili')
- * 2. Optional server-only x-admin-token header compared against server-side ADMIN_PASSCODE
+ * 2. Optional server-only x-admin-token header compared against server-side ADMIN_PASSCODE using constant-time comparison
  */
 export async function isAuthorizedAdmin(request: Request): Promise<boolean> {
   try {
@@ -22,7 +23,7 @@ export async function isAuthorizedAdmin(request: Request): Promise<boolean> {
       process.env.NEXT_PUBLIC_ADMIN_PASSCODE ||
       (process.env.NODE_ENV === 'production' ? '' : 'das@123');
 
-    if (serverPasscode && adminToken && adminToken === serverPasscode) {
+    if (serverPasscode && adminToken && timingSafeCompare(adminToken, serverPasscode)) {
       return true;
     }
 
