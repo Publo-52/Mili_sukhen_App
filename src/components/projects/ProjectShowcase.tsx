@@ -10,8 +10,14 @@ import { ProjectCard } from './ProjectCard';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 
-import { ProjectPreviewModal } from './ProjectPreviewModal';
-import { ProjectEditorModal } from './ProjectEditorModal';
+const ProjectPreviewModal = dynamic(
+  () => import('./ProjectPreviewModal').then((m) => m.ProjectPreviewModal),
+  { ssr: false }
+);
+const ProjectEditorModal = dynamic(
+  () => import('./ProjectEditorModal').then((m) => m.ProjectEditorModal),
+  { ssr: false }
+);
 import { useModalHistory } from '@/lib/modal-history';
 
 const CATEGORIES: (ProjectCategory | 'All' | 'Favorites')[] = [

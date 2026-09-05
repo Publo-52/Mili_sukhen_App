@@ -32,8 +32,14 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 import { getOptimizedImageUrl, isMediaVideo } from '@/lib/utils';
 
-import { MemoryEditorModal } from './MemoryEditorModal';
-import { MediaViewerModal } from './MediaViewerModal';
+const MemoryEditorModal = dynamic(
+  () => import('./MemoryEditorModal').then((m) => m.MemoryEditorModal),
+  { ssr: false }
+);
+const MediaViewerModal = dynamic(
+  () => import('./MediaViewerModal').then((m) => m.MediaViewerModal),
+  { ssr: false }
+);
 import { useModalHistory } from '@/lib/modal-history';
 
 // Helper to guarantee high-res image poster for Cloudinary videos and images

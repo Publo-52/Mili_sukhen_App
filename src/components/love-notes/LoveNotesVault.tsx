@@ -34,8 +34,14 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 
-import { NoteReaderModal } from './NoteReaderModal';
-import { LoveNoteEditorModal } from './LoveNoteEditorModal';
+const NoteReaderModal = dynamic(
+  () => import('./NoteReaderModal').then((m) => m.NoteReaderModal),
+  { ssr: false }
+);
+const LoveNoteEditorModal = dynamic(
+  () => import('./LoveNoteEditorModal').then((m) => m.LoveNoteEditorModal),
+  { ssr: false }
+);
 import { useModalHistory } from '@/lib/modal-history';
 
 const MOOD_FILTERS = [

@@ -18,8 +18,14 @@ import { getOptimizedImageUrl } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 
-import { FullscreenLightbox } from './FullscreenLightbox';
-import { TurtleEditorModal } from './TurtleEditorModal';
+const FullscreenLightbox = dynamic(
+  () => import('./FullscreenLightbox').then((m) => m.FullscreenLightbox),
+  { ssr: false }
+);
+const TurtleEditorModal = dynamic(
+  () => import('./TurtleEditorModal').then((m) => m.TurtleEditorModal),
+  { ssr: false }
+);
 import { useModalHistory } from '@/lib/modal-history';
 
 import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
