@@ -3,7 +3,7 @@ import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { getSessionFromRequest } from '@/lib/sessions';
-import { dispatchNotification } from '@/lib/notifications';
+import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { TurtleCreation } from '@/types';
 import { markTurtleDeletedOnServer, isTurtleDeletedOnServer } from '@/lib/server-deleted-tracker';
 import { sanitizeText } from '@/lib/security';
@@ -118,28 +118,30 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── Instant Real-Time Broadcast & Web Push Notification ─────────────────
+    // ── WhatsApp Notification ──────────────────────────────────────────────
+    let whatsappResult = null;
     try {
       const session = await getSessionFromRequest(request);
       const senderRole: 'sukhen' | 'mili' = session?.userRole === 'mili' ? 'mili' : 'sukhen';
       const senderName = senderRole === 'mili' ? 'Mili' : 'Sukhen';
 
-      dispatchNotification({
+      whatsappResult = await sendWhatsAppNotification({
         type: 'turtle',
-        title: `🎨 ${senderName} crafted a new Python Art creation!`,
-        body: `${cleanTitle}: ${cleanDesc || 'Explore the generative turtle graphics!'}`,
+        title: cleanTitle,
+        body: cleanDesc,
         url: `/#turtle`,
         senderRole,
         senderName,
-        image: cleanImage || undefined,
-      }).catch((notifErr) => {
-        console.warn('[Notification Error turtle]:', notifErr);
       });
-    } catch {
-      // Non-blocking
+    } catch (waErr) {
+      console.warn('[WhatsApp Error turtle]:', waErr);
     }
 
-    return NextResponse.json({ success: true, creation });
+    return NextResponse.json({
+      success: true,
+      creation,
+      whatsapp: whatsappResult,
+    });
   } catch {
     return NextResponse.json(
       { error: 'Failed to save Python Turtle creation' },

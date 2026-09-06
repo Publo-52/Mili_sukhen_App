@@ -29,8 +29,6 @@ yarn-error.log*
 
 # sessions store & runtime caches
 .sessions.json
-.vapid_keys.json
-.push_subscriptions.json
 
 # vercel
 .vercel

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { getSessionFromRequest } from '@/lib/sessions';
-import { dispatchNotification } from '@/lib/notifications';
+import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { APP_CONFIG } from '@/data/config';
 import { DirectMessage } from '@/types';
 
@@ -148,28 +148,30 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── Instant Real-Time Broadcast & Web Push Notification ─────────────────
+    // ── WhatsApp Notification ──────────────────────────────────────────────
+    let whatsappResult = null;
     try {
       const session = await getSessionFromRequest(request);
       const isMili = session?.userRole === 'mili' || cleanSender.toLowerCase().includes('mili');
       const senderRole: 'sukhen' | 'mili' = isMili ? 'mili' : 'sukhen';
       const senderName = isMili ? 'Mili' : 'Sukhen';
 
-      dispatchNotification({
+      whatsappResult = await sendWhatsAppNotification({
         type: 'message',
-        title: `💬 ${senderName} sent you a message! ${cleanMood}`,
-        body: cleanMessage.length > 80 ? `${cleanMessage.slice(0, 80)}...` : cleanMessage,
+        title: cleanMessage,
         url: `/admin#messages`,
         senderRole,
         senderName,
-      }).catch((notifErr) => {
-        console.warn('[Notification Error messages]:', notifErr);
       });
-    } catch {
-      // Non-blocking
+    } catch (waErr) {
+      console.warn('[WhatsApp Error messages]:', waErr);
     }
 
-    return NextResponse.json({ success: true, message: msgRecord });
+    return NextResponse.json({
+      success: true,
+      message: msgRecord,
+      whatsapp: whatsappResult,
+    });
   } catch {
     return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
   }

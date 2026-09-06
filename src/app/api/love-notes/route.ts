@@ -3,7 +3,7 @@ import { INITIAL_LOVE_NOTES } from '@/data/loveNotes';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { getSessionFromRequest } from '@/lib/sessions';
-import { dispatchNotification } from '@/lib/notifications';
+import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { LoveNote } from '@/types';
 import { markNoteDeletedOnServer, isNoteDeletedOnServer } from '@/lib/server-deleted-tracker';
 import { sanitizeText } from '@/lib/security';
@@ -119,27 +119,30 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── Instant Real-Time Broadcast & Web Push Notification ─────────────────
+    // ── WhatsApp Notification ──────────────────────────────────────────────
+    let whatsappResult = null;
     try {
       const session = await getSessionFromRequest(request);
       const senderRole: 'sukhen' | 'mili' = session?.userRole === 'mili' ? 'mili' : 'sukhen';
       const senderName = senderRole === 'mili' ? 'Mili' : 'Sukhen';
 
-      dispatchNotification({
+      whatsappResult = await sendWhatsAppNotification({
         type: 'love_note',
-        title: `💌 ${senderName} wrote a new Love Note for you!`,
-        body: `${cleanNote.title}: "${cleanNote.snippet.slice(0, 100)}..."`,
+        title: cleanNote.title,
+        body: cleanNote.snippet,
         url: `/#love-notes`,
         senderRole,
         senderName,
-      }).catch((notifErr) => {
-        console.warn('[Notification Error love-notes]:', notifErr);
       });
-    } catch {
-      // Non-blocking
+    } catch (waErr) {
+      console.warn('[WhatsApp Error love-notes]:', waErr);
     }
 
-    return NextResponse.json({ success: true, note: cleanNote });
+    return NextResponse.json({
+      success: true,
+      note: cleanNote,
+      whatsapp: whatsappResult,
+    });
   } catch {
     return NextResponse.json({ error: 'Failed to save love note' }, { status: 500 });
   }

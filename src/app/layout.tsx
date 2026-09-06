@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, Cormorant_Garamond, Playfair_Display, Great_Vibes, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
-import { NotificationManager } from "@/components/notifications/NotificationManager";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -45,7 +44,6 @@ export const metadata: Metadata = {
   ),
   title: "Suksharmi ❤️ — A Digital Universe Made For You",
   description: "Suksharmi — A cinematic personal digital universe dedicated to Mili & Sukhen. A collection of every website, Python turtle artwork, memory, and love note.",
-  manifest: "/manifest.json",
   authors: [{ name: "Sukhen" }],
   keywords: ["Suksharmi", "Sukhen", "Mili", "Love App", "Portfolio", "Python Turtle", "Memories", "Romantic Web App"],
   openGraph: {
@@ -84,7 +82,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${outfit.variable} ${cormorant.variable} ${playfair.variable} ${greatVibes.variable} ${jetbrainsMono.variable}`}>
       <head>
-        <link rel="manifest" href="/manifest.json" />
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
@@ -93,7 +90,6 @@ export default function RootLayout({
       <body className="antialiased min-h-screen bg-[#06040a] text-slate-100 selection:bg-roseGlow-600 selection:text-white">
         <AuthProvider>
           {children}
-          <NotificationManager />
         </AuthProvider>
       </body>
     </html>

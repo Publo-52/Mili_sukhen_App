@@ -3,7 +3,7 @@ import { INITIAL_MEMORIES } from '@/data/memories';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { getSessionFromRequest } from '@/lib/sessions';
-import { dispatchNotification } from '@/lib/notifications';
+import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { MemoryItem } from '@/types';
 import { markMemoryDeletedOnServer, isMemoryDeletedOnServer } from '@/lib/server-deleted-tracker';
 import { sanitizeText } from '@/lib/security';
@@ -138,31 +138,31 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── Instant Real-Time Broadcast & Web Push Notification ─────────────────
+    // ── WhatsApp Notification ──────────────────────────────────────────────
+    let whatsappResult = null;
     try {
       const session = await getSessionFromRequest(request);
       const senderRole: 'sukhen' | 'mili' = session?.userRole === 'mili' ? 'mili' : 'sukhen';
       const senderName = senderRole === 'mili' ? 'Mili' : 'Sukhen';
       const isVideo = cleanMemory.type === 'video';
 
-      dispatchNotification({
+      whatsappResult = await sendWhatsAppNotification({
         type: isVideo ? 'video' : 'photo',
-        title: isVideo
-          ? `🎥 ${senderName} uploaded a new video!`
-          : `📸 ${senderName} uploaded a new memory photo!`,
-        body: `${cleanMemory.title}${cleanMemory.location ? ` • ${cleanMemory.location}` : ''}`,
+        title: cleanMemory.title,
+        body: cleanMemory.location ? `স্মৃতির স্থান: ${cleanMemory.location}` : cleanMemory.description,
         url: `/#memories`,
         senderRole,
         senderName,
-        image: cleanMemory.thumbnailUrl || cleanMemory.url,
-      }).catch((notifErr) => {
-        console.warn('[Notification Error memories]:', notifErr);
       });
-    } catch {
-      // Non-blocking for upload response
+    } catch (waErr) {
+      console.warn('[WhatsApp Error memories]:', waErr);
     }
 
-    return NextResponse.json({ success: true, memory: cleanMemory });
+    return NextResponse.json({
+      success: true,
+      memory: cleanMemory,
+      whatsapp: whatsappResult,
+    });
   } catch {
     return NextResponse.json(
       { error: 'Failed to save memory' },
