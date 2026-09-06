@@ -34,9 +34,14 @@ import {
   Video,
   ExternalLink,
   Sparkles,
+  MessageCircle,
+  Bot,
+  Send,
 } from 'lucide-react';
 import { Project, DirectMessage, ProjectCategory, TurtleCreation, LoveNote, MemoryItem } from '@/types';
 import { APP_CONFIG, AUTH_CONFIG } from '@/data/config';
+import { handleWhatsAppApiResponse } from '@/lib/whatsapp-client';
+import { WhatsAppNotificationToast } from '@/components/whatsapp/WhatsAppNotificationToast';
 import { ProjectEditorModal } from '@/components/projects/ProjectEditorModal';
 import { TurtleEditorModal } from '@/components/turtle/TurtleEditorModal';
 import { LoveNoteEditorModal } from '@/components/love-notes/LoveNoteEditorModal';
@@ -76,7 +81,15 @@ export default function AdminPage() {
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'projects' | 'turtle' | 'love-notes' | 'memories' | 'sessions'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'turtle' | 'love-notes' | 'memories' | 'sessions' | 'whatsapp'>('projects');
+  const [waTestingRole, setWaTestingRole] = useState<'mili' | 'sukhen' | null>(null);
+  const [waConfigStatus, setWaConfigStatus] = useState<{
+    sukhenPhone?: string;
+    miliPhone?: string;
+    miliCallMeBotConfigured?: boolean;
+    sukhenCallMeBotConfigured?: boolean;
+    webhookConfigured?: boolean;
+  } | null>(null);
 
   // Messages State
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -145,6 +158,16 @@ export default function AdminPage() {
     }
   }, []);
 
+  const loadWhatsAppConfig = useCallback(async () => {
+    try {
+      const res = await fetch('/api/whatsapp/test');
+      if (res.ok) {
+        const data = await res.json();
+        setWaConfigStatus(data.config);
+      }
+    } catch {}
+  }, []);
+
   const loadData = useCallback(async () => {
     // 1. Load Messages from API / Supabase
     try {
@@ -180,7 +203,7 @@ export default function AdminPage() {
       setProjects(getProjects());
     }
 
-    // 3. Load Turtle Creations from API / Supabase
+    // 3. Load Turtle Creactions from API / Supabase
     try {
       const turtleRes = await fetch('/api/turtle', { cache: 'no-store' });
       if (turtleRes.ok) {
@@ -233,7 +256,29 @@ export default function AdminPage() {
 
     // 6. Load Active Device Sessions
     loadSessions();
-  }, [loadSessions]);
+
+    // 7. Load WhatsApp configuration status
+    loadWhatsAppConfig();
+  }, [loadSessions, loadWhatsAppConfig]);
+
+  const handleTestWhatsApp = async (targetRole: 'mili' | 'sukhen') => {
+    setWaTestingRole(targetRole);
+    try {
+      const res = await fetch('/api/whatsapp/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetRole }),
+      });
+      const data = await res.json();
+      if (data.whatsapp) {
+        handleWhatsAppApiResponse(data);
+      }
+    } catch (err) {
+      console.warn('[WhatsApp Test Error]:', err);
+    } finally {
+      setWaTestingRole(null);
+    }
+  };
 
   useEffect(() => {
     if (isAdminLoggedIn() || isAdmin) {
@@ -326,13 +371,17 @@ export default function AdminPage() {
     setEditingProject(null);
 
     try {
-      await fetch('/api/projects', {
+      const res = await fetch('/api/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ project }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        handleWhatsAppApiResponse(data);
+      }
     } catch {}
 
     window.dispatchEvent(new Event('mili-projects-updated'));
@@ -365,13 +414,17 @@ export default function AdminPage() {
     setEditingTurtle(null);
 
     try {
-      await fetch('/api/turtle', {
+      const res = await fetch('/api/turtle', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ creation }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        handleWhatsAppApiResponse(data);
+      }
     } catch {}
 
     window.dispatchEvent(new Event('mili-turtle-updated'));
@@ -398,13 +451,17 @@ export default function AdminPage() {
     setEditingNote(null);
 
     try {
-      await fetch('/api/love-notes', {
+      const res = await fetch('/api/love-notes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ note }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        handleWhatsAppApiResponse(data);
+      }
     } catch {}
 
     window.dispatchEvent(new Event('mili-notes-updated'));
@@ -436,13 +493,17 @@ export default function AdminPage() {
     setEditingMemory(null);
 
     try {
-      await fetch('/api/memories', {
+      const res = await fetch('/api/memories', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ memory }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        handleWhatsAppApiResponse(data);
+      }
     } catch {}
 
     window.dispatchEvent(new Event('mili-memories-updated'));
@@ -688,6 +749,18 @@ export default function AdminPage() {
           >
             <Smartphone className="w-3.5 h-3.5" />
             <span>Devices ({deviceSessions.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('whatsapp')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-mono font-medium transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
+              activeTab === 'whatsapp'
+                ? 'bg-emerald-600 text-white shadow-[0_0_16px_rgba(16,185,129,0.35)] font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+            <span>WhatsApp Hub 🟢</span>
           </button>
         </div>
 
@@ -1234,6 +1307,204 @@ export default function AdminPage() {
             )}
           </div>
         )}
+
+        {/* Tab 6: WhatsApp Notification Hub & Live Diagnostics */}
+        {activeTab === 'whatsapp' && (
+          <div className="space-y-6">
+            {/* Header Banner */}
+            <div className="p-4 sm:p-6 rounded-2xl glass-card border border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-emerald-950/20 via-obsidian-900 to-teal-950/20">
+              <div>
+                <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <MessageCircle className="w-5 h-5 fill-emerald-400/20" />
+                  </div>
+                  <span>WhatsApp নোটিফিকেশন হাব ও লাইভ ডায়াগনস্টিকস</span>
+                </h2>
+                <p className="text-xs text-slate-300 font-mono mt-1">
+                  সুখেন ও মিলির সরাসরি হোয়াটসঅ্যাপ নোটিফিকেশন ও অটোমেটিক বটের পূর্ণ নিয়ন্ত্রণ
+                </p>
+              </div>
+
+              <button
+                onClick={loadWhatsAppConfig}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-card hover:border-emerald-500/40 text-xs font-mono text-emerald-300 transition-all cursor-pointer w-fit"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>স্ট্যাটাস রিফ্রেশ করুন</span>
+              </button>
+            </div>
+
+            {/* Target Numbers & Quick Test Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Card 1: Mili's WhatsApp Target */}
+              <div className="glass-card rounded-2xl p-5 border border-pink-500/20 space-y-4 hover:border-pink-500/40 transition-all shadow-sm">
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-full bg-roseGlow-500/20 border border-roseGlow-500/30 flex items-center justify-center text-lg">
+                      👑
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                        <span>মিলি (Sharmili Mandal)</span>
+                        <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
+                      </h3>
+                      <p className="text-xs font-mono text-emerald-400 font-semibold">
+                        +91 97329 34032
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-pink-500/10 text-pink-300 border border-pink-500/20">
+                    সুখেনের আপলোডের প্রাপক
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  সুখেন যখনই কোনো ছবি, ভিডিও, প্রজেক্ট বা গভীর ভালোবাসার নোট আপলোড করবে, তখন এই নম্বরে স্বয়ংক্রিয়ভাবে মিষ্টি বার্তা যাবে।
+                </p>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={() => handleTestWhatsApp('mili')}
+                    disabled={waTestingRole !== null}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs font-mono shadow-[0_0_16px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-95"
+                  >
+                    {waTestingRole === 'mili' ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-3.5 h-3.5" />
+                    )}
+                    <span>মিলির হোয়াটসঅ্যাপে টেস্ট মেসেজ পাঠান</span>
+                  </button>
+
+                  <a
+                    href="https://api.whatsapp.com/send?phone=919732934032"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-2.5 rounded-xl glass-card hover:border-emerald-500/40 text-slate-300 hover:text-emerald-300 transition-colors shrink-0"
+                    title="Open chat with Mili"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Card 2: Sukhen's WhatsApp Target */}
+              <div className="glass-card rounded-2xl p-5 border border-purple-500/20 space-y-4 hover:border-purple-500/40 transition-all shadow-sm">
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-lg">
+                      ✨
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                        <span>সুখেন (Sukhen Das)</span>
+                        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                      </h3>
+                      <p className="text-xs font-mono text-emerald-400 font-semibold">
+                        +91 98326 95291
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                    মিলির আপলোডের প্রাপক
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  মিলি যখনই কোনো নতুন চিঠি লিখবে, ডাইরেক্ট মেসেজ দেবে বা ছবি সেভ করবে, তখন সাথে সাথে সুখেনের এই হোয়াটসঅ্যাপে নোটিফিকেশন আসবে।
+                </p>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={() => handleTestWhatsApp('sukhen')}
+                    disabled={waTestingRole !== null}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs font-mono shadow-[0_0_16px_rgba(168,85,247,0.3)] transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-95"
+                  >
+                    {waTestingRole === 'sukhen' ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-3.5 h-3.5" />
+                    )}
+                    <span>সুখেনের হোয়াটসঅ্যাপে টেস্ট মেসেজ পাঠান</span>
+                  </button>
+
+                  <a
+                    href="https://api.whatsapp.com/send?phone=919832695291"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-2.5 rounded-xl glass-card hover:border-purple-500/40 text-slate-300 hover:text-purple-300 transition-colors shrink-0"
+                    title="Open chat with Sukhen"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Guide: Zero-Click 100% Background WhatsApp Bot (CallMeBot) */}
+            <div className="glass-card rounded-2xl p-5 sm:p-6 border border-white/10 space-y-4">
+              <div className="flex items-center gap-2.5 text-emerald-400 font-bold text-sm">
+                <Bot className="w-5 h-5" />
+                <span>১০০% জিরো-ক্লিক ব্যাকগ্রাউন্ড হোয়াটসঅ্যাপ বট সক্রিয় করার সহজ উপায় (CallMeBot)</span>
+              </div>
+
+              <p className="text-xs text-slate-300 leading-relaxed">
+                সাধারণত মেটা কোনো ওয়েবসাইটকে সরাসরি হোয়াটসঅ্যাপ মেসেজ পুশ করতে দেয় না। তবে একদম ফ্রি <strong className="text-white">CallMeBot API</strong> ব্যবহার করলে কোনো বাটন ক্লিক না করেই আপনার বা মিলির আপলোড করার মুহূর্তে অপরজনের ফোনে রিয়েল নোটিফিকেশন পৌঁছে যাবে!
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 font-mono text-xs flex items-center justify-center font-bold">
+                    ১
+                  </div>
+                  <h4 className="text-xs font-bold text-white">বটকে মেসেজ দিন</h4>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    হোয়াটসঅ্যাপে <code className="text-emerald-300 select-all font-mono">+34 644 44 20 62</code> নম্বরে লিখুন:
+                  </p>
+                  <code className="block bg-black/60 p-2 rounded text-[10px] text-emerald-400 font-mono select-all break-all">
+                    I allow callmebot to send me messages
+                  </code>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 font-mono text-xs flex items-center justify-center font-bold">
+                    ২
+                  </div>
+                  <h4 className="text-xs font-bold text-white">API কী গ্রহণ করুন</h4>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    বট সাথে সাথে হোয়াটসঅ্যাপে আপনাকে রিপ্লাই দেবে এবং একটি নির্দিষ্ট <strong className="text-white">API Key</strong> পাঠাবে (উদাঃ 123456)।
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 font-mono text-xs flex items-center justify-center font-bold">
+                    ৩
+                  </div>
+                  <h4 className="text-xs font-bold text-white">.env.local এ যুক্ত করুন</h4>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    আপনার <code className="text-purple-300">.env.local</code> ফাইলে কি-গুলো সেভ করে দিন:
+                  </p>
+                  <code className="block bg-black/60 p-2 rounded text-[10px] text-purple-300 font-mono select-all break-all">
+                    SUKHEN_CALLMEBOT_APIKEY=...<br />
+                    MILI_CALLMEBOT_APIKEY=...
+                  </code>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/20 flex items-center justify-between text-xs text-slate-300 flex-wrap gap-2">
+                <span className="flex items-center gap-1.5 text-emerald-300 font-mono text-[11px]">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>বর্তমানে ১-ক্লিক ইনস্ট্যান্ট রোমান্টিক ডিসপ্যাচার সক্রিয় রয়েছে</span>
+                </span>
+                <span className="text-[11px] font-mono text-slate-400">
+                  যে কোনো আপলোডে স্ক্রিনে ১-ট্যাপ WhatsApp বাটন ভেসে উঠবে
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Project Editor Modal */}
@@ -1279,6 +1550,9 @@ export default function AdminPage() {
         }}
         onSave={handleSaveMemoryModal}
       />
+
+      {/* Global WhatsApp Notification Toast */}
+      <WhatsAppNotificationToast />
     </motion.main>
   );
 }

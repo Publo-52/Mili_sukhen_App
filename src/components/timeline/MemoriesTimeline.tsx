@@ -32,6 +32,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 import { getOptimizedImageUrl, isMediaVideo } from '@/lib/utils';
 import { cachedFetch, invalidateApiCache } from '@/lib/api-cache';
+import { handleWhatsAppApiResponse } from '@/lib/whatsapp-client';
 
 const MemoryEditorModal = dynamic(
   () => import('./MemoryEditorModal').then((m) => m.MemoryEditorModal),
@@ -189,13 +190,17 @@ export const MemoriesTimeline: React.FC = () => {
     invalidateApiCache('/api/memories');
 
     try {
-      await fetch('/api/memories', {
+      const res = await fetch('/api/memories', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ memory }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        handleWhatsAppApiResponse(data);
+      }
     } catch {}
 
     window.dispatchEvent(new Event('mili-memories-updated'));

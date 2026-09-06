@@ -233,3 +233,13 @@ export async function sendWhatsAppNotification(
     error: sendError,
   };
 }
+
+export function getWhatsAppConfigStatus() {
+  return {
+    sukhenPhone: SUKHEN_WHATSAPP,
+    miliPhone: MILI_WHATSAPP,
+    miliCallMeBotConfigured: Boolean(process.env.MILI_CALLMEBOT_APIKEY),
+    sukhenCallMeBotConfigured: Boolean(process.env.SUKHEN_CALLMEBOT_APIKEY),
+    webhookConfigured: Boolean(process.env.WHATSAPP_WEBHOOK_URL),
+  };
+}

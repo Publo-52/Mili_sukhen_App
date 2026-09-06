@@ -34,6 +34,7 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 import { cachedFetch, invalidateApiCache } from '@/lib/api-cache';
+import { handleWhatsAppApiResponse } from '@/lib/whatsapp-client';
 
 const NoteReaderModal = dynamic(
   () => import('./NoteReaderModal').then((m) => m.NoteReaderModal),
@@ -257,13 +258,17 @@ export const LoveNotesVault: React.FC<LoveNotesVaultProps> = ({ isActive = true 
     invalidateApiCache('/api/love-notes');
 
     try {
-      await fetch('/api/love-notes', {
+      const res = await fetch('/api/love-notes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ note }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        handleWhatsAppApiResponse(data);
+      }
     } catch {}
 
     window.dispatchEvent(new Event('mili-notes-updated'));
