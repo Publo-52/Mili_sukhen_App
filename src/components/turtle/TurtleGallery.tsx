@@ -17,6 +17,7 @@ import { useAuth } from '@/lib/auth-context';
 import { getOptimizedImageUrl } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
+import { cachedFetch, invalidateApiCache } from '@/lib/api-cache';
 
 const FullscreenLightbox = dynamic(
   () => import('./FullscreenLightbox').then((m) => m.FullscreenLightbox),
@@ -51,18 +52,17 @@ export const TurtleGallery: React.FC = () => {
   useModalHistory(selectedCreation !== null, () => setSelectedCreation(null), 'turtle-lightbox');
   useModalHistory(isEditorOpen, () => setIsEditorOpen(false), 'turtle-editor');
 
-  const loadCreations = useCallback(async () => {
+  const loadCreations = useCallback(async (forceRefresh = false) => {
     try {
-      const res = await fetch('/api/turtle', { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.creations && Array.isArray(data.creations)) {
-          setCreations(data.creations);
-          try {
-            localStorage.setItem('mili_custom_turtle', JSON.stringify(data.creations));
-          } catch {}
-          return;
-        }
+      const data = await cachedFetch<{ creations?: TurtleCreation[] }>('/api/turtle', {
+        forceRefresh,
+      });
+      if (data?.creations && Array.isArray(data.creations)) {
+        setCreations(data.creations);
+        try {
+          localStorage.setItem('mili_custom_turtle', JSON.stringify(data.creations));
+        } catch {}
+        return;
       }
     } catch {}
     setCreations(getTurtleCreations());
@@ -81,7 +81,8 @@ export const TurtleGallery: React.FC = () => {
             'postgres_changes',
             { event: '*', schema: 'public', table: 'turtle_creations' },
             () => {
-              loadCreations();
+              invalidateApiCache('/api/turtle');
+              loadCreations(true);
             }
           )
           .subscribe();
@@ -90,13 +91,17 @@ export const TurtleGallery: React.FC = () => {
       }
     }
 
+    // Tab focus / wake listener (deduplicated by cachedFetch TTL)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         loadCreations();
       }
     };
     const handleFocus = () => loadCreations();
-    const handleSyncEvent = () => loadCreations();
+    const handleSyncEvent = () => {
+      invalidateApiCache('/api/turtle');
+      loadCreations(true);
+    };
 
     window.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
@@ -117,6 +122,7 @@ export const TurtleGallery: React.FC = () => {
     setCreations(updated);
     setIsEditorOpen(false);
     setEditingCreation(null);
+    invalidateApiCache('/api/turtle');
 
     // If currently viewing this creation in lightbox, update it
     if (selectedCreation && selectedCreation.id === creation.id) {
@@ -134,12 +140,13 @@ export const TurtleGallery: React.FC = () => {
     } catch {}
 
     window.dispatchEvent(new Event('mili-turtle-updated'));
-    await loadCreations();
+    await loadCreations(true);
   };
 
   const handleDeleteCreation = async (id: string) => {
     const updated = deleteTurtleCreation(id);
     setCreations(updated);
+    invalidateApiCache('/api/turtle');
 
     if (selectedCreation && selectedCreation.id === id) {
       setSelectedCreation(null);

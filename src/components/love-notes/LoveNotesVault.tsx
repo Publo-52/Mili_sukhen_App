@@ -33,6 +33,7 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
+import { cachedFetch, invalidateApiCache } from '@/lib/api-cache';
 
 const NoteReaderModal = dynamic(
   () => import('./NoteReaderModal').then((m) => m.NoteReaderModal),
@@ -90,18 +91,17 @@ export const LoveNotesVault: React.FC = () => {
   useModalHistory(isEditorOpen, () => setIsEditorOpen(false), 'note-editor');
 
   // Load notes from API / Supabase with local fallback
-  const loadNotes = useCallback(async () => {
+  const loadNotes = useCallback(async (forceRefresh = false) => {
     try {
-      const res = await fetch('/api/love-notes', { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.notes && Array.isArray(data.notes)) {
-          setAllNotes(data.notes);
-          try {
-            localStorage.setItem('mili_universe_love_notes', JSON.stringify(data.notes));
-          } catch {}
-          return;
-        }
+      const data = await cachedFetch<{ notes?: LoveNote[] }>('/api/love-notes', {
+        forceRefresh,
+      });
+      if (data?.notes && Array.isArray(data.notes)) {
+        setAllNotes(data.notes);
+        try {
+          localStorage.setItem('mili_universe_love_notes', JSON.stringify(data.notes));
+        } catch {}
+        return;
       }
     } catch {}
     setAllNotes(getLoveNotes());
@@ -121,7 +121,8 @@ export const LoveNotesVault: React.FC = () => {
             'postgres_changes',
             { event: '*', schema: 'public', table: 'love_notes' },
             () => {
-              loadNotes();
+              invalidateApiCache('/api/love-notes');
+              loadNotes(true);
             }
           )
           .subscribe();
@@ -130,13 +131,17 @@ export const LoveNotesVault: React.FC = () => {
       }
     }
 
+    // Tab focus / wake listener (deduplicated by cachedFetch TTL)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         loadNotes();
       }
     };
     const handleFocus = () => loadNotes();
-    const handleSyncEvent = () => loadNotes();
+    const handleSyncEvent = () => {
+      invalidateApiCache('/api/love-notes');
+      loadNotes(true);
+    };
 
     const handleHash = () => {
       if (window.location.hash === '#love-notes') {
@@ -243,6 +248,7 @@ export const LoveNotesVault: React.FC = () => {
     setAllNotes(updated);
     setIsEditorOpen(false);
     setEditingNote(null);
+    invalidateApiCache('/api/love-notes');
 
     try {
       await fetch('/api/love-notes', {
@@ -255,7 +261,7 @@ export const LoveNotesVault: React.FC = () => {
     } catch {}
 
     window.dispatchEvent(new Event('mili-notes-updated'));
-    await loadNotes();
+    await loadNotes(true);
   };
 
   const handleDeleteNote = async (id: string) => {
@@ -264,6 +270,7 @@ export const LoveNotesVault: React.FC = () => {
     if (currentIndex >= updated.length) {
       setCurrentIndex(Math.max(0, updated.length - 1));
     }
+    invalidateApiCache('/api/love-notes');
 
     try {
       await fetch(`/api/love-notes?id=${id}`, {

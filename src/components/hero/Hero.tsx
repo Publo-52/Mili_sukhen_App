@@ -10,6 +10,7 @@ import { MemoryItem, SectionType } from '@/types';
 import { getMemories } from '@/lib/storage';
 import { isMediaVideo, getOptimizedImageUrl } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { cachedFetch, invalidateApiCache } from '@/lib/api-cache';
 
 interface HeroProps {
   onOpenSurprise?: () => void;
@@ -56,17 +57,16 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
   });
 
   // Sync latest memories photos from API / Supabase
-  const syncMemoriesPhotos = useCallback(async () => {
+  const syncMemoriesPhotos = useCallback(async (forceRefresh = false) => {
     try {
-      const res = await fetch('/api/memories', { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.memories && Array.isArray(data.memories)) {
-          const photos = getPhotoListFromMemories(data.memories);
-          if (photos.length > 0) {
-            setAvatarImages(photos);
-            return;
-          }
+      const data = await cachedFetch<{ memories?: MemoryItem[] }>('/api/memories', {
+        forceRefresh,
+      });
+      if (data?.memories && Array.isArray(data.memories)) {
+        const photos = getPhotoListFromMemories(data.memories);
+        if (photos.length > 0) {
+          setAvatarImages(photos);
+          return;
         }
       }
     } catch {}
@@ -95,7 +95,8 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
             'postgres_changes',
             { event: '*', schema: 'public', table: 'memories' },
             () => {
-              syncMemoriesPhotos();
+              invalidateApiCache('/api/memories');
+              syncMemoriesPhotos(true);
             }
           )
           .subscribe();

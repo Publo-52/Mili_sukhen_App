@@ -70,8 +70,8 @@ export const config = {
      * Match all request paths except:
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico, logo.png, etc.
+     * - images, audio, favicon, icons, logo
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|images|audio|favicon.ico|favicon.png|logo.png|icon.png|apple-icon.png|manifest.webmanifest).*)',
   ],
 };

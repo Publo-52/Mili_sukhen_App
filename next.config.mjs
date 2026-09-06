@@ -12,6 +12,15 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
 
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      'framer-motion',
+      '@supabase/supabase-js',
+      'canvas-confetti',
+    ],
+  },
+
   // ── Webpack Cache Fix ────────────────────────────────────────────────────────
   webpack(config, { dev }) {
     if (dev) {
@@ -107,7 +116,34 @@ const nextConfig = {
         ],
       },
       {
-        source: '/(icon.png|apple-icon.png|manifest.webmanifest)',
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/audio/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/(logo.png|favicon.ico|favicon.png|icon.png|apple-icon.png)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/(manifest.webmanifest|robots.txt|sitemap.xml)',
         headers: [
           {
             key: 'Cache-Control',

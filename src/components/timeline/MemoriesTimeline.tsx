@@ -31,6 +31,7 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 import { getOptimizedImageUrl, isMediaVideo } from '@/lib/utils';
+import { cachedFetch, invalidateApiCache } from '@/lib/api-cache';
 
 const MemoryEditorModal = dynamic(
   () => import('./MemoryEditorModal').then((m) => m.MemoryEditorModal),
@@ -98,19 +99,18 @@ export const MemoriesTimeline: React.FC = () => {
   useModalHistory(isEditorOpen, () => setIsEditorOpen(false), 'memory-editor');
 
   // Load Memories from API / Supabase with local fallback
-  const loadMemories = useCallback(async () => {
+  const loadMemories = useCallback(async (forceRefresh = false) => {
     try {
-      const res = await fetch('/api/memories', { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.memories && Array.isArray(data.memories)) {
-          setMemories(data.memories);
-          try {
-            localStorage.setItem('mili_universe_memories', JSON.stringify(data.memories));
-            localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
-          } catch {}
-          return;
-        }
+      const data = await cachedFetch<{ memories?: MemoryItem[] }>('/api/memories', {
+        forceRefresh,
+      });
+      if (data?.memories && Array.isArray(data.memories)) {
+        setMemories(data.memories);
+        try {
+          localStorage.setItem('mili_universe_memories', JSON.stringify(data.memories));
+          localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
+        } catch {}
+        return;
       }
     } catch {}
     setMemories(getMemories());
@@ -130,7 +130,8 @@ export const MemoriesTimeline: React.FC = () => {
             'postgres_changes',
             { event: '*', schema: 'public', table: 'memories' },
             () => {
-              loadMemories();
+              invalidateApiCache('/api/memories');
+              loadMemories(true);
             }
           )
           .subscribe();
@@ -139,12 +140,15 @@ export const MemoriesTimeline: React.FC = () => {
       }
     }
 
-    // 2. Phone wake / tab focus listener
+    // 2. Phone wake / tab focus listener (deduplicated by cachedFetch TTL)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') loadMemories();
     };
     const handleFocus = () => loadMemories();
-    const handleSyncEvent = () => loadMemories();
+    const handleSyncEvent = () => {
+      invalidateApiCache('/api/memories');
+      loadMemories(true);
+    };
 
     // 3. Favorite state change listener across components
     const handleFavSync = () => {
@@ -182,6 +186,7 @@ export const MemoriesTimeline: React.FC = () => {
     setMemories(updated);
     setIsEditorOpen(false);
     setEditingMemory(null);
+    invalidateApiCache('/api/memories');
 
     try {
       await fetch('/api/memories', {
@@ -194,12 +199,13 @@ export const MemoriesTimeline: React.FC = () => {
     } catch {}
 
     window.dispatchEvent(new Event('mili-memories-updated'));
-    await loadMemories();
+    await loadMemories(true);
   };
 
   const handleDeleteMemory = async (id: string) => {
     const updated = deleteMemory(id);
     setMemories(updated);
+    invalidateApiCache('/api/memories');
 
     try {
       await fetch(`/api/memories?id=${id}`, {

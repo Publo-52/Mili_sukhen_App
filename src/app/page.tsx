@@ -7,13 +7,29 @@ import { MobileBottomNav } from '@/components/navigation/MobileBottomNav';
 import { SectionType } from '@/types';
 import { Hero } from '@/components/hero/Hero';
 import { Footer } from '@/components/footer/Footer';
-import { ProjectShowcase } from '@/components/projects/ProjectShowcase';
-import { TurtleGallery } from '@/components/turtle/TurtleGallery';
-import { MemoriesTimeline } from '@/components/timeline/MemoriesTimeline';
-import { LoveNotesVault } from '@/components/love-notes/LoveNotesVault';
+import { cachedFetch } from '@/lib/api-cache';
 
-import { CinematicIntro } from '@/components/hero/CinematicIntro';
-import { INTRO_COLLAGE_PHOTOS } from '@/data/introCollagePhotos';
+// Code-split heavy views dynamically with zero initial bundle bloat
+const ProjectShowcase = dynamic(
+  () => import('@/components/projects/ProjectShowcase').then((m) => m.ProjectShowcase),
+  { ssr: false }
+);
+const TurtleGallery = dynamic(
+  () => import('@/components/turtle/TurtleGallery').then((m) => m.TurtleGallery),
+  { ssr: false }
+);
+const MemoriesTimeline = dynamic(
+  () => import('@/components/timeline/MemoriesTimeline').then((m) => m.MemoriesTimeline),
+  { ssr: false }
+);
+const LoveNotesVault = dynamic(
+  () => import('@/components/love-notes/LoveNotesVault').then((m) => m.LoveNotesVault),
+  { ssr: false }
+);
+const CinematicIntro = dynamic(
+  () => import('@/components/hero/CinematicIntro').then((m) => m.CinematicIntro),
+  { ssr: false }
+);
 
 // Ambient Background Elements loaded asynchronously
 const ParticleCanvas = dynamic(
@@ -38,23 +54,21 @@ const warmUpAllDatasetsAndAssets = () => {
   if (typeof window === 'undefined') return;
 
   try {
-    // 1. Parallel API Cache Preload (warm up localStorage & memory in parallel)
+    // 1. Parallel API Cache Preload with deduplication
     const endpoints = ['/api/projects', '/api/turtle', '/api/love-notes', '/api/memories'];
     endpoints.forEach((url) => {
-      fetch(url, { cache: 'no-store' })
-        .then(async (res) => {
-          if (res.ok) {
-            const data = await res.json();
-            if (url === '/api/projects' && data.projects) {
-              localStorage.setItem('mili_universe_projects', JSON.stringify(data.projects));
-            } else if (url === '/api/turtle' && data.creations) {
-              localStorage.setItem('mili_custom_turtle', JSON.stringify(data.creations));
-            } else if (url === '/api/love-notes' && data.notes) {
-              localStorage.setItem('mili_universe_love_notes', JSON.stringify(data.notes));
-            } else if (url === '/api/memories' && data.memories) {
-              localStorage.setItem('mili_universe_memories', JSON.stringify(data.memories));
-              localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
-            }
+      cachedFetch(url)
+        .then((data: any) => {
+          if (!data) return;
+          if (url === '/api/projects' && data.projects) {
+            localStorage.setItem('mili_universe_projects', JSON.stringify(data.projects));
+          } else if (url === '/api/turtle' && data.creations) {
+            localStorage.setItem('mili_custom_turtle', JSON.stringify(data.creations));
+          } else if (url === '/api/love-notes' && data.notes) {
+            localStorage.setItem('mili_universe_love_notes', JSON.stringify(data.notes));
+          } else if (url === '/api/memories' && data.memories) {
+            localStorage.setItem('mili_universe_memories', JSON.stringify(data.memories));
+            localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
           }
         })
         .catch(() => {});
@@ -73,9 +87,16 @@ const warmUpAllDatasetsAndAssets = () => {
       } catch {}
     });
 
-    // 3. Defer background images till browser is idle (zero main-thread blocking)
+    // 3. Defer secondary images and prefetch view chunks till browser is idle (zero main-thread blocking)
     const scheduleIdle = typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback : (cb: any) => setTimeout(cb, 1200);
     scheduleIdle(() => {
+      // Background preload dynamic component bundles
+      import('@/components/projects/ProjectShowcase');
+      import('@/components/turtle/TurtleGallery');
+      import('@/components/timeline/MemoriesTimeline');
+      import('@/components/love-notes/LoveNotesVault');
+      import('@/components/hero/CinematicIntro');
+
       const secondaryImages = [
         '/images/hero/mili_hero_3.jpg',
         '/images/hero/mili_hero_4.png',

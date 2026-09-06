@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ProjectCard } from './ProjectCard';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
+import { cachedFetch, invalidateApiCache } from '@/lib/api-cache';
 
 const ProjectPreviewModal = dynamic(
   () => import('./ProjectPreviewModal').then((m) => m.ProjectPreviewModal),
@@ -63,18 +64,17 @@ export const ProjectShowcase: React.FC = () => {
   useModalHistory(previewProject !== null, () => setPreviewProject(null), 'project-preview');
   useModalHistory(isEditorOpen, () => setIsEditorOpen(false), 'project-editor');
 
-  const loadProjects = useCallback(async () => {
+  const loadProjects = useCallback(async (forceRefresh = false) => {
     try {
-      const res = await fetch('/api/projects', { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.projects && Array.isArray(data.projects)) {
-          setProjects(data.projects);
-          try {
-            localStorage.setItem('mili_universe_projects', JSON.stringify(data.projects));
-          } catch {}
-          return;
-        }
+      const data = await cachedFetch<{ projects?: Project[] }>('/api/projects', {
+        forceRefresh,
+      });
+      if (data?.projects && Array.isArray(data.projects)) {
+        setProjects(data.projects);
+        try {
+          localStorage.setItem('mili_universe_projects', JSON.stringify(data.projects));
+        } catch {}
+        return;
       }
     } catch {}
     setProjects(getProjects());
@@ -94,7 +94,8 @@ export const ProjectShowcase: React.FC = () => {
             'postgres_changes',
             { event: '*', schema: 'public', table: 'projects' },
             () => {
-              loadProjects();
+              invalidateApiCache('/api/projects');
+              loadProjects(true);
             }
           )
           .subscribe();
@@ -103,14 +104,17 @@ export const ProjectShowcase: React.FC = () => {
       }
     }
 
-    // 2. Re-fetch whenever phone screen turns on or user switches back to tab
+    // 2. Re-fetch whenever phone screen turns on or user switches back to tab (deduplicated by cachedFetch TTL)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         loadProjects();
       }
     };
     const handleFocus = () => loadProjects();
-    const handleSyncEvent = () => loadProjects();
+    const handleSyncEvent = () => {
+      invalidateApiCache('/api/projects');
+      loadProjects(true);
+    };
 
     window.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
@@ -137,6 +141,7 @@ export const ProjectShowcase: React.FC = () => {
     setProjects(updated);
     setIsEditorOpen(false);
     setEditingProject(null);
+    invalidateApiCache('/api/projects');
 
     if (previewProject && previewProject.id === project.id) {
       setPreviewProject(project);
@@ -153,13 +158,14 @@ export const ProjectShowcase: React.FC = () => {
     } catch {}
 
     window.dispatchEvent(new Event('mili-projects-updated'));
-    await loadProjects();
+    await loadProjects(true);
   };
 
   // Admin Delete Project
   const handleDeleteProject = async (id: string) => {
     const updated = deleteProject(id);
     setProjects(updated);
+    invalidateApiCache('/api/projects');
 
     if (previewProject && previewProject.id === id) {
       setPreviewProject(null);
