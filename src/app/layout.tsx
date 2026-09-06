@@ -62,6 +62,11 @@ export const metadata: Metadata = {
     ],
     shortcut: '/favicon.ico',
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Suksharmi',
+  },
 };
 
 export const viewport: Viewport = {
