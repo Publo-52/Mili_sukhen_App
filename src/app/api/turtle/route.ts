@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
+import { getSessionFromRequest } from '@/lib/sessions';
+import { dispatchNotification } from '@/lib/notifications';
 import { TurtleCreation } from '@/types';
 import { markTurtleDeletedOnServer, isTurtleDeletedOnServer } from '@/lib/server-deleted-tracker';
 import { sanitizeText } from '@/lib/security';
@@ -114,6 +116,27 @@ export async function POST(request: Request) {
       if (error) {
         console.warn('Supabase upsert turtle warning:', error.message);
       }
+    }
+
+    // ── Instant Real-Time Broadcast & Web Push Notification ─────────────────
+    try {
+      const session = await getSessionFromRequest(request);
+      const senderRole: 'sukhen' | 'mili' = session?.userRole === 'mili' ? 'mili' : 'sukhen';
+      const senderName = senderRole === 'mili' ? 'Mili' : 'Sukhen';
+
+      dispatchNotification({
+        type: 'turtle',
+        title: `🎨 ${senderName} crafted a new Python Art creation!`,
+        body: `${cleanTitle}: ${cleanDesc || 'Explore the generative turtle graphics!'}`,
+        url: `/#turtle`,
+        senderRole,
+        senderName,
+        image: cleanImage || undefined,
+      }).catch((notifErr) => {
+        console.warn('[Notification Error turtle]:', notifErr);
+      });
+    } catch {
+      // Non-blocking
     }
 
     return NextResponse.json({ success: true, creation });

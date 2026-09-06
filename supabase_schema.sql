@@ -304,4 +304,18 @@ CREATE POLICY "Allow all operations on turtle_creations" ON public.turtle_creati
 CREATE POLICY "Allow all operations on love_notes" ON public.love_notes FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on memories" ON public.memories FOR ALL USING (true) WITH CHECK (true);
 
+-- 9. Push Subscriptions Table (Web Push notifications for offline / background alerts)
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
+    id TEXT PRIMARY KEY,
+    user_role TEXT NOT NULL DEFAULT 'mili', -- 'mili' or 'sukhen'
+    user_name TEXT NOT NULL DEFAULT 'Mili',
+    endpoint TEXT NOT NULL UNIQUE,
+    subscription JSONB NOT NULL,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
+ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all operations on push_subscriptions" ON public.push_subscriptions;
+CREATE POLICY "Allow all operations on push_subscriptions" ON public.push_subscriptions FOR ALL USING (true) WITH CHECK (true);

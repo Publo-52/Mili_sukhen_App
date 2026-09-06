@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { INITIAL_LOVE_NOTES } from '@/data/loveNotes';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
+import { getSessionFromRequest } from '@/lib/sessions';
+import { dispatchNotification } from '@/lib/notifications';
 import { LoveNote } from '@/types';
 import { markNoteDeletedOnServer, isNoteDeletedOnServer } from '@/lib/server-deleted-tracker';
 import { sanitizeText } from '@/lib/security';
@@ -115,6 +117,26 @@ export async function POST(request: Request) {
       } catch (err: any) {
         console.warn('Supabase error for love note:', err?.message);
       }
+    }
+
+    // ── Instant Real-Time Broadcast & Web Push Notification ─────────────────
+    try {
+      const session = await getSessionFromRequest(request);
+      const senderRole: 'sukhen' | 'mili' = session?.userRole === 'mili' ? 'mili' : 'sukhen';
+      const senderName = senderRole === 'mili' ? 'Mili' : 'Sukhen';
+
+      dispatchNotification({
+        type: 'love_note',
+        title: `💌 ${senderName} wrote a new Love Note for you!`,
+        body: `${cleanNote.title}: "${cleanNote.snippet.slice(0, 100)}..."`,
+        url: `/#love-notes`,
+        senderRole,
+        senderName,
+      }).catch((notifErr) => {
+        console.warn('[Notification Error love-notes]:', notifErr);
+      });
+    } catch {
+      // Non-blocking
     }
 
     return NextResponse.json({ success: true, note: cleanNote });

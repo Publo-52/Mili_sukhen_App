@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { INITIAL_MEMORIES } from '@/data/memories';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
+import { getSessionFromRequest } from '@/lib/sessions';
+import { dispatchNotification } from '@/lib/notifications';
 import { MemoryItem } from '@/types';
 import { markMemoryDeletedOnServer, isMemoryDeletedOnServer } from '@/lib/server-deleted-tracker';
 import { sanitizeText } from '@/lib/security';
@@ -134,6 +136,30 @@ export async function POST(request: Request) {
       if (error) {
         console.warn('Supabase upsert memory warning:', error.message);
       }
+    }
+
+    // ── Instant Real-Time Broadcast & Web Push Notification ─────────────────
+    try {
+      const session = await getSessionFromRequest(request);
+      const senderRole: 'sukhen' | 'mili' = session?.userRole === 'mili' ? 'mili' : 'sukhen';
+      const senderName = senderRole === 'mili' ? 'Mili' : 'Sukhen';
+      const isVideo = cleanMemory.type === 'video';
+
+      dispatchNotification({
+        type: isVideo ? 'video' : 'photo',
+        title: isVideo
+          ? `🎥 ${senderName} uploaded a new video!`
+          : `📸 ${senderName} uploaded a new memory photo!`,
+        body: `${cleanMemory.title}${cleanMemory.location ? ` • ${cleanMemory.location}` : ''}`,
+        url: `/#memories`,
+        senderRole,
+        senderName,
+        image: cleanMemory.thumbnailUrl || cleanMemory.url,
+      }).catch((notifErr) => {
+        console.warn('[Notification Error memories]:', notifErr);
+      });
+    } catch {
+      // Non-blocking for upload response
     }
 
     return NextResponse.json({ success: true, memory: cleanMemory });

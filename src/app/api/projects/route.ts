@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { INITIAL_PROJECTS } from '@/data/projects';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
+import { getSessionFromRequest } from '@/lib/sessions';
+import { dispatchNotification } from '@/lib/notifications';
 import { markProjectDeletedOnServer, isProjectDeletedOnServer } from '@/lib/server-deleted-tracker';
 import { sanitizeText, isSafeExternalUrl } from '@/lib/security';
 
@@ -122,6 +124,27 @@ export async function POST(request: Request) {
       if (error) {
         console.warn('Supabase upsert warning:', error.message);
       }
+    }
+
+    // ── Instant Real-Time Broadcast & Web Push Notification ─────────────────
+    try {
+      const session = await getSessionFromRequest(request);
+      const senderRole: 'sukhen' | 'mili' = session?.userRole === 'mili' ? 'mili' : 'sukhen';
+      const senderName = senderRole === 'mili' ? 'Mili' : 'Sukhen';
+
+      dispatchNotification({
+        type: 'project',
+        title: `🚀 ${senderName} launched a new project!`,
+        body: `${cleanTitle}: ${cleanDesc || 'Check out the new creation!'}`,
+        url: project.slug ? `/projects/${project.slug}` : `/#projects`,
+        senderRole,
+        senderName,
+        image: cleanThumbnail || undefined,
+      }).catch((notifErr) => {
+        console.warn('[Notification Error projects]:', notifErr);
+      });
+    } catch {
+      // Non-blocking
     }
 
     return NextResponse.json({ success: true, project });

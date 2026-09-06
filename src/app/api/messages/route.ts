@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { getSessionFromRequest } from '@/lib/sessions';
+import { dispatchNotification } from '@/lib/notifications';
 import { APP_CONFIG } from '@/data/config';
 import { DirectMessage } from '@/types';
 
@@ -145,6 +146,27 @@ export async function POST(request: Request) {
       } catch (err: any) {
         console.warn('Supabase messages error:', err?.message);
       }
+    }
+
+    // ── Instant Real-Time Broadcast & Web Push Notification ─────────────────
+    try {
+      const session = await getSessionFromRequest(request);
+      const isMili = session?.userRole === 'mili' || cleanSender.toLowerCase().includes('mili');
+      const senderRole: 'sukhen' | 'mili' = isMili ? 'mili' : 'sukhen';
+      const senderName = isMili ? 'Mili' : 'Sukhen';
+
+      dispatchNotification({
+        type: 'message',
+        title: `💬 ${senderName} sent you a message! ${cleanMood}`,
+        body: cleanMessage.length > 80 ? `${cleanMessage.slice(0, 80)}...` : cleanMessage,
+        url: `/admin#messages`,
+        senderRole,
+        senderName,
+      }).catch((notifErr) => {
+        console.warn('[Notification Error messages]:', notifErr);
+      });
+    } catch {
+      // Non-blocking
     }
 
     return NextResponse.json({ success: true, message: msgRecord });
