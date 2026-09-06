@@ -30,6 +30,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
   overflow-x: hidden;
   max-width: 100vw;
   width: 100%;
@@ -47,17 +48,9 @@ body {
   overscroll-behavior-y: auto;
 }
 
-/* 120fps Ultra-Smooth Scroll Engine & GPU Layer Isolation */
-html {
-  scroll-behavior: smooth;
-  text-rendering: optimizeSpeed;
-}
-
-/* Fast Rendering & Virtual Containment for Infinite / Long Lists */
+/* Smooth Rendering & Visual Stability for Masonry / Long Lists */
 .fast-scroll-item {
-  contain: layout style paint;
-  content-visibility: auto;
-  contain-intrinsic-size: 320px;
+  transform: translateZ(0);
 }
 
 /* Prevent iOS Safari from auto-zooming on input focus */
@@ -72,23 +65,20 @@ html {
   color: #ffffff;
 }
 
-/* Custom Cinematic Luxury Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
+/* Completely Hide All Scrollbars (Zero Visual Bar, 100% Ultra-Smooth Native Scrolling) */
+html,
+body,
+* {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
 }
 
-::-webkit-scrollbar-track {
-  background: #06040a;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #231b33;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #f43f5e;
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
 }
 
 /* Safe Area Utilities for Mobile Notches & Navigation */
@@ -230,14 +220,11 @@ html {
 
 .animate-fade-in {
   animation: sectionEnter 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: opacity, transform;
 }
 
-/* Zero-Latency Instant Rendering Optimization */
+/* Zero-Latency Instant Rendering & Non-Flicker Layout */
 .instant-section {
-  contain: layout style;
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 600px;
+  contain: none;
 }
 
 /* Modal Open Isolation */

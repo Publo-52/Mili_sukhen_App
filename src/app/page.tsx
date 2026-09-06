@@ -299,7 +299,7 @@ export default function HomePage() {
       {/* Main Content Container with Instant 0ms Smooth Viewport */}
       <main className="relative z-10 min-h-[75vh]">
         {/* 1. Home Sanctuary View */}
-        <div className={isHome ? 'pt-18 sm:pt-22 pb-8 block animate-fade-in gpu-layer instant-section' : 'hidden'}>
+        <div className={isHome ? 'pt-18 sm:pt-22 pb-8 block animate-fade-in instant-section' : 'hidden'}>
           <Hero
             onOpenSurprise={() => setShowSurprise(true)}
             onSelectSection={handleSelectSection}
@@ -307,22 +307,22 @@ export default function HomePage() {
         </div>
 
         {/* 2. Projects Showcase View */}
-        <div className={activeSection === 'projects' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in gpu-layer instant-section' : 'hidden'}>
+        <div className={activeSection === 'projects' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
           <ProjectShowcase />
         </div>
 
         {/* 3. Python Turtle Art Gallery View */}
-        <div className={activeSection === 'turtle' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in gpu-layer instant-section' : 'hidden'}>
+        <div className={activeSection === 'turtle' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
           <TurtleGallery />
         </div>
 
         {/* 4. Memories Timeline View */}
-        <div className={activeSection === 'memories' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in gpu-layer instant-section' : 'hidden'}>
+        <div className={activeSection === 'memories' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
           <MemoriesTimeline />
         </div>
 
         {/* 5. Love Notes Vault View */}
-        <div className={activeSection === 'love-notes' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in gpu-layer instant-section' : 'hidden'}>
+        <div className={activeSection === 'love-notes' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
           <LoveNotesVault />
         </div>
       </main>

@@ -26,8 +26,6 @@ export const ParticleCanvas: React.FC = () => {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
     const isMobile = width < 768;
-    let isScrolling = false;
-    let scrollTimeout: NodeJS.Timeout;
 
     const handleResize = () => {
       if (!canvas) return;
@@ -35,17 +33,7 @@ export const ParticleCanvas: React.FC = () => {
       height = canvas.height = window.innerHeight;
     };
 
-    // Pause particle animation during user scrolling for butter-smooth 120fps scrolling
-    const handleScroll = () => {
-      isScrolling = true;
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        isScrolling = false;
-      }, 120);
-    };
-
     window.addEventListener('resize', handleResize, { passive: true });
-    window.addEventListener('scroll', handleScroll, { passive: true });
 
     const particles: Particle[] = [];
     const particleCount = isMobile ? 8 : 18;
@@ -69,8 +57,8 @@ export const ParticleCanvas: React.FC = () => {
     let lastTime = 0;
 
     const render = (time: number) => {
-      // 1. If user is scrolling or tab is hidden, skip frame calculation entirely (0% GPU workload during scroll!)
-      if (isScrolling || document.hidden) {
+      // If tab is hidden, skip frame calculation entirely
+      if (document.hidden) {
         animationFrameId = requestAnimationFrame(render);
         return;
       }
@@ -120,9 +108,7 @@ export const ParticleCanvas: React.FC = () => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('visibilitychange', handleVisibility);
-      clearTimeout(scrollTimeout);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
