@@ -214,10 +214,6 @@ export const MemoriesTimeline: React.FC = () => {
     <section id="memories" className="pt-1 pb-6 px-3 sm:px-6 lg:px-8 max-w-6xl mx-auto relative">
       {/* Section Header */}
       <div className="text-center space-y-2 mb-6 sm:mb-8">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-mono tracking-wider uppercase">
-          <Film className="w-3.5 h-3.5" />
-          <span>Cloudinary Photo & Video Vault</span>
-        </div>
         <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight">
           Moments & Memories of Us
         </h2>
