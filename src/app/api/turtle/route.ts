@@ -9,7 +9,7 @@ import { markTurtleDeletedOnServer, isTurtleDeletedOnServer } from '@/lib/server
 import { sanitizeText } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 10;
 
 export async function GET() {
   if (isSupabaseConfigured && supabase) {
@@ -41,8 +41,7 @@ export async function GET() {
           { creations: filtered },
           {
             headers: {
-              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-              Pragma: 'no-cache',
+              'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59',
             },
           }
         );
@@ -58,8 +57,7 @@ export async function GET() {
     { creations: baselineFiltered },
     {
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        Pragma: 'no-cache',
+        'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59',
       },
     }
   );

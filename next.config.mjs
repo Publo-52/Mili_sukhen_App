@@ -7,6 +7,7 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   swcMinify: true,
+  productionBrowserSourceMaps: false,
 
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
@@ -18,6 +19,8 @@ const nextConfig = {
       'framer-motion',
       '@supabase/supabase-js',
       'canvas-confetti',
+      'clsx',
+      'tailwind-merge',
     ],
   },
 

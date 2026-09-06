@@ -42,8 +42,6 @@ const config: Config = {
         sans: ["var(--font-outfit)", "system-ui", "sans-serif"],
         serif: ["var(--font-cormorant)", "Georgia", "serif"],
         stylish: ["var(--font-stylish)", "'Great Vibes'", "'Alex Brush'", "cursive"],
-        luxury: ["var(--font-luxury)", "'Cinzel Decorative'", "'Playfair Display'", "Georgia", "serif"],
-        display: ["var(--font-display)", "'Playfair Display'", "Georgia", "serif"],
         mono: ["var(--font-mono)", "monospace"],
       },
       boxShadow: {

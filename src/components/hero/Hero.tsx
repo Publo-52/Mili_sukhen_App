@@ -15,6 +15,7 @@ import { cachedFetch, invalidateApiCache } from '@/lib/api-cache';
 interface HeroProps {
   onOpenSurprise?: () => void;
   onSelectSection?: (section: SectionType) => void;
+  isActive?: boolean;
 }
 
 interface AvatarImage {
@@ -42,7 +43,7 @@ function getPhotoListFromMemories(items: MemoryItem[]): AvatarImage[] {
     }));
 }
 
-export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) => {
+export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection, isActive = true }) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [avatarIndex, setAvatarIndex] = useState(0);
   const [avatarImages, setAvatarImages] = useState<AvatarImage[]>(() => {
@@ -127,22 +128,25 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
     };
   }, [syncMemoriesPhotos]);
 
-  // Quote rotating interval (6 seconds)
+  // Quote rotating interval (6 seconds, paused when inactive or tab hidden)
   useEffect(() => {
+    if (!isActive) return;
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setQuoteIndex((prev) => (prev + 1) % ROMANTIC_QUOTES.length);
     }, 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isActive]);
 
-  // Avatar looping interval (strictly 5 seconds with ultra-smooth easing)
+  // Avatar looping interval (strictly 5 seconds, paused when inactive or tab hidden)
   useEffect(() => {
-    if (avatarImages.length <= 1) return;
+    if (!isActive || avatarImages.length <= 1) return;
     const avatarTimer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setAvatarIndex((prev) => (prev + 1) % avatarImages.length);
     }, 5000);
     return () => clearInterval(avatarTimer);
-  }, [avatarImages.length]);
+  }, [isActive, avatarImages.length]);
 
   const safeAvatarIndex = avatarImages.length > 0 ? avatarIndex % avatarImages.length : 0;
   const currentAvatar = avatarImages[safeAvatarIndex] || DEFAULT_HERO_AVATAR_IMAGES[0];

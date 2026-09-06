@@ -57,7 +57,11 @@ const MOOD_FILTERS = [
 
 import { INITIAL_LOVE_NOTES } from '@/data/loveNotes';
 
-export const LoveNotesVault: React.FC = () => {
+interface LoveNotesVaultProps {
+  isActive?: boolean;
+}
+
+export const LoveNotesVault: React.FC<LoveNotesVaultProps> = ({ isActive = true }) => {
   const [allNotes, setAllNotes] = useState<LoveNote[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -181,9 +185,10 @@ export const LoveNotesVault: React.FC = () => {
     }
   }, [filteredNotes.length, currentIndex]);
 
-  // Auto-rotation timer for featured view
+  // Auto-rotation timer for featured view (paused when inactive or tab hidden)
   useEffect(() => {
     if (
+      !isActive ||
       !isAutoPlaying ||
       viewMode !== 'featured' ||
       readingNote !== null ||
@@ -194,12 +199,13 @@ export const LoveNotesVault: React.FC = () => {
     }
 
     const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setDirection(1);
       setCurrentIndex((prev) => (prev + 1) % filteredNotes.length);
     }, 6000);
 
     return () => clearInterval(timer);
-  }, [isAutoPlaying, viewMode, readingNote, isEditorOpen, filteredNotes.length]);
+  }, [isActive, isAutoPlaying, viewMode, readingNote, isEditorOpen, filteredNotes.length]);
 
   const currentNote = filteredNotes[currentIndex] || allNotes[0] || {
     id: 'placeholder',

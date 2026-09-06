@@ -127,6 +127,42 @@ export default function HomePage() {
   const [activeSection, setActiveSection] = useState<SectionType>('home');
   const historyStackRef = React.useRef<SectionType[]>(['home']);
 
+  // Track mounted sections to defer heavy views until idle or requested
+  const [mountedSections, setMountedSections] = useState<Record<string, boolean>>({
+    home: true,
+  });
+
+  // Ensure newly selected active section is immediately mounted
+  useEffect(() => {
+    setMountedSections((prev) => (prev[activeSection] ? prev : { ...prev, [activeSection]: true }));
+  }, [activeSection]);
+
+  // Gentle idle warmup: mount remaining sections after initial paint without competing for CPU
+  useEffect(() => {
+    const scheduleIdle =
+      typeof window !== 'undefined' && typeof (window as any).requestIdleCallback === 'function'
+        ? (window as any).requestIdleCallback
+        : (cb: () => void) => setTimeout(cb, 1200);
+
+    const idleTimer = scheduleIdle(() => {
+      setMountedSections({
+        home: true,
+        projects: true,
+        turtle: true,
+        memories: true,
+        'love-notes': true,
+      });
+    });
+
+    return () => {
+      if (typeof window !== 'undefined' && typeof (window as any).cancelIdleCallback === 'function') {
+        try {
+          (window as any).cancelIdleCallback(idleTimer);
+        } catch {}
+      }
+    };
+  }, []);
+
   // Eager background preload & Sync with URL Hash on load
   useEffect(() => {
     // 1. Fire full-site eager warm-up immediately
@@ -324,28 +360,37 @@ export default function HomePage() {
           <Hero
             onOpenSurprise={() => setShowSurprise(true)}
             onSelectSection={handleSelectSection}
+            isActive={isHome}
           />
         </div>
 
         {/* 2. Projects Showcase View */}
-        <div className={activeSection === 'projects' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
-          <ProjectShowcase />
-        </div>
+        {mountedSections['projects'] && (
+          <div className={activeSection === 'projects' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
+            <ProjectShowcase />
+          </div>
+        )}
 
         {/* 3. Python Turtle Art Gallery View */}
-        <div className={activeSection === 'turtle' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
-          <TurtleGallery />
-        </div>
+        {mountedSections['turtle'] && (
+          <div className={activeSection === 'turtle' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
+            <TurtleGallery />
+          </div>
+        )}
 
         {/* 4. Memories Timeline View */}
-        <div className={activeSection === 'memories' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
-          <MemoriesTimeline />
-        </div>
+        {mountedSections['memories'] && (
+          <div className={activeSection === 'memories' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
+            <MemoriesTimeline />
+          </div>
+        )}
 
         {/* 5. Love Notes Vault View */}
-        <div className={activeSection === 'love-notes' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
-          <LoveNotesVault />
-        </div>
+        {mountedSections['love-notes'] && (
+          <div className={activeSection === 'love-notes' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
+            <LoveNotesVault isActive={activeSection === 'love-notes'} />
+          </div>
+        )}
       </main>
 
       {/* Footer: Visible on Home Section */}

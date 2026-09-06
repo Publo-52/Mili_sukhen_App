@@ -6,8 +6,6 @@
   --font-outfit: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-cormorant: 'Cormorant Garamond', Georgia, serif;
   --font-stylish: 'Great Vibes', 'Alex Brush', cursive;
-  --font-luxury: 'Cinzel Decorative', 'Playfair Display', Georgia, serif;
-  --font-display: 'Playfair Display', Georgia, serif;
   --font-mono: 'JetBrains Mono', monospace;
   --background: #06040a;
   --foreground: #f8fafc;
@@ -50,6 +48,8 @@ body {
 
 /* Smooth Rendering & Visual Stability for Masonry / Long Lists */
 .fast-scroll-item {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 400px;
   transform: translateZ(0);
 }
 
@@ -179,14 +179,6 @@ body,
 /* Stylish Brand Font Classes */
 .font-stylish {
   font-family: var(--font-stylish), 'Great Vibes', 'Alex Brush', cursive;
-}
-
-.font-luxury {
-  font-family: var(--font-luxury), 'Cinzel Decorative', 'Playfair Display', Georgia, serif;
-}
-
-.font-display {
-  font-family: var(--font-display), 'Playfair Display', Georgia, serif;
 }
 
 @keyframes shimmer {

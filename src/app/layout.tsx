@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Cormorant_Garamond, Playfair_Display, Great_Vibes, JetBrains_Mono } from "next/font/google";
+import { Outfit, Cormorant_Garamond, Great_Vibes, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 
@@ -11,15 +11,8 @@ const outfit = Outfit({
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "600"],
   variable: "--font-cormorant",
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  variable: "--font-display",
   display: "swap",
 });
 
@@ -80,7 +73,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${outfit.variable} ${cormorant.variable} ${playfair.variable} ${greatVibes.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`dark ${outfit.variable} ${cormorant.variable} ${greatVibes.variable} ${jetbrainsMono.variable}`}>
       <head>
         <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
