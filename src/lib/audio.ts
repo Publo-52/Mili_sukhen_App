@@ -212,10 +212,6 @@ declare global {
   }
 }
 
-// 1-second silent WAV base64 to keep mobile OS background audio session alive
-const SILENT_AUDIO_DATA_URI =
-  'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAP//';
-
 class RomanticAudioEngine {
   private isPlaying: boolean = false;
   private volume: number = 0.55;
@@ -229,11 +225,6 @@ class RomanticAudioEngine {
   private isYtReady: boolean = false;
   private isYtLoading: boolean = false;
   private pendingPlay: boolean = false;
-
-  // Background Audio & Lock Screen Support
-  private carrierAudio: HTMLAudioElement | null = null;
-  private wakeLock: any = null;
-  private userPaused: boolean = false;
 
   // Fallback Audio & Synth Elements
   private audioElement: HTMLAudioElement | null = null;
@@ -251,171 +242,10 @@ class RomanticAudioEngine {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      // Setup lifecycle & visibility handlers for background playback
-      this.initBackgroundHandlers();
-
       // Delay initialization slightly to let the DOM settle
       setTimeout(() => {
         this.initYouTubeEngine();
       }, 500);
-    }
-  }
-
-  // --- Background Playback & Visibility Lifecycle ---
-  private initBackgroundHandlers() {
-    if (typeof document === 'undefined' || typeof window === 'undefined') return;
-
-    // Keep playing when tab is hidden, phone is locked, or user switches apps
-    document.addEventListener('visibilitychange', () => {
-      if (this.isPlaying && !this.userPaused) {
-        this.startCarrierAudio();
-        this.updateMediaSession();
-        if (this.ytPlayer && this.isYtReady && typeof this.ytPlayer.playVideo === 'function') {
-          try {
-            this.ytPlayer.playVideo();
-          } catch {}
-        }
-      }
-    });
-
-    window.addEventListener('pagehide', () => {
-      if (this.isPlaying && !this.userPaused) {
-        this.updateMediaSession();
-      }
-    });
-  }
-
-  // --- Silent Carrier Audio (Keeps Mobile OS Audio Pipeline Awake in Background) ---
-  private initCarrierAudio() {
-    if (typeof window === 'undefined' || this.carrierAudio) return;
-    try {
-      this.carrierAudio = new Audio();
-      this.carrierAudio.src = SILENT_AUDIO_DATA_URI;
-      this.carrierAudio.loop = true;
-      this.carrierAudio.volume = 0.01;
-      this.carrierAudio.setAttribute('playsinline', 'true');
-      this.carrierAudio.setAttribute('webkit-playsinline', 'true');
-      
-      // Auto-restart carrier if interrupted by iOS or system focus changes
-      this.carrierAudio.addEventListener('ended', () => {
-        if (this.isPlaying && !this.userPaused) {
-          this.carrierAudio?.play().catch(() => {});
-        }
-      });
-      this.carrierAudio.addEventListener('pause', () => {
-        if (this.isPlaying && !this.userPaused) {
-          this.carrierAudio?.play().catch(() => {});
-        }
-      });
-    } catch (e) {
-      console.warn('Carrier audio init error:', e);
-    }
-  }
-
-  private startCarrierAudio() {
-    this.initCarrierAudio();
-    if (this.carrierAudio) {
-      this.carrierAudio.play().catch(() => {});
-    }
-  }
-
-  private stopCarrierAudio() {
-    if (this.carrierAudio) {
-      try {
-        this.carrierAudio.pause();
-      } catch {}
-    }
-  }
-
-  // --- WakeLock Screen API Support ---
-  private async requestWakeLock() {
-    if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
-      try {
-        if (!this.wakeLock) {
-          this.wakeLock = await (navigator as any).wakeLock.request('screen');
-          this.wakeLock.addEventListener('release', () => {
-            this.wakeLock = null;
-          });
-        }
-      } catch {}
-    }
-  }
-
-  private releaseWakeLock() {
-    if (this.wakeLock) {
-      try {
-        this.wakeLock.release();
-      } catch {}
-      this.wakeLock = null;
-    }
-  }
-
-  // --- Native Media Session API (Lock Screen & Notification Controls) ---
-  private updateMediaSession() {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
-
-    try {
-      const track = this.currentTrack;
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: track.title || 'Romantic Melody',
-        artist: track.artist || 'Suksharmi',
-        album: 'Mili & Sukhen Forever ❤️',
-        artwork: [
-          { src: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
-          { src: '/icon.png', sizes: '192x192', type: 'image/png' },
-          { src: '/logo.png', sizes: '512x512', type: 'image/png' },
-          { src: '/mili.jpg', sizes: '800x800', type: 'image/jpeg' },
-        ],
-      });
-
-      navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused';
-
-      const actionHandlers: [MediaSessionAction, MediaSessionActionHandler | null][] = [
-        ['play', () => this.play()],
-        ['pause', () => this.pause()],
-        ['previoustrack', () => this.prevTrack()],
-        ['nexttrack', () => this.nextTrack()],
-        ['stop', () => this.pause()],
-      ];
-
-      actionHandlers.forEach(([action, handler]) => {
-        try {
-          navigator.mediaSession.setActionHandler(action, handler);
-        } catch {}
-      });
-
-      // Scrubbing / Seeking support
-      try {
-        navigator.mediaSession.setActionHandler('seekto', (details) => {
-          if (details.seekTime !== undefined && this.ytPlayer && typeof this.ytPlayer.seekTo === 'function') {
-            try {
-              this.ytPlayer.seekTo(details.seekTime, true);
-            } catch {}
-          } else if (details.seekTime !== undefined && this.audioElement) {
-            this.audioElement.currentTime = details.seekTime;
-          }
-        });
-        navigator.mediaSession.setActionHandler('seekforward', (details) => {
-          const offset = details.seekOffset || 10;
-          if (this.ytPlayer && typeof this.ytPlayer.getCurrentTime === 'function') {
-            try {
-              const cur = this.ytPlayer.getCurrentTime();
-              this.ytPlayer.seekTo(cur + offset, true);
-            } catch {}
-          }
-        });
-        navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-          const offset = details.seekOffset || 10;
-          if (this.ytPlayer && typeof this.ytPlayer.getCurrentTime === 'function') {
-            try {
-              const cur = this.ytPlayer.getCurrentTime();
-              this.ytPlayer.seekTo(Math.max(0, cur - offset), true);
-            } catch {}
-          }
-        });
-      } catch {}
-    } catch (err) {
-      console.warn('Failed to update MediaSession:', err);
     }
   }
 
@@ -464,28 +294,20 @@ class RomanticAudioEngine {
         return;
       }
 
-      // 1. Create hidden iframe container with active layout footprint
+      // 1. Create hidden iframe container
       let container = document.getElementById('youtube-bg-audio-engine');
       if (!container) {
         container = document.createElement('div');
         container.id = 'youtube-bg-audio-engine';
         container.style.position = 'fixed';
-        container.style.width = '200px';
-        container.style.height = '200px';
-        container.style.bottom = '0px';
-        container.style.right = '0px';
-        container.style.opacity = '0.001';
+        container.style.width = '1px';
+        container.style.height = '1px';
+        container.style.top = '-9999px';
+        container.style.left = '-9999px';
+        container.style.opacity = '0';
         container.style.pointerEvents = 'none';
         container.style.zIndex = '-9999';
-        container.setAttribute('aria-hidden', 'true');
         document.body.appendChild(container);
-
-        if (!document.getElementById('yt-bg-engine-style')) {
-          const style = document.createElement('style');
-          style.id = 'yt-bg-engine-style';
-          style.textContent = '#youtube-bg-audio-engine, #youtube-bg-audio-engine * { pointer-events: none !important; user-select: none !important; }';
-          document.head.appendChild(style);
-        }
       }
 
       // 2. Load YouTube IFrame Script if not present
@@ -522,8 +344,8 @@ class RomanticAudioEngine {
     try {
       const videoId = this.currentTrack.youtubeId || '3-buUW3gmtU';
       this.ytPlayer = new window.YT.Player('youtube-bg-audio-engine', {
-        height: '200',
-        width: '200',
+        height: '1',
+        width: '1',
         videoId: videoId,
         playerVars: {
           autoplay: 0,
@@ -555,21 +377,9 @@ class RomanticAudioEngine {
             // 1: PLAYING, 2: PAUSED, 0: ENDED, 3: BUFFERING
             if (event.data === 1) {
               this.isPlaying = true;
-              this.startCarrierAudio();
-              this.updateMediaSession();
               this.notify();
             } else if (event.data === 2) {
-              // If YouTube paused because tab is hidden/backgrounded on mobile and user didn't explicitly pause, keep playing
-              if (!this.userPaused && this.isPlaying && typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-                try {
-                  event.target.playVideo();
-                } catch {}
-                return;
-              }
               this.isPlaying = false;
-              this.stopCarrierAudio();
-              this.releaseWakeLock();
-              this.updateMediaSession();
               this.notify();
             } else if (event.data === 0) {
               // Auto-play next track if playlist has multiple songs, else restart
@@ -580,8 +390,6 @@ class RomanticAudioEngine {
                   event.target.playVideo();
                 } catch {
                   this.isPlaying = false;
-                  this.stopCarrierAudio();
-                  this.updateMediaSession();
                   this.notify();
                 }
               }
@@ -600,12 +408,8 @@ class RomanticAudioEngine {
   }
 
   public async play() {
-    this.userPaused = false;
     this.initYouTubeEngine();
     this.isPlaying = true;
-    this.startCarrierAudio();
-    this.requestWakeLock();
-    this.updateMediaSession();
     this.notify();
 
     // If YouTube Player is ready, play video
@@ -631,7 +435,6 @@ class RomanticAudioEngine {
   }
 
   public pause() {
-    this.userPaused = true;
     this.pendingPlay = false;
     this.isPlaying = false;
 
@@ -645,10 +448,7 @@ class RomanticAudioEngine {
       this.audioElement.pause();
     }
 
-    this.stopCarrierAudio();
-    this.releaseWakeLock();
     this.stopSynth();
-    this.updateMediaSession();
     this.notify();
   }
 
@@ -662,7 +462,6 @@ class RomanticAudioEngine {
 
   public playTrackIndex(index: number) {
     if (!this.playlist || this.playlist.length === 0) return;
-    this.userPaused = false;
     this.currentTrackIndex = (index + this.playlist.length) % this.playlist.length;
     this.currentTrack = this.playlist[this.currentTrackIndex];
 
@@ -672,9 +471,6 @@ class RomanticAudioEngine {
     this.stopSynth();
 
     this.isPlaying = true;
-    this.startCarrierAudio();
-    this.requestWakeLock();
-    this.updateMediaSession();
     this.notify();
 
     if (this.currentTrack.type === 'youtube' && this.currentTrack.youtubeId) {
@@ -772,8 +568,6 @@ class RomanticAudioEngine {
 
     this.audioElement.src = url;
     if (this.isPlaying) {
-      this.startCarrierAudio();
-      this.updateMediaSession();
       this.audioElement
         .play()
         .then(() => {
