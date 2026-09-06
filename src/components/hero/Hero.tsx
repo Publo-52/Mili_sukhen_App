@@ -192,7 +192,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise, onSelectSection }) =
                   alt={currentAvatar.alt}
                   fill
                   sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, 176px"
-                  priority
+                  priority={safeAvatarIndex === 0}
                   unoptimized={currentAvatar.src.startsWith('http')}
                   className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
                 />

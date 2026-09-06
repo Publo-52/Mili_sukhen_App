@@ -53,8 +53,15 @@ export default async function ProjectDetailsPage({ params }: PageProps) {
         thumbnail: data.thumbnail,
         technologies: Array.isArray(data.technologies)
           ? data.technologies
-          : data.technologies
-          ? JSON.parse(data.technologies)
+          : typeof data.technologies === 'string'
+          ? (() => {
+              try {
+                const parsed = JSON.parse(data.technologies);
+                return Array.isArray(parsed) ? parsed : [parsed];
+              } catch {
+                return data.technologies.split(',').map((s: string) => s.trim()).filter(Boolean);
+              }
+            })()
           : ['React', 'Tailwind CSS'],
         featured: data.featured,
         order: data.order_index || 1,

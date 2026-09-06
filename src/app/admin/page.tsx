@@ -121,11 +121,12 @@ export default function AdminPage() {
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
 
   useEffect(() => {
+    if (!isAuthenticated || activeTab !== 'sessions') return;
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isAuthenticated, activeTab]);
 
   const loadSessions = useCallback(async () => {
     setSessionsLoading(true);
