@@ -3,7 +3,6 @@ import { INITIAL_MEMORIES } from '@/data/memories';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { getSessionFromRequest } from '@/lib/sessions';
-import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { MemoryItem } from '@/types';
 import { markMemoryDeletedOnServer, isMemoryDeletedOnServer } from '@/lib/server-deleted-tracker';
 import { sanitizeText } from '@/lib/security';
@@ -136,30 +135,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── WhatsApp Notification ──────────────────────────────────────────────
-    let whatsappResult = null;
-    try {
-      const session = await getSessionFromRequest(request);
-      const senderRole: 'sukhen' | 'mili' = session?.userRole === 'mili' ? 'mili' : 'sukhen';
-      const senderName = senderRole === 'mili' ? 'Mili' : 'Sukhen';
-      const isVideo = cleanMemory.type === 'video';
-
-      whatsappResult = await sendWhatsAppNotification({
-        type: isVideo ? 'video' : 'photo',
-        title: cleanMemory.title,
-        body: cleanMemory.location ? `স্মৃতির স্থান: ${cleanMemory.location}` : cleanMemory.description,
-        url: `/#memories`,
-        senderRole,
-        senderName,
-      });
-    } catch (waErr) {
-      console.warn('[WhatsApp Error memories]:', waErr);
-    }
-
     return NextResponse.json({
       success: true,
       memory: cleanMemory,
-      whatsapp: whatsappResult,
     });
   } catch {
     return NextResponse.json(

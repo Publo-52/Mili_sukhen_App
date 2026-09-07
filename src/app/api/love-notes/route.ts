@@ -3,7 +3,6 @@ import { INITIAL_LOVE_NOTES } from '@/data/loveNotes';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { getSessionFromRequest } from '@/lib/sessions';
-import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { LoveNote } from '@/types';
 import { markNoteDeletedOnServer, isNoteDeletedOnServer } from '@/lib/server-deleted-tracker';
 import { sanitizeText } from '@/lib/security';
@@ -117,29 +116,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── WhatsApp Notification ──────────────────────────────────────────────
-    let whatsappResult = null;
-    try {
-      const session = await getSessionFromRequest(request);
-      const senderRole: 'sukhen' | 'mili' = session?.userRole === 'mili' ? 'mili' : 'sukhen';
-      const senderName = senderRole === 'mili' ? 'Mili' : 'Sukhen';
-
-      whatsappResult = await sendWhatsAppNotification({
-        type: 'love_note',
-        title: cleanNote.title,
-        body: cleanNote.snippet,
-        url: `/#love-notes`,
-        senderRole,
-        senderName,
-      });
-    } catch (waErr) {
-      console.warn('[WhatsApp Error love-notes]:', waErr);
-    }
-
     return NextResponse.json({
       success: true,
       note: cleanNote,
-      whatsapp: whatsappResult,
     });
   } catch {
     return NextResponse.json({ error: 'Failed to save love note' }, { status: 500 });

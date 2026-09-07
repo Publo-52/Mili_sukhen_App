@@ -32,3 +32,20 @@ export async function isAuthorizedAdmin(request: Request): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Retrieves the active DeviceSession if the request belongs to an authorized admin (Sukhen or Mili).
+ */
+export async function getAuthorizedAdminSession(request: Request) {
+  try {
+    const session = await getSessionFromRequest(request);
+    if (session && (session.userRole === 'sukhen' || session.userRole === 'mili')) {
+      return session;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+

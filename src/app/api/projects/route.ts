@@ -3,7 +3,6 @@ import { INITIAL_PROJECTS } from '@/data/projects';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { getSessionFromRequest } from '@/lib/sessions';
-import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { markProjectDeletedOnServer, isProjectDeletedOnServer } from '@/lib/server-deleted-tracker';
 import { sanitizeText, isSafeExternalUrl } from '@/lib/security';
 
@@ -124,29 +123,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── WhatsApp Notification ──────────────────────────────────────────────
-    let whatsappResult = null;
-    try {
-      const session = await getSessionFromRequest(request);
-      const senderRole: 'sukhen' | 'mili' = session?.userRole === 'mili' ? 'mili' : 'sukhen';
-      const senderName = senderRole === 'mili' ? 'Mili' : 'Sukhen';
-
-      whatsappResult = await sendWhatsAppNotification({
-        type: 'project',
-        title: cleanTitle,
-        body: cleanDesc,
-        url: project.slug ? `/projects/${project.slug}` : `/#projects`,
-        senderRole,
-        senderName,
-      });
-    } catch (waErr) {
-      console.warn('[WhatsApp Error projects]:', waErr);
-    }
-
     return NextResponse.json({
       success: true,
       project,
-      whatsapp: whatsappResult,
     });
   } catch {
     return NextResponse.json({ error: 'Failed to save project' }, { status: 500 });

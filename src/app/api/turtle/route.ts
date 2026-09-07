@@ -3,7 +3,6 @@ import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { isAuthorizedAdmin } from '@/lib/admin-auth';
 import { getSessionFromRequest } from '@/lib/sessions';
-import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { TurtleCreation } from '@/types';
 import { markTurtleDeletedOnServer, isTurtleDeletedOnServer } from '@/lib/server-deleted-tracker';
 import { sanitizeText } from '@/lib/security';
@@ -116,29 +115,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── WhatsApp Notification ──────────────────────────────────────────────
-    let whatsappResult = null;
-    try {
-      const session = await getSessionFromRequest(request);
-      const senderRole: 'sukhen' | 'mili' = session?.userRole === 'mili' ? 'mili' : 'sukhen';
-      const senderName = senderRole === 'mili' ? 'Mili' : 'Sukhen';
-
-      whatsappResult = await sendWhatsAppNotification({
-        type: 'turtle',
-        title: cleanTitle,
-        body: cleanDesc,
-        url: `/#turtle`,
-        senderRole,
-        senderName,
-      });
-    } catch (waErr) {
-      console.warn('[WhatsApp Error turtle]:', waErr);
-    }
-
     return NextResponse.json({
       success: true,
       creation,
-      whatsapp: whatsappResult,
     });
   } catch {
     return NextResponse.json(

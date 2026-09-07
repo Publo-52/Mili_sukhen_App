@@ -18,7 +18,7 @@ import { getOptimizedImageUrl } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
 import { cachedFetch, invalidateApiCache } from '@/lib/api-cache';
-import { handleWhatsAppApiResponse } from '@/lib/whatsapp-client';
+
 
 const FullscreenLightbox = dynamic(
   () => import('./FullscreenLightbox').then((m) => m.FullscreenLightbox),
@@ -138,10 +138,6 @@ export const TurtleGallery: React.FC = () => {
         },
         body: JSON.stringify({ creation }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        handleWhatsAppApiResponse(data);
-      }
     } catch {}
 
     window.dispatchEvent(new Event('mili-turtle-updated'));

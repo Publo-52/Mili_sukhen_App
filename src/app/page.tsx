@@ -40,10 +40,7 @@ const SpecialSurpriseModal = dynamic(
   () => import('@/components/surprise/SpecialSurpriseModal').then((m) => m.SpecialSurpriseModal),
   { ssr: false }
 );
-const WhatsAppNotificationToast = dynamic(
-  () => import('@/components/whatsapp/WhatsAppNotificationToast').then((m) => m.WhatsAppNotificationToast),
-  { ssr: false }
-);
+
 
 const EasterEggListener = dynamic(
   () => import('@/components/easter-eggs/EasterEggListener').then((m) => m.EasterEggListener),
@@ -417,9 +414,6 @@ export default function HomePage() {
         isOpen={showSurprise}
         onClose={() => setShowSurprise(false)}
       />
-
-      {/* Global WhatsApp Notification Toast */}
-      <WhatsAppNotificationToast />
     </motion.div>
   );
 }

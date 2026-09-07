@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { getSessionFromRequest } from '@/lib/sessions';
-import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { APP_CONFIG } from '@/data/config';
 import { DirectMessage } from '@/types';
 
@@ -148,29 +147,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── WhatsApp Notification ──────────────────────────────────────────────
-    let whatsappResult = null;
-    try {
-      const session = await getSessionFromRequest(request);
-      const isMili = session?.userRole === 'mili' || cleanSender.toLowerCase().includes('mili');
-      const senderRole: 'sukhen' | 'mili' = isMili ? 'mili' : 'sukhen';
-      const senderName = isMili ? 'Mili' : 'Sukhen';
-
-      whatsappResult = await sendWhatsAppNotification({
-        type: 'message',
-        title: cleanMessage,
-        url: `/admin#messages`,
-        senderRole,
-        senderName,
-      });
-    } catch (waErr) {
-      console.warn('[WhatsApp Error messages]:', waErr);
-    }
-
     return NextResponse.json({
       success: true,
       message: msgRecord,
-      whatsapp: whatsappResult,
     });
   } catch {
     return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
