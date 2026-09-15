@@ -96,8 +96,12 @@ function LoginContent() {
           window.dispatchEvent(new Event('auth-changed'));
         } catch {}
 
-        // Instant direct SPA navigation to Home page (Zero intermediate welcome screen)
-        router.replace(redirectTarget);
+        // Reliable direct navigation for all mobile & desktop browsers (ensures cookie flush)
+        if (typeof window !== 'undefined') {
+          window.location.assign(redirectTarget);
+        } else {
+          router.replace(redirectTarget);
+        }
       } else if (res.status === 403 && data.code === 'MAX_DEVICES') {
         setBlockedSessions(data.sessions || []);
         setStep('blocked');
@@ -217,7 +221,7 @@ function LoginContent() {
                     placeholder="Enter email or phone number"
                     required
                     autoFocus
-                    className="w-full px-4 py-3 rounded-2xl bg-black/40 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 focus:ring-2 focus:ring-roseGlow-500/20 transition-all"
+                    className="w-full px-4 py-3 rounded-2xl bg-black/40 border border-white/10 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 focus:ring-2 focus:ring-roseGlow-500/20 transition-all"
                   />
                 </div>
 
@@ -243,7 +247,7 @@ function LoginContent() {
                       }}
                       placeholder="Enter your password"
                       required
-                      className="w-full px-4 py-3 pr-12 rounded-2xl bg-black/40 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 focus:ring-2 focus:ring-roseGlow-500/20 transition-all"
+                      className="w-full px-4 py-3 pr-12 rounded-2xl bg-black/40 border border-white/10 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-roseGlow-500/60 focus:ring-2 focus:ring-roseGlow-500/20 transition-all"
                     />
                     <button
                       type="button"

@@ -309,13 +309,10 @@ export default function HomePage() {
       const deltaX = touchEndX - touchStartX;
       const deltaY = Math.abs(touchEndY - touchStartY);
 
-      // Natural Left-to-Right Swipe Back Gesture (deltaX >= 50px, horizontal dominant, < 450ms)
-      if (deltaX > 50 && deltaX > deltaY * 1.3 && duration < 450) {
-        if (typeof window !== 'undefined' && window.history.length > 1) {
-          window.history.back();
-        } else {
-          navigateStepBack();
-        }
+      // Edge Swipe Back: ONLY trigger if swipe started from the far left screen edge (<= 35px)
+      // and safely navigate within app sections rather than kicking out to /login
+      if (touchStartX <= 35 && deltaX > 60 && deltaX > deltaY * 1.5 && duration < 400) {
+        navigateStepBack();
       }
     };
 
