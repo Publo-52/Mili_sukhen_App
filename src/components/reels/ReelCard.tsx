@@ -221,21 +221,26 @@ export const ReelCard: React.FC<ReelCardProps> = ({
 
   return (
     <div className="relative w-full aspect-[9/16] max-w-[310px] sm:max-w-[340px] h-[480px] sm:h-[510px] max-h-[58vh] mx-auto rounded-2xl sm:rounded-3xl overflow-hidden bg-black shadow-[0_12px_45px_rgba(0,0,0,0.85)] border border-white/15 select-none group">
-      {/* Background Ambient Video Blur (Ensures landscape/square videos look lush and fill the frame) */}
-      <video
-        src={reel.url}
-        playsInline
-        muted
-        loop
-        aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 pointer-events-none"
-      />
+      {/* Background Ambient Blur using poster/thumbnail or CSS backdrop (Zero duplicate video decoders) */}
+      {reel.thumbnailUrl ? (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full bg-cover bg-center blur-2xl opacity-35 scale-110 pointer-events-none"
+          style={{ backgroundImage: `url(${reel.thumbnailUrl})` }}
+        />
+      ) : (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full bg-gradient-to-b from-purple-950/40 via-black to-roseGlow-950/40 blur-xl pointer-events-none"
+        />
+      )}
 
       {/* 1. Main HTML5 Video Player */}
       <video
         ref={videoRef}
         src={reel.url}
         poster={reel.thumbnailUrl}
+        preload={isActive ? 'auto' : 'metadata'}
         playsInline
         loop
         muted={isMuted}

@@ -664,6 +664,11 @@ class RomanticAudioEngine {
       this.gainNode.gain.cancelScheduledValues(now);
       this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
       this.gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+      setTimeout(() => {
+        if (!this.isPlaying && this.ctx && this.ctx.state === 'running') {
+          this.ctx.suspend().catch(() => {});
+        }
+      }, 900);
     }
   }
 }

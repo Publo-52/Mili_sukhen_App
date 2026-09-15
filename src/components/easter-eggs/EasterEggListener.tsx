@@ -33,6 +33,8 @@ export const EasterEggListener: React.FC<EasterEggListenerProps> = ({ onTriggerS
 
   // Screen double click -> spawn floating heart
   useEffect(() => {
+    const timeouts: NodeJS.Timeout[] = [];
+
     const handleDoubleClick = (e: MouseEvent) => {
       const colors = ['#f43f5e', '#fb7185', '#fda4af', '#fde047', '#c084fc'];
       const newHeart: FloatingHeart = {
@@ -45,13 +47,17 @@ export const EasterEggListener: React.FC<EasterEggListenerProps> = ({ onTriggerS
 
       setHearts((prev) => [...prev, newHeart]);
 
-      setTimeout(() => {
+      const t = setTimeout(() => {
         setHearts((prev) => prev.filter((h) => h.id !== newHeart.id));
       }, 1500);
+      timeouts.push(t);
     };
 
-    window.addEventListener('dblclick', handleDoubleClick);
-    return () => window.removeEventListener('dblclick', handleDoubleClick);
+    window.addEventListener('dblclick', handleDoubleClick, { passive: true });
+    return () => {
+      window.removeEventListener('dblclick', handleDoubleClick);
+      timeouts.forEach(clearTimeout);
+    };
   }, []);
 
   return (

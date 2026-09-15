@@ -27,12 +27,21 @@ const KEYS = {
 // Legacy key for backward-compatibility migration
 const LEGACY_MEMORIES_ALL_KEY = 'mili_fav_memories_all';
 
-// Safe LocalStorage access
+// Safe LocalStorage access with in-memory parsed caching
+const memoryCache = new Map<string, { data: any; raw: string | null }>();
+
 function getStorageItem<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
   try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : fallback;
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    const cached = memoryCache.get(key);
+    if (cached && cached.raw === raw) {
+      return cached.data as T;
+    }
+    const parsed = JSON.parse(raw);
+    memoryCache.set(key, { data: parsed, raw });
+    return parsed;
   } catch (error) {
     console.warn(`Error reading localStorage key "${key}":`, error);
     return fallback;
@@ -42,7 +51,9 @@ function getStorageItem<T>(key: string, fallback: T): T {
 function setStorageItem<T>(key: string, value: T): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    const raw = JSON.stringify(value);
+    localStorage.setItem(key, raw);
+    memoryCache.set(key, { data: value, raw });
   } catch (error) {
     console.warn(`Error saving localStorage key "${key}":`, error);
   }

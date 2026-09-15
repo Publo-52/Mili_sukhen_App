@@ -65,18 +65,6 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
-          ...(!isProd
-            ? [
-                {
-                  key: 'Clear-Site-Data',
-                  value: '"cache"',
-                },
-                {
-                  key: 'Cache-Control',
-                  value: 'no-cache, no-store, must-revalidate, max-age=0',
-                },
-              ]
-            : []),
           {
             key: 'X-DNS-Prefetch-Control',
             value: 'on',

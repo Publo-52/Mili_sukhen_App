@@ -798,17 +798,28 @@ export const TurtleCanvasViewer: React.FC<TurtleCanvasViewerProps> = ({ creation
       setProgress(Math.min(100, Math.round((step / 280) * 100)));
 
       if (type === 'love-app' || step < 280) {
-        if (isPlaying) {
+        if (isPlaying && (typeof document === 'undefined' || !document.hidden)) {
           animRef.current = requestAnimationFrame(drawFrame);
         }
       }
     };
 
-    if (isPlaying) {
+    const handleVisibility = () => {
+      if (!document.hidden && isPlaying) {
+        animRef.current = requestAnimationFrame(drawFrame);
+      } else if (animRef.current) {
+        cancelAnimationFrame(animRef.current);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    if (isPlaying && (typeof document === 'undefined' || !document.hidden)) {
       animRef.current = requestAnimationFrame(drawFrame);
     }
 
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
   }, [creation, isPlaying, burstTrigger]);

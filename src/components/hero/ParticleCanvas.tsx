@@ -23,20 +23,27 @@ export const ParticleCanvas: React.FC = () => {
     if (!ctx) return;
 
     let animationFrameId: number;
+    let resizeTimer: any = null;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
     const isMobile = width < 768;
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (!canvas) return;
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      }, 150);
     };
 
     window.addEventListener('resize', handleResize, { passive: true });
 
+    if (prefersReducedMotion) return;
+
     const particles: Particle[] = [];
-    const particleCount = isMobile ? 8 : 18;
+    const particleCount = isMobile ? 8 : 16;
     const hues = [345, 350, 45, 275, 330];
 
     for (let i = 0; i < particleCount; i++) {
