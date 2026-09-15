@@ -53,6 +53,7 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const [iframeLoading, setIframeLoading] = useState(true);
+  const [iframeTimedOut, setIframeTimedOut] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -61,7 +62,18 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
     if (project) {
       document.body.classList.add('modal-open');
       setIframeLoading(true);
+      setIframeTimedOut(false);
       setIframeKey((prev) => prev + 1);
+
+      const timer = setTimeout(() => {
+        setIframeTimedOut(true);
+        setIframeLoading(false);
+      }, 7500);
+
+      return () => {
+        clearTimeout(timer);
+        document.body.classList.remove('modal-open');
+      };
     } else {
       document.body.classList.remove('modal-open');
     }
@@ -344,11 +356,30 @@ export const ProjectPreviewModal: React.FC<ProjectPreviewModalProps> = ({
                     </div>
                   )}
 
+                  {iframeTimedOut && (
+                    <div className="absolute top-3 inset-x-4 z-20 flex items-center justify-between gap-3 p-3 rounded-xl bg-obsidian-950/95 border border-purple-500/40 backdrop-blur-md shadow-glow">
+                      <p className="text-xs text-slate-200">
+                        Embedding is taking longer or restricted by host. For full interactivity:
+                      </p>
+                      <a
+                        href={project.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 text-xs font-semibold rounded-lg bg-roseGlow-600 hover:bg-roseGlow-500 text-white shrink-0 shadow-sm"
+                      >
+                        Open Live ↗
+                      </a>
+                    </div>
+                  )}
+
                   <iframe
                     key={iframeKey}
                     src={project.url}
                     title={project.title}
-                    onLoad={() => setIframeLoading(false)}
+                    onLoad={() => {
+                      setIframeLoading(false);
+                      setIframeTimedOut(false);
+                    }}
                     sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
                     className="w-full h-full border-0 bg-white"
                     loading="eager"

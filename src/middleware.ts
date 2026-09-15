@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 // Public endpoints and assets that do NOT require authentication
 const PUBLIC_PREFIXES = [
   '/login',
+  '/404',
+  '/not-found',
+  '/_not-found',
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/me',

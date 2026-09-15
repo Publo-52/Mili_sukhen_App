@@ -261,7 +261,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
         )}
 
         {/* ── MEDIA AREA ── */}
-        <div className="absolute inset-0 flex items-center justify-center px-14 sm:px-20 pt-14 sm:pt-16 pb-28 sm:pb-32">
+        <div className="absolute inset-0 flex items-center justify-center px-2 sm:px-12 md:px-16 pt-12 sm:pt-14 pb-16 sm:pb-24">
           <AnimatePresence custom={direction} mode="popLayout">
             <motion.div
               key={currentItem.id}

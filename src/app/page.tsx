@@ -18,6 +18,10 @@ const TurtleGallery = dynamic(
   () => import('@/components/turtle/TurtleGallery').then((m) => m.TurtleGallery),
   { ssr: false }
 );
+const ReelsSection = dynamic(
+  () => import('@/components/reels/ReelsSection').then((m) => m.ReelsSection),
+  { ssr: false }
+);
 const MemoriesTimeline = dynamic(
   () => import('@/components/timeline/MemoriesTimeline').then((m) => m.MemoriesTimeline),
   { ssr: false }
@@ -94,6 +98,7 @@ const warmUpAllDatasetsAndAssets = () => {
       // Background preload dynamic component bundles
       import('@/components/projects/ProjectShowcase');
       import('@/components/turtle/TurtleGallery');
+      import('@/components/reels/ReelsSection');
       import('@/components/timeline/MemoriesTimeline');
       import('@/components/love-notes/LoveNotesVault');
       import('@/components/hero/CinematicIntro');
@@ -150,6 +155,7 @@ export default function HomePage() {
         home: true,
         projects: true,
         turtle: true,
+        reels: true,
         memories: true,
         'love-notes': true,
       });
@@ -179,8 +185,9 @@ export default function HomePage() {
       const clean = hash.replace('#', '').toLowerCase();
       if (clean === 'projects') return 'projects';
       if (clean === 'python-art' || clean === 'turtle') return 'turtle';
+      if (clean === 'reels') return 'reels';
       if (clean === 'memories') return 'memories';
-      if (clean === 'love-notes') return 'love-notes';
+      if (clean === 'love-notes' || clean === 'notes') return 'love-notes';
       return 'home';
     };
 
@@ -192,7 +199,7 @@ export default function HomePage() {
     } else {
       try {
         const saved = sessionStorage.getItem('mili_active_tab') as SectionType;
-        if (saved && (saved === 'projects' || saved === 'turtle' || saved === 'memories' || saved === 'love-notes')) {
+        if (saved && (saved === 'projects' || saved === 'turtle' || saved === 'reels' || saved === 'memories' || saved === 'love-notes')) {
           setActiveSection(saved);
           historyStackRef.current = ['home', saved];
         }
@@ -222,6 +229,7 @@ export default function HomePage() {
     const validSection: SectionType =
       section === 'projects' ||
       section === 'turtle' ||
+      section === 'reels' ||
       section === 'memories' ||
       section === 'love-notes'
         ? section
@@ -320,12 +328,7 @@ export default function HomePage() {
     };
   }, [navigateStepBack]);
 
-  const isHome =
-    activeSection === 'home' ||
-    (activeSection !== 'projects' &&
-      activeSection !== 'turtle' &&
-      activeSection !== 'memories' &&
-      activeSection !== 'love-notes');
+  const isHome = activeSection === 'home';
 
   return (
     <motion.div
@@ -379,7 +382,14 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 4. Memories Timeline View */}
+        {/* 4. Reels Section View (Instagram / Facebook Style) */}
+        {mountedSections['reels'] && (
+          <div className={activeSection === 'reels' ? 'pt-20 sm:pt-24 pb-16 block animate-fade-in instant-section' : 'hidden'}>
+            <ReelsSection isActive={activeSection === 'reels'} />
+          </div>
+        )}
+
+        {/* 5. Memories Timeline View */}
         {mountedSections['memories'] && (
           <div className={activeSection === 'memories' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
             <MemoriesTimeline />

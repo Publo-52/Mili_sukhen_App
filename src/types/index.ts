@@ -1,4 +1,4 @@
-export type SectionType = 'home' | 'projects' | 'turtle' | 'memories' | 'love-notes';
+export type SectionType = 'home' | 'projects' | 'turtle' | 'reels' | 'memories' | 'love-notes';
 
 export type ProjectCategory = 
   | 'Websites' 
@@ -59,9 +59,12 @@ export interface MemoryItem {
   isFavorite?: boolean;
   aspectRatio?: 'portrait' | 'landscape' | 'square';
   createdAt?: string;
+  uploader?: 'sukhen' | 'mili' | 'both';
+  likesCount?: number;
 }
 
 export type MemoryMilestone = MemoryItem;
+export type ReelItem = MemoryItem;
 
 export interface LoveNote {
   id: string;

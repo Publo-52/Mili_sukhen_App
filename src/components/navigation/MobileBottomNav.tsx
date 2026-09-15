@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Home, Layers, Sparkles, History, BookOpen } from 'lucide-react';
+import { Home, Layers, Sparkles, Film, History, BookOpen } from 'lucide-react';
 import { SectionType } from '@/types';
 
 interface MobileBottomNavProps {
@@ -9,17 +9,26 @@ interface MobileBottomNavProps {
   onSelectSection?: (section: SectionType) => void;
 }
 
+const BOTTOM_NAV_ITEMS: { label: string; sectionId: SectionType; icon: React.ElementType }[] = [
+  { label: 'Home', sectionId: 'home', icon: Home },
+  { label: 'Projects', sectionId: 'projects', icon: Layers },
+  { label: 'Art', sectionId: 'turtle', icon: Sparkles },
+  { label: 'Reels', sectionId: 'reels', icon: Film },
+  { label: 'Memories', sectionId: 'memories', icon: History },
+  { label: 'Notes', sectionId: 'love-notes', icon: BookOpen },
+];
+
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
-  activeSection = 'all',
+  activeSection = 'home',
   onSelectSection,
 }) => {
-  const items: { label: string; sectionId: SectionType; icon: React.ElementType }[] = [
-    { label: 'Home', sectionId: 'home', icon: Home },
-    { label: 'Projects', sectionId: 'projects', icon: Layers },
-    { label: 'Python Art', sectionId: 'turtle', icon: Sparkles },
-    { label: 'Memories', sectionId: 'memories', icon: History },
-    { label: 'Love Notes', sectionId: 'love-notes', icon: BookOpen },
-  ];
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const currentActive = isMounted ? (activeSection || 'home') : 'home';
 
   const handleClick = (sectionId: SectionType, e: React.MouseEvent) => {
     if (onSelectSection) {
@@ -29,15 +38,19 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-obsidian-950/95 backdrop-blur-2xl px-2 py-1.5 safe-area-pb shadow-2xl">
+    <nav
+      suppressHydrationWarning
+      className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-obsidian-950/95 backdrop-blur-2xl px-2 py-1.5 safe-area-pb shadow-2xl"
+    >
       <div className="flex items-center justify-around">
-        {items.map((item) => {
+        {BOTTOM_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = activeSection === item.sectionId;
+          const isActive = currentActive === item.sectionId;
 
           return (
             <button
-              key={item.label}
+              key={item.sectionId}
+              suppressHydrationWarning
               onClick={(e) => handleClick(item.sectionId, e)}
               className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all ${
                 isActive

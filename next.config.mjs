@@ -24,18 +24,6 @@ const nextConfig = {
     ],
   },
 
-  // ── Webpack Cache Fix ────────────────────────────────────────────────────────
-  webpack(config, { dev }) {
-    if (dev) {
-      config.cache = {
-        type: 'filesystem',
-        cacheDirectory: path.join(os.tmpdir(), 'mili-next-cache'),
-        compression: false,
-      };
-    }
-    return config;
-  },
-
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000,
@@ -58,10 +46,37 @@ const nextConfig = {
   },
 
   async headers() {
+    const isProd = process.env.NODE_ENV === 'production';
+    const staticCacheHeaders = isProd
+      ? [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ]
+      : [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ];
+
     return [
       {
         source: '/(.*)',
         headers: [
+          ...(!isProd
+            ? [
+                {
+                  key: 'Clear-Site-Data',
+                  value: '"cache"',
+                },
+                {
+                  key: 'Cache-Control',
+                  value: 'no-cache, no-store, must-revalidate, max-age=0',
+                },
+              ]
+            : []),
           {
             key: 'X-DNS-Prefetch-Control',
             value: 'on',
@@ -111,46 +126,28 @@ const nextConfig = {
       },
       {
         source: '/_next/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
+        headers: staticCacheHeaders,
       },
       {
         source: '/images/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
+        headers: staticCacheHeaders,
       },
       {
         source: '/audio/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
+        headers: staticCacheHeaders,
       },
       {
         source: '/(logo.png|favicon.ico|favicon.png|icon.png|apple-icon.png)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
+        headers: staticCacheHeaders,
       },
       {
         source: '/(manifest.webmanifest|robots.txt|sitemap.xml)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=86400, stale-while-revalidate=604800',
+            value: isProd
+              ? 'public, max-age=86400, stale-while-revalidate=604800'
+              : 'no-cache, no-store, must-revalidate',
           },
         ],
       },

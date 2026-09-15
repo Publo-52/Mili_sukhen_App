@@ -78,7 +78,7 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({
                 “A collection of everything I created for you.”
               </p>
               <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-rose-200/90 font-mono drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                Websites • Python Art • Memories • Love Notes
+                Websites • Python Art • Reels • Memories • Love Notes
               </p>
             </div>
 

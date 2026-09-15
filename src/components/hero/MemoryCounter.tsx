@@ -6,6 +6,10 @@ import { Code2, Sparkles, BookOpen, Clock, Camera, Film } from 'lucide-react';
 import { calculateDaysTogether } from '@/lib/utils';
 import { APP_CONFIG } from '@/data/config';
 import { getProjects, getTurtleCreations, getLoveNotes, getMemories } from '@/lib/storage';
+import { INITIAL_PROJECTS } from '@/data/projects';
+import { INITIAL_TURTLE_CREATIONS } from '@/data/turtleCreations';
+import { INITIAL_LOVE_NOTES } from '@/data/loveNotes';
+import { INITIAL_MEMORIES } from '@/data/memories';
 
 export const MemoryCounter: React.FC = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -19,25 +23,25 @@ export const MemoryCounter: React.FC = () => {
     if (typeof window !== 'undefined') {
       try { return getProjects().length; } catch {}
     }
-    return 8;
+    return INITIAL_PROJECTS.length;
   });
   const [turtleCount, setTurtleCount] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       try { return getTurtleCreations().length; } catch {}
     }
-    return 10;
+    return INITIAL_TURTLE_CREATIONS.length;
   });
   const [noteCount, setNoteCount] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       try { return getLoveNotes().length; } catch {}
     }
-    return 12;
+    return INITIAL_LOVE_NOTES.length;
   });
   const [memoryCount, setMemoryCount] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       try { return getMemories().length; } catch {}
     }
-    return 24;
+    return INITIAL_MEMORIES.length;
   });
 
   const refreshCounts = useCallback(async () => {

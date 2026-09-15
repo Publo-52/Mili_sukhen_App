@@ -33,7 +33,21 @@ import { audioEngine, AudioTrack } from '@/lib/audio';
 
 import { SectionType } from '@/types';
 
-interface NavbarProps {
+export const NAV_LINKS: {
+  name: string;
+  href: string;
+  sectionId: SectionType;
+  icon: React.ElementType;
+}[] = [
+  { name: 'Home', href: '#home', sectionId: 'home', icon: Home },
+  { name: 'Projects', href: '#projects', sectionId: 'projects', icon: Layers },
+  { name: 'Python Art', href: '#python-art', sectionId: 'turtle', icon: Terminal },
+  { name: 'Reels', href: '#reels', sectionId: 'reels', icon: Film },
+  { name: 'Memories', href: '#memories', sectionId: 'memories', icon: Camera },
+  { name: 'Love Notes', href: '#love-notes', sectionId: 'love-notes', icon: BookOpen },
+];
+
+export interface NavbarProps {
   onReplayIntro?: () => void;
   onOpenSurprise?: () => void;
   activeSection?: SectionType;
@@ -55,6 +69,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   const desktopMusicRef = useRef<HTMLDivElement>(null);
   const mobileMusicRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, user, session, isAdmin, loading, logout } = useAuth();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -112,23 +131,14 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  const navLinks: {
-    name: string;
-    href: string;
-    sectionId: SectionType;
-    icon: React.ElementType;
-  }[] = [
-    { name: 'Home', href: '#home', sectionId: 'home', icon: Home },
-    { name: 'Projects', href: '#projects', sectionId: 'projects', icon: Layers },
-    { name: 'Python Art', href: '#python-art', sectionId: 'turtle', icon: Terminal },
-    { name: 'Memories', href: '#memories', sectionId: 'memories', icon: Camera },
-    { name: 'Love Notes', href: '#love-notes', sectionId: 'love-notes', icon: BookOpen },
-  ];
+  const currentActive = isMounted ? (activeSection || 'home') : 'home';
 
-  const handleNavClick = (sectionId: SectionType, e?: React.MouseEvent) => {
+  const handleNavClick = (sectionId: SectionType, e?: React.MouseEvent, href?: string) => {
     if (onSelectSection) {
       if (e) e.preventDefault();
       onSelectSection(sectionId);
+    } else if (href) {
+      window.location.href = '/' + href;
     }
     setMobileMenuOpen(false);
   };
@@ -175,13 +185,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 backdrop-blur-md">
-            {navLinks.map((link) => {
-              const isActive = activeSection === link.sectionId;
+          <nav
+            suppressHydrationWarning
+            className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 backdrop-blur-md"
+          >
+            {NAV_LINKS.map((link) => {
+              const isActive = currentActive === link.sectionId;
               return (
                 <button
-                  key={link.name}
-                  onClick={(e) => handleNavClick(link.sectionId, e)}
+                  key={link.sectionId}
+                  suppressHydrationWarning
+                  onClick={(e) => handleNavClick(link.sectionId, e, link.href)}
                   className={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-medium rounded-full transition-all duration-200 cursor-pointer ${
                     isActive
                       ? 'bg-roseGlow-600 text-white shadow-glow font-bold'
@@ -319,7 +333,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
 
             {/* Login / User Status / Logout Button */}
-            {!loading && (
+            {isMounted && !loading && (
               isAuthenticated ? (
                 <div className="flex items-center gap-2">
                   <div
@@ -504,13 +518,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                   },
                 }}
                 className="flex flex-col gap-1.5"
+                suppressHydrationWarning
               >
-                {navLinks.map((link) => {
-                  const isActive = activeSection === link.sectionId;
+                {NAV_LINKS.map((link) => {
+                  const isActive = currentActive === link.sectionId;
                   const Icon = link.icon;
                   return (
                     <motion.div
-                      key={link.name}
+                      key={link.sectionId}
                       variants={{
                         hidden: { opacity: 0, y: -4 },
                         visible: { opacity: 1, y: 0 },
@@ -518,7 +533,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
                     >
                       <button
-                        onClick={(e) => handleNavClick(link.sectionId, e)}
+                        onClick={(e) => handleNavClick(link.sectionId, e, link.href)}
                         className={`w-full px-3.5 py-2.5 rounded-2xl transition-all duration-200 flex items-center justify-between group active:scale-[0.98] cursor-pointer ${
                           isActive
                             ? 'bg-gradient-to-r from-roseGlow-500/20 via-purple-600/15 to-transparent border border-roseGlow-500/40 shadow-glow text-white'
