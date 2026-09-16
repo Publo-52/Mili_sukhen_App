@@ -13,7 +13,7 @@ export const INITIAL_REELS: ReelItem[] = [
     isFavorite: true,
     aspectRatio: 'portrait',
     uploader: 'sukhen',
-    likesCount: 142,
+    likesCount: 0,
     createdAt: '2026-02-14T18:30:00.000Z',
   },
   {
@@ -28,7 +28,7 @@ export const INITIAL_REELS: ReelItem[] = [
     isFavorite: true,
     aspectRatio: 'portrait',
     uploader: 'mili',
-    likesCount: 238,
+    likesCount: 0,
     createdAt: '2026-01-01T20:15:00.000Z',
   },
   {
@@ -43,7 +43,7 @@ export const INITIAL_REELS: ReelItem[] = [
     isFavorite: true,
     aspectRatio: 'portrait',
     uploader: 'both',
-    likesCount: 189,
+    likesCount: 0,
     createdAt: '2025-12-25T22:45:00.000Z',
   },
   {
@@ -58,7 +58,7 @@ export const INITIAL_REELS: ReelItem[] = [
     isFavorite: false,
     aspectRatio: 'portrait',
     uploader: 'sukhen',
-    likesCount: 310,
+    likesCount: 0,
     createdAt: '2025-11-12T16:20:00.000Z',
   },
 ];
@@ -86,7 +86,8 @@ export function isReelLiked(reelId: string): boolean {
  * Toggle like status for a reel and return updated like state
  */
 export function toggleReelLike(reelId: string, baseCount = 0): { liked: boolean; newCount: number } {
-  if (typeof window === 'undefined') return { liked: false, newCount: baseCount };
+  const safeBase = typeof baseCount === 'number' && baseCount < 50 ? Math.max(0, baseCount) : 0;
+  if (typeof window === 'undefined') return { liked: false, newCount: safeBase };
   try {
     const raw = localStorage.getItem(REEL_LIKES_KEY);
     const likedIds: string[] = raw ? JSON.parse(raw) : [];
@@ -103,34 +104,43 @@ export function toggleReelLike(reelId: string, baseCount = 0): { liked: boolean;
 
     localStorage.setItem(REEL_LIKES_KEY, JSON.stringify(likedIds));
 
-    // Custom counts store
+    // Custom counts store - start from 0 / real count
     const countKey = `mili_reel_count_${reelId}`;
     const storedCount = localStorage.getItem(countKey);
-    let count = storedCount ? parseInt(storedCount, 10) : baseCount;
+    let count = storedCount ? parseInt(storedCount, 10) : safeBase;
+    if (isNaN(count) || count >= 50) {
+      count = safeBase;
+    }
     count = liked ? count + 1 : Math.max(0, count - 1);
     localStorage.setItem(countKey, count.toString());
 
     return { liked, newCount: count };
   } catch {
-    return { liked: false, newCount: baseCount };
+    return { liked: false, newCount: safeBase };
   }
 }
 
 /**
- * Get current like count for a reel
+ * Get current like count for a reel (defaults to 0, adds 1 if user liked)
  */
 export function getReelLikeCount(reelId: string, baseCount = 0): number {
-  if (typeof window === 'undefined') return baseCount;
+  const safeBase = typeof baseCount === 'number' && baseCount < 50 ? Math.max(0, baseCount) : 0;
+  if (typeof window === 'undefined') return safeBase;
   try {
     const countKey = `mili_reel_count_${reelId}`;
     const storedCount = localStorage.getItem(countKey);
     if (storedCount !== null) {
       const parsed = parseInt(storedCount, 10);
-      if (!isNaN(parsed)) return parsed;
+      // Clean up any old random 100+ or 150 legacy fake numbers
+      if (!isNaN(parsed) && parsed < 50) {
+        return parsed;
+      }
+      localStorage.removeItem(countKey);
     }
-    return baseCount;
+    const liked = isReelLiked(reelId);
+    return liked ? Math.max(1, safeBase + 1) : safeBase;
   } catch {
-    return baseCount;
+    return safeBase;
   }
 }
 

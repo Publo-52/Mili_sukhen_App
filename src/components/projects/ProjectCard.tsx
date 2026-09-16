@@ -27,7 +27,7 @@ const PIN_ASPECTS = [
   'aspect-[3/4]',    // Portrait
 ];
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({
+export const ProjectCard = React.memo<ProjectCardProps>(({
   project,
   isFavorite,
   onToggleFavorite,
@@ -44,7 +44,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
   return (
     <div
-      className="group relative flex flex-col cursor-pointer select-none mb-3 sm:mb-4 fast-scroll-item"
+      className="group relative flex flex-col cursor-pointer select-none mb-3 sm:mb-4 fast-scroll-item will-change-transform"
+      style={{ transform: 'translateZ(0)' }}
       onClick={() => onQuickPreview(project)}
     >
       {/* 1. Pinterest Media Container with Overlays */}
@@ -98,18 +99,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           </button>
         </div>
 
-        {/* Top-Right: Admin Controls (Edit & Delete) */}
+        {/* Top-Right: Admin Controls */}
         {isAdmin && (
           <div
-            className="absolute top-2.5 right-2.5 flex items-center gap-1 z-20"
+            className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-20"
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
             }}
-            onPointerDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-1 bg-black/85 backdrop-blur-md p-1 rounded-full border border-white/20 shadow-lg">
+            <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
               {onEdit && (
                 <button
                   type="button"
@@ -118,7 +117,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     e.preventDefault();
                     onEdit(project);
                   }}
-                  className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 text-amber-300 hover:text-white flex items-center justify-center transition-all active:scale-90 cursor-pointer"
+                  className="w-7 h-7 rounded-full bg-black/60 text-white hover:bg-roseGlow-600 hover:text-white border border-white/20 backdrop-blur-md flex items-center justify-center transition-all shadow-md active:scale-90"
                   title="Edit Project"
                   aria-label="Edit Project"
                 >
@@ -131,9 +130,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    onDelete(project.id);
+                    if (confirm(`Delete "${project.title}"?`)) {
+                      onDelete(project.id);
+                    }
                   }}
-                  className="w-7 h-7 rounded-full bg-red-500/25 hover:bg-red-500/50 text-red-300 hover:text-red-100 flex items-center justify-center transition-all active:scale-90 cursor-pointer"
+                  className="w-7 h-7 rounded-full bg-black/60 text-rose-300 hover:bg-rose-600 hover:text-white border border-white/20 backdrop-blur-md flex items-center justify-center transition-all shadow-md active:scale-90"
                   title="Delete Project"
                   aria-label="Delete Project"
                 >
@@ -173,4 +174,5 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       </div>
     </div>
   );
-};
+});
+ProjectCard.displayName = 'ProjectCard';

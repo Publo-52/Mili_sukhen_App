@@ -372,10 +372,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Mobile Action Icons (Header Right) */}
           <div ref={mobileMusicRef} className="relative flex md:hidden items-center gap-1.5">
-            {/* Music Icon Button */}
+            {/* Music Icon Button (Compact) */}
             <button
               onClick={() => setMusicControlsOpen((prev) => !prev)}
-              className={`p-2 rounded-full glass-card transition-all cursor-pointer ${
+              className={`p-1.5 rounded-full glass-card transition-all cursor-pointer ${
                 musicControlsOpen || isPlayingAudio
                   ? 'border-roseGlow-500/60 text-roseGlow-300 bg-roseGlow-500/20 shadow-glow'
                   : 'text-slate-300 hover:text-white'
@@ -383,7 +383,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               title={musicControlsOpen ? 'Hide Music Controls' : 'Open Music Controls'}
               aria-label="Toggle Romantic Music"
             >
-              <Music className={`w-4 h-4 ${isPlayingAudio ? 'text-roseGlow-400 animate-pulse' : 'text-slate-400'}`} />
+              <Music className={`w-3.5 h-3.5 ${isPlayingAudio ? 'text-roseGlow-400 animate-pulse' : 'text-slate-400'}`} />
             </button>
 
             {onOpenSurprise && (

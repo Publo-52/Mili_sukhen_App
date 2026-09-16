@@ -217,6 +217,22 @@ export const MemoriesTimeline: React.FC = () => {
     window.dispatchEvent(new Event('mili-memories-updated'));
   };
 
+  // Memoize counts to avoid re-filtering the entire array on every re-render
+  const tabCounts = useMemo(() => {
+    let photo = 0;
+    let video = 0;
+    for (let i = 0; i < memories.length; i++) {
+      if (memories[i].type === 'video') video++;
+      else photo++;
+    }
+    return {
+      all: memories.length,
+      photo,
+      video,
+      favorites: favoriteIds.length,
+    };
+  }, [memories, favoriteIds]);
+
   return (
     <section id="memories" className="pt-1 pb-6 px-3 sm:px-6 lg:px-8 max-w-6xl mx-auto relative">
       {/* Section Header */}
@@ -248,10 +264,10 @@ export const MemoriesTimeline: React.FC = () => {
       {/* Filter Tabs */}
       <div className="flex items-center justify-center gap-2 mb-6 flex-wrap">
         {[
-          { id: 'all', label: `All Moments (${memories.length})`, icon: Film },
-          { id: 'photo', label: `Photos (${memories.filter((m) => m.type === 'photo').length})`, icon: Camera },
-          { id: 'video', label: `Videos (${memories.filter((m) => m.type === 'video').length})`, icon: Video },
-          { id: 'favorites', label: `Favorites (${favoriteIds.length})`, icon: Heart },
+          { id: 'all', label: `All Moments (${tabCounts.all})`, icon: Film },
+          { id: 'photo', label: `Photos (${tabCounts.photo})`, icon: Camera },
+          { id: 'video', label: `Videos (${tabCounts.video})`, icon: Video },
+          { id: 'favorites', label: `Favorites (${tabCounts.favorites})`, icon: Heart },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeFilter === tab.id;
@@ -334,8 +350,9 @@ export const MemoriesTimeline: React.FC = () => {
                       alt={memory.title}
                       fill
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105 will-change-transform"
                       priority={index < 2}
+                      loading={index < 2 ? 'eager' : 'lazy'}
                       quality={75}
                     />
 

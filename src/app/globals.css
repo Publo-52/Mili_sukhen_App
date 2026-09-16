@@ -145,6 +145,10 @@ body,
   perspective: 1000px;
 }
 
+.will-change-transform {
+  will-change: transform;
+}
+
 /* Optimized Lightweight Glowing Elements */
 .shadow-glow {
   box-shadow: 0 0 24px -4px rgba(244, 63, 94, 0.35);

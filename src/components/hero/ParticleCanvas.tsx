@@ -13,7 +13,11 @@ interface Particle {
   hue: number;
 }
 
-export const ParticleCanvas: React.FC = () => {
+interface ParticleCanvasProps {
+  isActive?: boolean;
+}
+
+export const ParticleCanvas: React.FC<ParticleCanvasProps> = ({ isActive = true }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -40,7 +44,12 @@ export const ParticleCanvas: React.FC = () => {
 
     window.addEventListener('resize', handleResize, { passive: true });
 
-    if (prefersReducedMotion) return;
+    if (prefersReducedMotion || !isActive) {
+      ctx.clearRect(0, 0, width, height);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
+    }
 
     const particles: Particle[] = [];
     const particleCount = isMobile ? 8 : 16;
@@ -64,9 +73,8 @@ export const ParticleCanvas: React.FC = () => {
     let lastTime = 0;
 
     const render = (time: number) => {
-      // If tab is hidden, skip frame calculation entirely
-      if (document.hidden) {
-        animationFrameId = requestAnimationFrame(render);
+      // If tab is hidden or canvas inactive, pause calculations
+      if (document.hidden || !isActive) {
         return;
       }
 
@@ -105,7 +113,7 @@ export const ParticleCanvas: React.FC = () => {
 
     const handleVisibility = () => {
       cancelAnimationFrame(animationFrameId);
-      if (!document.hidden) {
+      if (!document.hidden && isActive) {
         animationFrameId = requestAnimationFrame(render);
       }
     };
@@ -118,7 +126,7 @@ export const ParticleCanvas: React.FC = () => {
       document.removeEventListener('visibilitychange', handleVisibility);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [isActive]);
 
   return (
     <canvas

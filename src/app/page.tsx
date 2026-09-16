@@ -195,12 +195,14 @@ export default function HomePage() {
     if (initialHash) {
       const initialSec = parseSectionFromHash(initialHash);
       setActiveSection(initialSec);
+      setMountedSections((prev) => ({ ...prev, [initialSec]: true }));
       historyStackRef.current = ['home', initialSec];
     } else {
       try {
         const saved = sessionStorage.getItem('mili_active_tab') as SectionType;
         if (saved && (saved === 'projects' || saved === 'turtle' || saved === 'reels' || saved === 'memories' || saved === 'love-notes')) {
           setActiveSection(saved);
+          setMountedSections((prev) => ({ ...prev, [saved]: true }));
           historyStackRef.current = ['home', saved];
         }
       } catch {}
@@ -223,48 +225,92 @@ export default function HomePage() {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  const handleSelectSection = (section: SectionType, pushToHistory = true) => {
-    const validSection: SectionType =
-      section === 'projects' ||
-      section === 'turtle' ||
-      section === 'reels' ||
-      section === 'memories' ||
-      section === 'love-notes'
-        ? section
-        : 'home';
+  const handleSelectSection = React.useCallback(
+    (section: SectionType, pushToHistory = true) => {
+      const validSection: SectionType =
+        section === 'projects' ||
+        section === 'turtle' ||
+        section === 'reels' ||
+        section === 'memories' ||
+        section === 'love-notes'
+          ? section
+          : 'home';
 
-    setActiveSection(validSection);
-    try {
-      sessionStorage.setItem('mili_active_tab', validSection);
-    } catch {}
+      setMountedSections((prev) => (prev[validSection] ? prev : { ...prev, [validSection]: true }));
+      setActiveSection(validSection);
+      try {
+        sessionStorage.setItem('mili_active_tab', validSection);
+      } catch {}
 
-    try {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
-    } catch {
-      window.scrollTo(0, 0);
-    }
-
-    const targetHash = validSection === 'home' ? '' : validSection === 'turtle' ? 'python-art' : validSection;
-
-    if (pushToHistory) {
-      // Append to local step stack
-      const currentStack = historyStackRef.current;
-      if (currentStack[currentStack.length - 1] !== validSection) {
-        currentStack.push(validSection);
+      try {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
+      } catch {
+        window.scrollTo(0, 0);
       }
-      if (targetHash) {
-        window.history.pushState({ section: validSection }, '', `#${targetHash}`);
-      } else {
-        window.history.pushState({ section: 'home' }, '', window.location.pathname);
-      }
-    }
-  };
 
-  // Step-wise Back Navigation (Handles swipe back and history step reversal)
+      const targetHash = validSection === 'home' ? '' : validSection === 'turtle' ? 'python-art' : validSection;
+
+      if (pushToHistory) {
+        // Append to local step stack
+        const currentStack = historyStackRef.current;
+        if (currentStack[currentStack.length - 1] !== validSection) {
+          currentStack.push(validSection);
+        }
+        if (targetHash) {
+          window.history.pushState({ section: validSection }, '', `#${targetHash}`);
+        } else {
+          window.history.pushState({ section: 'home' }, '', window.location.pathname);
+        }
+      }
+    },
+    []
+  );
+
+  // Section Order for Intuitive Swipe Navigation
+  const SECTIONS_ORDER: SectionType[] = React.useMemo(
+    () => ['home', 'projects', 'turtle', 'reels', 'memories', 'love-notes'],
+    []
+  );
+
+  // Navigate to Next / Previous Section
+  const navigateToNextSection = React.useCallback(() => {
+    if (showSurprise || showIntro) return;
+    const currentIndex = SECTIONS_ORDER.indexOf(activeSection);
+    if (currentIndex >= 0 && currentIndex < SECTIONS_ORDER.length - 1) {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try {
+          navigator.vibrate(12);
+        } catch {}
+      }
+      handleSelectSection(SECTIONS_ORDER[currentIndex + 1]);
+    }
+  }, [activeSection, showSurprise, showIntro, SECTIONS_ORDER, handleSelectSection]);
+
+  const navigateToPrevSection = React.useCallback(() => {
+    if (showSurprise) {
+      setShowSurprise(false);
+      return;
+    }
+    if (showIntro) {
+      setShowIntro(false);
+      return;
+    }
+    const currentIndex = SECTIONS_ORDER.indexOf(activeSection);
+    if (currentIndex > 0) {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try {
+          navigator.vibrate(12);
+        } catch {}
+      }
+      handleSelectSection(SECTIONS_ORDER[currentIndex - 1]);
+    }
+  }, [activeSection, showSurprise, showIntro, SECTIONS_ORDER, handleSelectSection]);
+
+  // Step-wise Back Navigation (Handles history step reversal)
   const navigateStepBack = React.useCallback(() => {
-    // 1. If any modal is open, close modal first
     if (showSurprise) {
       setShowSurprise(false);
       return true;
@@ -274,10 +320,9 @@ export default function HomePage() {
       return true;
     }
 
-    // 2. Step backward through section navigation history stack
     const stack = historyStackRef.current;
     if (stack.length > 1) {
-      stack.pop(); // remove current section
+      stack.pop();
       const previousSection = stack[stack.length - 1] || 'home';
       handleSelectSection(previousSection, false);
       return true;
@@ -287,32 +332,69 @@ export default function HomePage() {
     }
 
     return false;
-  }, [activeSection, showSurprise, showIntro]);
+  }, [activeSection, showSurprise, showIntro, handleSelectSection]);
 
-  // Mobile Touch Swipe Listener (Left-to-Right swipe to step-wise go back)
+  // Full-Screen Horizontal Touch Swipe Listener (Effortlessly move between sections)
   useEffect(() => {
     let touchStartX = 0;
     let touchStartY = 0;
     let touchStartTime = 0;
+    let isSwipeBlocked = false;
 
     const handleTouchStart = (e: TouchEvent) => {
+      // Don't intercept multi-touch (e.g. pinch to zoom)
+      if (e.touches.length > 1) {
+        isSwipeBlocked = true;
+        return;
+      }
+
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        // Exclude interactive elements where horizontal gestures are needed (e.g. drawing canvas, code editors, inputs)
+        if (
+          target.closest('input, textarea, select, canvas, pre, code, [data-no-swipe], .ace_editor, input[type="range"]')
+        ) {
+          isSwipeBlocked = true;
+          return;
+        }
+      }
+
+      isSwipeBlocked = false;
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
       touchStartTime = Date.now();
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
+      if (isSwipeBlocked) return;
+      if (!e.changedTouches || e.changedTouches.length === 0) return;
+
+      // Don't switch section if a full modal is open
+      if (showSurprise || showIntro) {
+        return;
+      }
+
       const touchEndX = e.changedTouches[0].clientX;
       const touchEndY = e.changedTouches[0].clientY;
       const duration = Date.now() - touchStartTime;
 
       const deltaX = touchEndX - touchStartX;
-      const deltaY = Math.abs(touchEndY - touchStartY);
+      const deltaY = touchEndY - touchStartY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
 
-      // Edge Swipe Back: ONLY trigger if swipe started from the far left screen edge (<= 35px)
-      // and safely navigate within app sections rather than kicking out to /login
-      if (touchStartX <= 35 && deltaX > 60 && deltaX > deltaY * 1.5 && duration < 400) {
-        navigateStepBack();
+      // Must be predominantly horizontal gesture (avoids triggering while vertical scrolling)
+      if (absX > absY * 1.35) {
+        // Threshold: 45px normal swipe, or 25px fast flick under 280ms
+        if ((absX > 45 && duration < 500) || (absX > 25 && duration < 280)) {
+          if (deltaX < 0) {
+            // Swiped LEFT -> Advance to NEXT section
+            navigateToNextSection();
+          } else {
+            // Swiped RIGHT -> Go to PREVIOUS section
+            navigateToPrevSection();
+          }
+        }
       }
     };
 
@@ -323,7 +405,29 @@ export default function HomePage() {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [navigateStepBack]);
+  }, [navigateToNextSection, navigateToPrevSection, showSurprise, showIntro]);
+
+  // Desktop Keyboard Arrow Navigation (Left/Right to switch sections when not typing)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA' ||
+        (document.activeElement as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.key === 'ArrowRight' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        navigateToNextSection();
+      } else if (e.key === 'ArrowLeft' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        navigateToPrevSection();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigateToNextSection, navigateToPrevSection]);
 
   const isHome = activeSection === 'home';
 
@@ -334,8 +438,8 @@ export default function HomePage() {
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain"
     >
-      {/* Dynamic Stardust & Ambient Particle Layer */}
-      <ParticleCanvas />
+      {/* Dynamic Stardust & Ambient Particle Layer (Paused on non-home sections for 100% GPU/battery efficiency) */}
+      <ParticleCanvas isActive={isHome} />
 
       {/* Cinematic Opening Sequence — Pre-rendered in background for true 0ms instant open */}
       <CinematicIntro
@@ -346,13 +450,15 @@ export default function HomePage() {
       {/* Global Interactive Easter Egg Listeners */}
       <EasterEggListener onTriggerSurprise={() => setShowSurprise(true)} />
 
-      {/* Navbar with Replay Intro & Surprise Controls */}
-      <Navbar
-        onReplayIntro={() => setShowIntro(true)}
-        onOpenSurprise={() => setShowSurprise(true)}
-        activeSection={activeSection}
-        onSelectSection={handleSelectSection}
-      />
+      {/* Navbar with Replay Intro & Surprise Controls — Hidden when inside Reels */}
+      <div className={activeSection === 'reels' ? 'hidden' : 'contents'}>
+        <Navbar
+          onReplayIntro={() => setShowIntro(true)}
+          onOpenSurprise={() => setShowSurprise(true)}
+          activeSection={activeSection}
+          onSelectSection={handleSelectSection}
+        />
+      </div>
 
       {/* Main Content Container with Instant 0ms Smooth Viewport */}
       <main className="relative z-10 min-h-[75vh]">
@@ -379,10 +485,13 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 4. Reels Section View (Instagram / Facebook Style) */}
+        {/* 4. Reels Section View (Immersive Mobile Reels with Bottom Nav) */}
         {mountedSections['reels'] && (
-          <div className={activeSection === 'reels' ? 'pt-20 sm:pt-24 pb-16 block animate-fade-in instant-section' : 'hidden'}>
-            <ReelsSection isActive={activeSection === 'reels'} />
+          <div className={activeSection === 'reels' ? 'pt-0 pb-16 sm:pb-0 block animate-fade-in instant-section' : 'hidden'}>
+            <ReelsSection
+              isActive={activeSection === 'reels'}
+              onBack={() => handleSelectSection('home')}
+            />
           </div>
         )}
 

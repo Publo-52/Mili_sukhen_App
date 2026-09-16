@@ -53,22 +53,39 @@ export function slugify(text: string): string {
 }
 
 /**
- * Accurately detects whether a media item or URL is a video
+ * Accurately detects whether a media item or URL is a real video (strictly rejecting images)
  */
 export function isMediaVideo(item?: { type?: string; url?: string } | string | null): boolean {
   if (!item) return false;
-  if (typeof item === 'string') {
-    return Boolean(
-      item.match(/\.(mp4|mov|webm|avi|mkv|m4v)(\?.*)?$/i) ||
-      item.includes('/video/upload/') ||
-      item.includes('resource_type=video')
-    );
+  const url = typeof item === 'string' ? item : item.url;
+  if (!url || typeof url !== 'string') return false;
+
+  const cleanUrl = url.trim().toLowerCase();
+
+  // 1. Explicitly reject image uploads, Cloudinary images, or image extensions
+  if (
+    cleanUrl.includes('/image/upload/') ||
+    cleanUrl.includes('/images/') ||
+    cleanUrl.includes('format=jpg') ||
+    cleanUrl.includes('format=png') ||
+    cleanUrl.includes('format=webp') ||
+    cleanUrl.match(/\.(jpe?g|png|gif|webp|avif|svg|bmp|ico|heic|heif|tiff)(\?.*)?$/i)
+  ) {
+    return false;
   }
-  if (item.type === 'video') return true;
+
+  // 2. Reject if explicit type is photo or image
+  if (typeof item !== 'string' && (item.type === 'photo' || item.type === 'image')) {
+    return false;
+  }
+
+  // 3. Confirm video indicators
   return Boolean(
-    item.url?.match(/\.(mp4|mov|webm|avi|mkv|m4v)(\?.*)?$/i) ||
-    item.url?.includes('/video/upload/') ||
-    item.url?.includes('resource_type=video')
+    cleanUrl.match(/\.(mp4|mov|webm|avi|mkv|m4v|ogv|3gp|flv)(\?.*)?$/i) ||
+    cleanUrl.includes('/video/upload/') ||
+    cleanUrl.includes('resource_type=video') ||
+    cleanUrl.includes('gtv-videos-bucket') ||
+    cleanUrl.includes('/sample/')
   );
 }
 
