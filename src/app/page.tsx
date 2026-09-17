@@ -453,6 +453,7 @@ export default function HomePage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
+      suppressHydrationWarning
       className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain"
     >
       {/* Dynamic Stardust & Ambient Particle Layer (Paused on non-home sections for 100% GPU/battery efficiency) */}

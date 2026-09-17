@@ -66,7 +66,11 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-import { NetworkStatusNotifier } from "@/components/common/NetworkStatusNotifier";
+import dynamic from 'next/dynamic';
+const NetworkStatusNotifier = dynamic(
+  () => import('@/components/common/NetworkStatusNotifier').then(m => m.NetworkStatusNotifier),
+  { ssr: false }
+);
 
 export default function RootLayout({
   children,
