@@ -4,11 +4,9 @@ export const APP_CONFIG: AppConfig = {
   appName: "Suksharmi ❤️",
   recipientName: "Mili",
   creatorName: "Sukhen",
-  anniversaryDate: "2025-10-14T00:00:00",
+  anniversaryDate: "2025-10-14T00:00:00+05:30",
   contactVisibility: 'PRIVATE',
-  adminPasscode: typeof window === 'undefined'
-    ? (process.env.ADMIN_PASSCODE || process.env.NEXT_PUBLIC_ADMIN_PASSCODE || (process.env.NODE_ENV === 'production' ? '' : 'das@123'))
-    : '',
+  adminPasscode: '',
   surprisePasscode: "forever",
   socials: {
     creatorPhone: "+91 98326 95291",
@@ -20,61 +18,13 @@ export const APP_CONFIG: AppConfig = {
   },
 };
 
-// ─── Login & Session Config ────────────────────────────────────────────────────
-export const AUTH_USERS = {
-  mili: {
-    id: "mili",
-    name: "Mili",
-    role: "mili" as const,
-    title: "Queen & Co-Admin",
-    phone: "9732934032",
-    formattedPhone: "+91 97329 34032",
-    emails: [
-      "mandalsharmili06@gmail.com",
-      "9732934032",
-      "+919732934032",
-      "+91 97329 34032"
-    ],
-    defaultEmail: "mandalsharmili06@gmail.com",
-    passwords: [process.env.MILI_PASSWORD || process.env.NEXT_PUBLIC_MILI_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'mili@123')],
-    defaultPassword: process.env.MILI_PASSWORD || process.env.NEXT_PUBLIC_MILI_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'mili@123'),
-    avatar: "M",
-    greeting: "Welcome back, Mili! Your Sanctuary & Admin Studio are ready.",
-    themeColor: "from-rose-500 to-pink-600",
-    glowColor: "rgba(244, 63, 94, 0.4)",
-  },
-  sukhen: {
-    id: "sukhen",
-    name: "Sukhen",
-    role: "sukhen" as const,
-    title: "Creator & Admin",
-    phone: "9832695291",
-    formattedPhone: "+91 98326 95291",
-    emails: [
-      "dassukhen@gmail.com",
-      "9832695291",
-      "+919832695291",
-      "+91 98326 95291"
-    ],
-    defaultEmail: "dassukhen@gmail.com",
-    passwords: [process.env.SUKHEN_PASSWORD || process.env.NEXT_PUBLIC_SUKHEN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'das@123')],
-    defaultPassword: process.env.SUKHEN_PASSWORD || process.env.NEXT_PUBLIC_SUKHEN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'das@123'),
-    avatar: "S",
-    greeting: "Welcome back, Sukhen! Creator Studio & Admin active.",
-    themeColor: "from-purple-600 to-indigo-600",
-    glowColor: "rgba(147, 51, 234, 0.4)",
-  },
-};
-
+// Public Session Configuration (Safe for client components)
 export const AUTH_CONFIG = {
-  /** Default fallback password */
-  password: process.env.MILI_PASSWORD || process.env.NEXT_PUBLIC_MILI_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'mili@123'),
   /** Maximum simultaneous device logins allowed (strictly 3) */
   maxDevices: 3,
   /** Session expiry — 30 days in milliseconds */
   sessionExpiryMs: 30 * 24 * 60 * 60 * 1000,
 };
-
 
 export const ROMANTIC_QUOTES = [
   "“Everything I created, I created with you in mind.”",

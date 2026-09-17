@@ -48,15 +48,65 @@ function getStorageItem<T>(key: string, fallback: T): T {
   }
 }
 
-function setStorageItem<T>(key: string, value: T): void {
+function pruneNonEssentialStorage(): void {
   if (typeof window === 'undefined') return;
   try {
-    const raw = JSON.stringify(value);
+    // 1. Remove legacy duplicate memory keys
+    localStorage.removeItem(LEGACY_MEMORIES_ALL_KEY);
+    // 2. Remove temporary transient caches or audio search keys
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('mili_temp_') || k.startsWith('mili_cache_') || k.startsWith('yt_') || k.startsWith('cache_'))) {
+        toRemove.push(k);
+      }
+    }
+    toRemove.forEach((k) => {
+      try { localStorage.removeItem(k); } catch {}
+    });
+  } catch {}
+}
+
+/**
+ * Universal safe LocalStorage setter with QuotaExceeded resilience and in-memory fallback.
+ */
+export function safeSetLocalStorage(key: string, value: any): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const raw = typeof value === 'string' ? value : JSON.stringify(value);
     localStorage.setItem(key, raw);
     memoryCache.set(key, { data: value, raw });
-  } catch (error) {
-    console.warn(`Error saving localStorage key "${key}":`, error);
+    return true;
+  } catch (error: any) {
+    const isQuota =
+      error?.name === 'QuotaExceededError' ||
+      error?.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      error?.code === 22 ||
+      error?.code === 1014;
+
+    if (isQuota) {
+      console.warn(`[Storage Alert] LocalStorage 5MB quota reached. Pruning transient cache for key "${key}"...`);
+      pruneNonEssentialStorage();
+      try {
+        const raw = typeof value === 'string' ? value : JSON.stringify(value);
+        localStorage.setItem(key, raw);
+        memoryCache.set(key, { data: value, raw });
+        return true;
+      } catch {
+        // Fall back to in-memory cache so the active session never crashes
+        console.warn(`[Storage Alert] Storing key "${key}" in-memory for active session.`);
+        memoryCache.set(key, { data: value, raw: null });
+        return false;
+      }
+    }
+    // Generic fallback to in-memory
+    memoryCache.set(key, { data: value, raw: null });
+    return false;
   }
+}
+
+function setStorageItem<T>(key: string, value: T): void {
+  safeSetLocalStorage(key, value);
 }
 
 // ----------------- Deleted IDs Tracking (Prevents resurrecting deleted defaults) -----------------

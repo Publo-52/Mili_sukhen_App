@@ -1,0 +1,17 @@
+name: Supabase Keep-Alive Heartbeat
+
+on:
+  schedule:
+    # Runs every 3 days at 06:00 UTC (keeps Supabase free tier active)
+    - cron: '0 6 */3 * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Keep-Alive Heartbeat
+        run: |
+          TARGET_URL="${{ secrets.SITE_URL || 'https://mili-universe.vercel.app' }}/api/health"
+          echo "Pinging health heartbeat at: $TARGET_URL"
+          curl -s -f -m 10 "$TARGET_URL" || echo "Ping completed with status $?"

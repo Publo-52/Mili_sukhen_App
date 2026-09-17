@@ -40,6 +40,38 @@ function createHmacSignature(data: string): string {
   return crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex');
 }
 
+export function getDeviceFamily(userAgent: string): string {
+  const ua = (userAgent || '').toLowerCase();
+  if (ua.includes('iphone')) return 'ios';
+  if (ua.includes('ipad')) return 'ipad';
+  if (ua.includes('android')) return 'android';
+  if (ua.includes('windows')) return 'windows';
+  if (ua.includes('mac os') || ua.includes('macintosh')) return 'macos';
+  if (ua.includes('linux')) return 'linux';
+  return 'generic';
+}
+
+/**
+ * Validates cross-compatibility for Mobile <-> Desktop Site toggle:
+ * 1. iPhone/iPad (ios/ipad) toggling "Desktop Website" sends macOS Safari UA.
+ * 2. Android phone (android) toggling "Desktop Site" sends Linux Chrome UA.
+ * Malicious cross-ecosystem hijacking (e.g. Windows -> iOS / Linux -> Windows) remains strictly blocked.
+ */
+export function isCompatibleDeviceFamily(issued: string, current: string): boolean {
+  if (issued === current) return true;
+  if (issued === 'generic' || current === 'generic') return true;
+
+  // Apple ecosystem mobile/desktop toggle
+  if ((issued === 'ios' || issued === 'ipad') && current === 'macos') return true;
+  if (issued === 'macos' && (current === 'ios' || current === 'ipad')) return true;
+
+  // Android/Linux ecosystem mobile/desktop toggle
+  if (issued === 'android' && current === 'linux') return true;
+  if (issued === 'linux' && current === 'android') return true;
+
+  return false;
+}
+
 function encodeSessionToken(payload: {
   id: string;
   userName: string;
@@ -47,6 +79,7 @@ function encodeSessionToken(payload: {
   userEmail?: string;
   avatar?: string;
   deviceName: string;
+  deviceFamily?: string;
   createdAt: string;
   expiresAt: string;
 }): string {
@@ -58,6 +91,7 @@ function encodeSessionToken(payload: {
       e: payload.userEmail,
       a: payload.avatar,
       d: payload.deviceName,
+      f: payload.deviceFamily || 'generic',
       c: payload.createdAt,
       x: payload.expiresAt,
     };
@@ -73,7 +107,7 @@ function encodeSessionToken(payload: {
   }
 }
 
-function decodeSessionToken(token: string): DeviceSession | null {
+function decodeSessionToken(token: string, expectedUserAgent?: string): DeviceSession | null {
   try {
     if (!token.startsWith('sess_')) return null;
     const raw = token.slice(5);
@@ -95,6 +129,15 @@ function decodeSessionToken(token: string): DeviceSession | null {
     const json = Buffer.from(b64, 'base64url').toString('utf-8');
     const p = JSON.parse(json);
     if (!p || !p.x || new Date(p.x).getTime() < Date.now()) return null;
+
+    // Anti-Session Hijacking verification (with mobile Desktop Site compatibility)
+    if (expectedUserAgent && p.f && p.f !== 'generic') {
+      const currentFamily = getDeviceFamily(expectedUserAgent);
+      if (!isCompatibleDeviceFamily(p.f, currentFamily)) {
+        console.warn(`[Security Alert] Session hijacking blocked! Token issued for ${p.f} but accessed from incompatible ${currentFamily}.`);
+        return null;
+      }
+    }
 
     return {
       id: token,
@@ -281,6 +324,8 @@ export async function createSession(
     : undefined;
   const originalCreatedAt = existingSession?.createdAt || now.toISOString();
 
+  const deviceFamily = getDeviceFamily(userAgent);
+
   const tokenId = encodeSessionToken({
     id: rawId,
     userName,
@@ -288,6 +333,7 @@ export async function createSession(
     userEmail,
     avatar,
     deviceName,
+    deviceFamily,
     createdAt: originalCreatedAt,
     expiresAt: expires.toISOString(),
   });
@@ -350,13 +396,23 @@ export async function createSession(
  * Validate a session token.
  * Supabase is the authoritative check; HMAC decode is a self-healing fallback.
  */
-export async function validateSession(token: string): Promise<DeviceSession | null> {
+export async function validateSession(token: string, expectedUserAgent?: string): Promise<DeviceSession | null> {
   if (!token) return null;
 
   // 1. Authoritative: Supabase lookup (checks expiry in the query)
   try {
     const dbSession = await dbGetSession(token);
     if (dbSession) {
+      // Anti-Session Hijacking check on device family
+      if (expectedUserAgent && dbSession.userAgent) {
+        const currentFamily = getDeviceFamily(expectedUserAgent);
+        const dbFamily = getDeviceFamily(dbSession.userAgent);
+        if (!isCompatibleDeviceFamily(dbFamily, currentFamily)) {
+          console.warn(`[Security Alert] Session hijacking blocked! Session registered for ${dbFamily} but accessed from incompatible ${currentFamily}.`);
+          return null;
+        }
+      }
+
       // Fire-and-forget last-seen update (non-blocking)
       dbUpdateLastSeen(token).catch(() => {});
       return dbSession;
@@ -367,7 +423,7 @@ export async function validateSession(token: string): Promise<DeviceSession | nu
 
   // 2. Cryptographic Self-Healing Fallback: Verify HMAC signature on token
   // Guarantees unexpired, signed sessions remain active even during Supabase latency or cold starts
-  const decoded = decodeSessionToken(token);
+  const decoded = decodeSessionToken(token, expectedUserAgent);
   if (decoded) {
     if (isSupabaseConfigured && supabase) {
       // Re-sync to database asynchronously in background
@@ -386,7 +442,8 @@ export async function getSessionFromRequest(request: Request): Promise<DeviceSes
   const cookieHeader = request.headers.get('cookie') || '';
   const match = cookieHeader.match(/mili_session=([^;]+)/);
   if (!match || !match[1]) return null;
-  return validateSession(match[1]);
+  const userAgent = request.headers.get('user-agent') || undefined;
+  return validateSession(match[1], userAgent);
 }
 
 /**

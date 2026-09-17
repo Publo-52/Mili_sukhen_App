@@ -36,8 +36,14 @@ export async function GET() {
             canvasDrawingType: t.canvas_drawing_type,
           }));
 
+        const existingIds = new Set(data.map((t) => t.id));
+        const missingBaseline = INITIAL_TURTLE_CREATIONS.filter(
+          (t) => !existingIds.has(t.id) && !isTurtleDeletedOnServer(t.id)
+        );
+        const allCombined = [...filtered, ...missingBaseline];
+
         return NextResponse.json(
-          { creations: filtered },
+          { creations: allCombined },
           {
             headers: {
               'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59',

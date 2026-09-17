@@ -26,8 +26,13 @@ export function calculateDaysTogether(startDateString: string): {
   seconds: number;
   totalDays: number;
 } {
-  const start = new Date(startDateString).getTime();
-  const now = new Date().getTime();
+  // Normalize timezone to IST (+05:30) if offset or 'Z' is missing to prevent overseas clock drift
+  let normalizedDate = startDateString || '2025-10-14T00:00:00+05:30';
+  if (!normalizedDate.includes('Z') && !normalizedDate.includes('+') && !normalizedDate.includes('-')) {
+    normalizedDate = `${normalizedDate}+05:30`;
+  }
+  const start = new Date(normalizedDate).getTime();
+  const now = Date.now();
   const diffMs = Math.max(0, now - start);
 
   const totalDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -97,7 +102,7 @@ export function getOptimizedImageUrl(
   url?: string,
   options: { width?: number; height?: number; quality?: string | number; crop?: string } = {}
 ): string {
-  if (!url) return '';
+  if (!url || typeof url !== 'string' || url.trim() === '') return DEFAULT_FALLBACK_IMAGE;
   const { width = 800, quality = 'auto', crop = 'limit' } = options;
 
   if (url.includes('res.cloudinary.com')) {
@@ -295,5 +300,24 @@ export function getSessionActivityStatus(
     badgeBorder: 'border-white/10',
     badgeText: 'text-slate-300',
   };
+}
+
+/**
+ * Universal fallback image if an external URL or Unsplash link ever 404s.
+ */
+export const DEFAULT_FALLBACK_IMAGE = '/images/hero/mili_hero_1.png';
+
+/**
+ * Injects Cloudinary auto-format (f_auto) and auto-quality (q_auto) parameters.
+ * Automatically serves lightweight AVIF/WebP images and compressed MP4/AV1 videos,
+ * reducing payload size by up to 70% and preventing Cloudinary bandwidth exhaustion.
+ */
+export function optimizeCloudinaryUrl(url?: string | null, width?: number): string {
+  if (!url || typeof url !== 'string') return DEFAULT_FALLBACK_IMAGE;
+  if (!url.includes('res.cloudinary.com')) return url;
+  if (url.includes('f_auto') || url.includes('q_auto')) return url;
+
+  const transformation = width ? `f_auto,q_auto,w_${width}` : 'f_auto,q_auto';
+  return url.replace('/upload/', `/upload/${transformation}/`);
 }
 

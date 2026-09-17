@@ -19,9 +19,7 @@ export async function isAuthorizedAdmin(request: Request): Promise<boolean> {
     // 2. Optional server token header (for CLI, background jobs, or explicit token)
     const adminToken = request.headers.get('x-admin-token');
     const serverPasscode =
-      process.env.ADMIN_PASSCODE ||
-      process.env.NEXT_PUBLIC_ADMIN_PASSCODE ||
-      (process.env.NODE_ENV === 'production' ? '' : 'das@123');
+      (process.env.ADMIN_PASSCODE || process.env.SUKHEN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'das@123')).trim();
 
     if (serverPasscode && adminToken && timingSafeCompare(adminToken, serverPasscode)) {
       return true;

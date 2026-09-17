@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Search, Sparkles, Heart, Filter, Layers, ArrowUpRight, Plus, Wand2 } from 'lucide-react';
 import { Project, ProjectCategory } from '@/types';
-import { getProjects, saveProject, deleteProject, toggleFavoriteProject, getFavoriteProjectIds, getDeletedProjectIds, markProjectDeleted } from '@/lib/storage';
+import { getProjects, saveProject, deleteProject, toggleFavoriteProject, getFavoriteProjectIds, getDeletedProjectIds, markProjectDeleted, safeSetLocalStorage } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { ProjectCard } from './ProjectCard';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -71,9 +71,7 @@ export const ProjectShowcase: React.FC = () => {
       });
       if (data?.projects && Array.isArray(data.projects)) {
         setProjects(data.projects);
-        try {
-          localStorage.setItem('mili_universe_projects', JSON.stringify(data.projects));
-        } catch {}
+        safeSetLocalStorage('mili_universe_projects', data.projects);
         return;
       }
     } catch {}

@@ -54,9 +54,10 @@ async function saveToSupabaseCache(cacheKey: string, videoId: string): Promise<v
 
 // ── Invidious Fallback Helper ────────────────────────────────────────────────
 const INVIDIOUS_INSTANCES = [
-  'https://invidious.io',
   'https://inv.nadeko.net',
   'https://invidious.nerdvpn.de',
+  'https://yewtu.be',
+  'https://invidious.io',
 ];
 
 async function searchWithInvidious(searchQuery: string): Promise<string | null> {
@@ -69,7 +70,7 @@ async function searchWithInvidious(searchQuery: string): Promise<string | null> 
 
       const res = await fetch(apiUrl.toString(), {
         headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(3500),
       });
 
       if (!res.ok) continue;
@@ -83,6 +84,30 @@ async function searchWithInvidious(searchQuery: string): Promise<string | null> 
       continue;
     }
   }
+  return null;
+}
+
+// ── iTunes Audio Fallback (Zero Quota Limit, 100% Free & Fast) ───────────────
+async function searchWithItunes(query: string): Promise<{ streamUrl: string; title: string; artist: string } | null> {
+  try {
+    const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=1`;
+    const res = await fetch(itunesUrl, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(3500),
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (data.resultCount > 0 && data.results[0]?.previewUrl) {
+      const track = data.results[0];
+      return {
+        streamUrl: track.previewUrl,
+        title: track.trackName || query,
+        artist: track.artistName || 'Various Artists',
+      };
+    }
+  } catch {}
   return null;
 }
 
@@ -164,6 +189,18 @@ export async function GET(request: NextRequest) {
     memCache.set(cacheKey, { videoId: fallbackVideoId, cachedAt: Date.now() });
     await saveToSupabaseCache(cacheKey, fallbackVideoId);
     return NextResponse.json({ videoId: fallbackVideoId, cached: false, source: 'invidious_fallback' });
+  }
+
+  // ── 5. iTunes API Fallback (Infinite free quota, instant direct preview stream) ──
+  const itunesTrack = await searchWithItunes(rawQuery);
+  if (itunesTrack) {
+    return NextResponse.json({
+      streamUrl: itunesTrack.streamUrl,
+      title: itunesTrack.title,
+      artist: itunesTrack.artist,
+      cached: false,
+      source: 'itunes_stream',
+    });
   }
 
   return NextResponse.json(

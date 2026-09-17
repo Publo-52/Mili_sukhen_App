@@ -14,6 +14,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { AUTH_CONFIG } from '@/data/config';
+import { safeSetLocalStorage } from '@/lib/storage';
 
 interface BlockedSession {
   id: string;
@@ -83,14 +84,14 @@ function LoginContent() {
       const data = await res.json();
 
       if (res.ok && data.success) {
+        safeSetLocalStorage('mili_user', data.user);
+        if (data.user.role === 'sukhen' || data.user.role === 'mili') {
+          safeSetLocalStorage('mili_admin_authenticated', 'true');
+        }
+        if (data.sessionId) {
+          safeSetLocalStorage('mili_session_ref', data.sessionId);
+        }
         try {
-          localStorage.setItem('mili_user', JSON.stringify(data.user));
-          if (data.user.role === 'sukhen' || data.user.role === 'mili') {
-            localStorage.setItem('mili_admin_authenticated', 'true');
-          }
-          if (data.sessionId) {
-            localStorage.setItem('mili_session_ref', data.sessionId);
-          }
           // Ensure first screen opened after login is always the Home page
           sessionStorage.setItem('mili_active_tab', 'home');
           window.dispatchEvent(new Event('auth-changed'));

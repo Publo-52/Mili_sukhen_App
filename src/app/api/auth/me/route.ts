@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ authenticated: false, session: null }, { status: 200 });
   }
 
-  const session = await validateSession(token);
+  const userAgent = request.headers.get('user-agent') || undefined;
+  const session = await validateSession(token, userAgent);
 
   if (!session) {
     return NextResponse.json({ authenticated: false, session: null }, { status: 200 });

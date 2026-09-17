@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSession } from '@/lib/sessions';
-import { AUTH_USERS, AUTH_CONFIG } from '@/data/config';
+import { AUTH_CONFIG } from '@/data/config';
+import { AUTH_USERS } from '@/lib/server-auth-config';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { timingSafeCompare } from '@/lib/security';
+import { timingSafeCompare, checkRateLimit, recordFailedAttempt, clearRateLimit } from '@/lib/security';
 
 // ── Lightweight in-memory fallback (local dev / Supabase unavailable) ─────────
 interface InMemoryRecord {
@@ -14,7 +15,7 @@ const inMemoryRateLimit = new Map<string, InMemoryRecord>();
 
 // ── Supabase-backed rate limiting ─────────────────────────────────────────────
 
-async function checkRateLimit(ip: string): Promise<{ allowed: boolean; waitSeconds?: number }> {
+async function checkIpRateLimit(ip: string): Promise<{ allowed: boolean; waitSeconds?: number }> {
   if (!isSupabaseConfigured || !supabase) {
     return checkInMemoryRateLimit(ip);
   }
@@ -51,7 +52,7 @@ async function checkRateLimit(ip: string): Promise<{ allowed: boolean; waitSecon
   }
 }
 
-async function recordFailedAttempt(ip: string, email: string): Promise<void> {
+async function recordIpFailedAttempt(ip: string, email: string): Promise<void> {
   if (!isSupabaseConfigured || !supabase) {
     recordInMemoryFailedAttempt(ip);
     return;
@@ -90,7 +91,7 @@ async function recordFailedAttempt(ip: string, email: string): Promise<void> {
   }
 }
 
-async function clearRateLimit(ip: string): Promise<void> {
+async function clearIpRateLimit(ip: string): Promise<void> {
   inMemoryRateLimit.delete(ip);
   if (!isSupabaseConfigured || !supabase) return;
   try {
@@ -137,7 +138,7 @@ export async function POST(request: NextRequest) {
       '127.0.0.1';
 
     // Check anti-brute-force rate limit (Supabase-backed, cross-instance)
-    const rateCheck = await checkRateLimit(ip);
+    const rateCheck = await checkIpRateLimit(ip);
     if (!rateCheck.allowed) {
       return NextResponse.json(
         {
@@ -167,6 +168,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Account-level rate defense: prevents distributed botnet attacks targeting Sukhen or Mili
+    const accountRateKey = `login_acct_${cleanEmail}`;
+    const accountCheck = await checkRateLimit(accountRateKey, 5, 5 * 60 * 1000);
+    if (!accountCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many failed login attempts for this account. Please wait ${accountCheck.waitSeconds} seconds.`,
+        },
+        { status: 429 }
+      );
+    }
+
     let candidateUser: typeof AUTH_USERS['mili'] | typeof AUTH_USERS['sukhen'] | null = null;
 
     // Check Sukhen email / phone
@@ -188,7 +201,10 @@ export async function POST(request: NextRequest) {
     } else if (isMiliEmail) {
       candidateUser = AUTH_USERS.mili;
     } else {
-      await recordFailedAttempt(ip, cleanEmail);
+      // Timing attack immunity: dummy constant-time comparison to prevent user enumeration via CPU timing
+      timingSafeCompare(cleanPass, 'decoy_hash_padding_for_timing_safety_384920');
+      await recordIpFailedAttempt(ip, cleanEmail);
+      recordFailedAttempt(accountRateKey, 5, 5 * 60 * 1000);
       return NextResponse.json(
         { error: 'Unrecognized email or phone number. Please enter your registered email or phone.' },
         { status: 401 }
@@ -196,18 +212,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password (constant-time cryptographic match to prevent timing attacks)
-    const isPasswordValid = candidateUser.passwords.some((p) => p && timingSafeCompare(cleanPass, p));
+    const validPasswords = candidateUser.getPasswords();
+    const isPasswordValid = validPasswords.some((p) => p && timingSafeCompare(cleanPass, p));
 
     if (!isPasswordValid) {
-      await recordFailedAttempt(ip, cleanEmail);
+      await recordIpFailedAttempt(ip, cleanEmail);
+      recordFailedAttempt(accountRateKey, 5, 5 * 60 * 1000);
       return NextResponse.json(
         { error: 'Incorrect password. Please verify and try again.' },
         { status: 401 }
       );
     }
 
-    // Clear rate limit on successful authentication
-    await clearRateLimit(ip);
+    // Clear rate limits on successful authentication
+    await clearIpRateLimit(ip);
+    clearRateLimit(accountRateKey);
 
     const authenticatedUser = candidateUser;
     const userAgent = request.headers.get('user-agent') || 'Unknown Browser';

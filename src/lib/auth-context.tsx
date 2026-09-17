@@ -9,7 +9,7 @@ import React, {
   ReactNode,
 } from 'react';
 
-import { setAdminLoggedIn } from '@/lib/storage';
+import { setAdminLoggedIn, safeSetLocalStorage } from '@/lib/storage';
 
 export interface UserInfo {
   name: string;
@@ -65,9 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAuthenticated(true);
           setUser(data.user);
           setSession(data.session || null);
-          try {
-            localStorage.setItem('mili_user', JSON.stringify(data.user));
-          } catch {}
+          safeSetLocalStorage('mili_user', data.user);
           if (
             data.user?.role === 'sukhen' ||
             data.user?.role === 'mili' ||
@@ -75,9 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             data.session?.userRole === 'mili'
           ) {
             setAdminLoggedIn(true);
-            try {
-              localStorage.setItem('mili_admin_authenticated', 'true');
-            } catch {}
+            safeSetLocalStorage('mili_admin_authenticated', 'true');
           }
           return;
         }

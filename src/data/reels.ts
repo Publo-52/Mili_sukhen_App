@@ -1,4 +1,5 @@
 import { ReelItem } from '@/types';
+import { safeSetLocalStorage } from '@/lib/storage';
 
 export const INITIAL_REELS: ReelItem[] = [
   {
@@ -102,9 +103,9 @@ export function toggleReelLike(reelId: string, baseCount = 0): { liked: boolean;
       liked = true;
     }
 
-    localStorage.setItem(REEL_LIKES_KEY, JSON.stringify(likedIds));
+    safeSetLocalStorage(REEL_LIKES_KEY, likedIds);
 
-    // Custom counts store - start from 0 / real count
+    // Custom counts store
     const countKey = `mili_reel_count_${reelId}`;
     const storedCount = localStorage.getItem(countKey);
     let count = storedCount ? parseInt(storedCount, 10) : safeBase;
@@ -112,7 +113,27 @@ export function toggleReelLike(reelId: string, baseCount = 0): { liked: boolean;
       count = safeBase;
     }
     count = liked ? count + 1 : Math.max(0, count - 1);
-    localStorage.setItem(countKey, count.toString());
+    safeSetLocalStorage(countKey, count.toString());
+
+    // Fire custom event so UI updates instantly
+    try {
+      window.dispatchEvent(new CustomEvent('mili-reels-likes-updated', { detail: { reelId, count, liked } }));
+    } catch {}
+
+    // Asynchronously sync with server API
+    fetch('/api/reels/likes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reelId, action: liked ? 'like' : 'unlike' }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.likesCount !== undefined && typeof data.likesCount === 'number') {
+          safeSetLocalStorage(countKey, data.likesCount.toString());
+          window.dispatchEvent(new CustomEvent('mili-reels-likes-updated', { detail: { reelId, count: data.likesCount, liked } }));
+        }
+      })
+      .catch(() => {});
 
     return { liked, newCount: count };
   } catch {
@@ -131,7 +152,6 @@ export function getReelLikeCount(reelId: string, baseCount = 0): number {
     const storedCount = localStorage.getItem(countKey);
     if (storedCount !== null) {
       const parsed = parseInt(storedCount, 10);
-      // Clean up any old random 100+ or 150 legacy fake numbers
       if (!isNaN(parsed) && parsed < 50) {
         return parsed;
       }
@@ -145,6 +165,27 @@ export function getReelLikeCount(reelId: string, baseCount = 0): number {
 }
 
 /**
+ * Fetch all global reel likes from server and populate localStorage
+ */
+export async function syncGlobalReelLikes(): Promise<Record<string, number>> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const res = await fetch('/api/reels/likes');
+    const data = await res.json();
+    if (data?.likes && typeof data.likes === 'object') {
+      Object.entries(data.likes).forEach(([id, count]) => {
+        if (typeof count === 'number') {
+          safeSetLocalStorage(`mili_reel_count_${id}`, count.toString());
+        }
+      });
+      window.dispatchEvent(new CustomEvent('mili-reels-likes-updated'));
+      return data.likes;
+    }
+  } catch {}
+  return {};
+}
+
+/**
  * Save custom reel locally as fallback
  */
 export function saveCustomReelLocally(reel: ReelItem): void {
@@ -154,7 +195,7 @@ export function saveCustomReelLocally(reel: ReelItem): void {
     const customList: ReelItem[] = raw ? JSON.parse(raw) : [];
     const filtered = customList.filter((r) => r.id !== reel.id);
     filtered.unshift(reel);
-    localStorage.setItem(REEL_CUSTOM_KEY, JSON.stringify(filtered));
+    safeSetLocalStorage(REEL_CUSTOM_KEY, filtered);
   } catch {}
 }
 

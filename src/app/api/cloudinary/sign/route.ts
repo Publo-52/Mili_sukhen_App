@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Cloudinary sign error:', error);
     return NextResponse.json(
-      { error: error?.message || 'Failed to generate signature' },
+      { error: 'Failed to generate signature. Please try again.' },
       { status: 500 }
     );
   }

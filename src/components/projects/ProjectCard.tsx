@@ -41,21 +41,27 @@ export const ProjectCard = React.memo<ProjectCardProps>(({
   const titleAccentClass = project.themeTextAccent || 'group-hover:text-roseGlow-300';
   const defaultThumb = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop';
   const displayThumbnail = getOptimizedImageUrl(project.thumbnail || defaultThumb, { width: 800, quality: 'auto' }) || defaultThumb;
+  const [imgSrc, setImgSrc] = React.useState(displayThumbnail);
+
+  React.useEffect(() => {
+    setImgSrc(displayThumbnail);
+  }, [displayThumbnail]);
 
   return (
     <div
-      className="group relative flex flex-col cursor-pointer select-none mb-3 sm:mb-4 fast-scroll-item will-change-transform"
-      style={{ transform: 'translateZ(0)' }}
       onClick={() => onQuickPreview(project)}
+      className="group relative flex flex-col w-full break-inside-avoid mb-4 sm:mb-6 cursor-pointer transform-gpu transition-all duration-300 active:scale-[0.985]"
+      style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       {/* 1. Pinterest Media Container with Overlays */}
       <div
         className={`relative ${aspectClass} w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-obsidian-900 border border-white/5 group-hover:border-roseGlow-500/40 transition-all duration-300 shadow-sm group-hover:shadow-xl`}
       >
         <Image
-          src={displayThumbnail}
+          src={imgSrc}
           alt={project.title}
           fill
+          onError={() => setImgSrc('/images/hero/mili_hero_1.png')}
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw"
           className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
           loading={index < 4 ? 'eager' : 'lazy'}

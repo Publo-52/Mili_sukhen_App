@@ -53,27 +53,35 @@ const EasterEggListener = dynamic(
 
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { safeSetLocalStorage } from '@/lib/storage';
 
 // Eager Parallel Cache Warm-up function (pre-loads key data & assets without blocking main thread)
 const warmUpAllDatasetsAndAssets = () => {
   if (typeof window === 'undefined') return;
 
   try {
-    // 1. Parallel API Cache Preload with deduplication
+    const safeSet = (key: string, value: string) => {
+      safeSetLocalStorage(key, value);
+    };
+
+    // 1. Keep Supabase active & warm (prevents 7-day free tier auto-pause)
+    fetch('/api/health').catch(() => {});
+
+    // 2. Parallel API Cache Preload with deduplication
     const endpoints = ['/api/projects', '/api/turtle', '/api/love-notes', '/api/memories'];
     endpoints.forEach((url) => {
       cachedFetch(url)
         .then((data: any) => {
           if (!data) return;
           if (url === '/api/projects' && data.projects) {
-            localStorage.setItem('mili_universe_projects', JSON.stringify(data.projects));
+            safeSet('mili_universe_projects', JSON.stringify(data.projects));
           } else if (url === '/api/turtle' && data.creations) {
-            localStorage.setItem('mili_custom_turtle', JSON.stringify(data.creations));
+            safeSet('mili_custom_turtle', JSON.stringify(data.creations));
           } else if (url === '/api/love-notes' && data.notes) {
-            localStorage.setItem('mili_universe_love_notes', JSON.stringify(data.notes));
+            safeSet('mili_universe_love_notes', JSON.stringify(data.notes));
           } else if (url === '/api/memories' && data.memories) {
-            localStorage.setItem('mili_universe_memories', JSON.stringify(data.memories));
-            localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
+            safeSet('mili_universe_memories', JSON.stringify(data.memories));
+            safeSet('mili_fav_memories_all', JSON.stringify(data.memories));
           }
         })
         .catch(() => {});
@@ -174,6 +182,15 @@ export default function HomePage() {
   useEffect(() => {
     // 1. Fire full-site eager warm-up immediately
     warmUpAllDatasetsAndAssets();
+
+    // Re-sync data whenever user returns to tab (solves stale mobile cache!)
+    const handleVisibilitySync = () => {
+      if (!document.hidden) {
+        warmUpAllDatasetsAndAssets();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilitySync);
+    window.addEventListener('focus', handleVisibilitySync);
 
     // 2. Prefetch Next.js routes upfront
     try {

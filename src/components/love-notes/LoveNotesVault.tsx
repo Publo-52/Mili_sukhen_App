@@ -29,6 +29,7 @@ import {
   deleteLoveNote,
   getFavoriteNoteIds,
   toggleFavoriteNote,
+  safeSetLocalStorage,
 } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -103,9 +104,7 @@ export const LoveNotesVault: React.FC<LoveNotesVaultProps> = ({ isActive = true 
       });
       if (data?.notes && Array.isArray(data.notes)) {
         setAllNotes(data.notes);
-        try {
-          localStorage.setItem('mili_universe_love_notes', JSON.stringify(data.notes));
-        } catch {}
+        safeSetLocalStorage('mili_universe_love_notes', data.notes);
         return;
       }
     } catch {}

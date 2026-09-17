@@ -12,7 +12,7 @@ import {
   Terminal,
 } from 'lucide-react';
 import { TurtleCreation } from '@/types';
-import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation } from '@/lib/storage';
+import { getTurtleCreations, saveTurtleCreation, deleteTurtleCreation, safeSetLocalStorage } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { getOptimizedImageUrl } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -60,9 +60,7 @@ export const TurtleGallery: React.FC = () => {
       });
       if (data?.creations && Array.isArray(data.creations)) {
         setCreations(data.creations);
-        try {
-          localStorage.setItem('mili_custom_turtle', JSON.stringify(data.creations));
-        } catch {}
+        safeSetLocalStorage('mili_custom_turtle', data.creations);
         return;
       }
     } catch {}

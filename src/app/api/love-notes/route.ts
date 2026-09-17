@@ -31,8 +31,14 @@ export async function GET() {
             isFavorite: Boolean(n.is_favorite),
           }));
 
+        const existingIds = new Set(data.map((n) => n.id));
+        const missingBaseline = INITIAL_LOVE_NOTES.filter(
+          (n) => !existingIds.has(n.id) && !isNoteDeletedOnServer(n.id)
+        );
+        const allCombined = [...filtered, ...missingBaseline];
+
         return NextResponse.json(
-          { notes: filtered },
+          { notes: allCombined },
           {
             headers: {
               'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59',

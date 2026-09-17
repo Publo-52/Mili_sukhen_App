@@ -7,22 +7,21 @@ import {
   Volume2,
   VolumeX,
   Share2,
-  Play,
-  Pause,
   MapPin,
   Calendar,
   Music2,
-  Sparkles,
   Check,
-  Info,
   ArrowLeft,
+  Play,
 } from 'lucide-react';
 import { ReelItem } from '@/types';
 import { toggleReelLike, isReelLiked, getReelLikeCount } from '@/data/reels';
+import { optimizeCloudinaryUrl } from '@/lib/utils';
 
 interface ReelCardProps {
   reel: ReelItem;
   isActive: boolean;
+  isNearby?: boolean;
   isMuted: boolean;
   onToggleMute: () => void;
   onBack?: () => void;
@@ -34,6 +33,7 @@ interface ReelCardProps {
 export const ReelCard: React.FC<ReelCardProps> = ({
   reel,
   isActive,
+  isNearby = true,
   isMuted,
   onToggleMute,
   onBack,
@@ -42,8 +42,8 @@ export const ReelCard: React.FC<ReelCardProps> = ({
   total,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const progressTrackRef = useRef<HTMLDivElement | null>(null);
 
-  // States
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,22 +51,35 @@ export const ReelCard: React.FC<ReelCardProps> = ({
   const [likesCount, setLikesCount] = useState(() =>
     getReelLikeCount(reel.id, reel.likesCount || 0)
   );
+  const [likeAnimKey, setLikeAnimKey] = useState(0);
   const [showHeartBurst, setShowHeartBurst] = useState(false);
-  const [showPlayStateIcon, setShowPlayStateIcon] = useState<'play' | 'pause' | 'sound' | 'mute' | null>(null);
   const [showCopiedToast, setShowCopiedToast] = useState(false);
+  const [showPlayPauseIcon, setShowPlayPauseIcon] = useState<'play' | 'pause' | null>(null);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
+  const [isDraggingProgress, setIsDraggingProgress] = useState(false);
 
   const lastTapRef = useRef<number>(0);
-  const playStateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const loadingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const playPauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sync like state if reel ID changes
+  // Sync like state if reel ID changes or server updates
   useEffect(() => {
     setIsLiked(isReelLiked(reel.id));
     setLikesCount(getReelLikeCount(reel.id, reel.likesCount || 0));
+
+    const handleLikesUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ reelId?: string; count?: number; liked?: boolean }>;
+      if (!customEvent.detail || customEvent.detail.reelId === reel.id) {
+        setIsLiked(isReelLiked(reel.id));
+        setLikesCount(getReelLikeCount(reel.id, reel.likesCount || 0));
+      }
+    };
+
+    window.addEventListener('mili-reels-likes-updated', handleLikesUpdated);
+    return () => window.removeEventListener('mili-reels-likes-updated', handleLikesUpdated);
   }, [reel.id, reel.likesCount]);
 
-  // Autoplay instantly when active, pause when inactive
+  // Autoplay when active, pause when inactive
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -81,7 +94,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
             setIsLoading(false);
           })
           .catch(() => {
-            // Autoplay with audio might be blocked by browser policy; retry muted
+            // Autoplay with sound blocked: fallback to muted autoplay
             video.muted = true;
             video
               .play()
@@ -89,30 +102,27 @@ export const ReelCard: React.FC<ReelCardProps> = ({
                 setIsPlaying(true);
                 setIsLoading(false);
               })
-              .catch(() => {
-                setIsPlaying(false);
-              });
+              .catch(() => setIsPlaying(false));
           });
       }
     } else {
       video.pause();
+      video.currentTime = 0;
       setIsPlaying(false);
+      setProgress(0);
     }
   }, [isActive, reel.id, isMuted]);
 
-  // Sync mute state changes to active video
+  // Sync mute state
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = isMuted;
     }
   }, [isMuted]);
 
-  // Debounced buffering handlers to prevent flickers on instant swipe
   const handleWaiting = () => {
     if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
-    loadingTimerRef.current = setTimeout(() => {
-      setIsLoading(true);
-    }, 200);
+    loadingTimerRef.current = setTimeout(() => setIsLoading(true), 200);
   };
 
   const handleCanPlay = () => {
@@ -120,59 +130,105 @@ export const ReelCard: React.FC<ReelCardProps> = ({
     setIsLoading(false);
   };
 
-  // Handle Video Time Update for progress bar
   const handleTimeUpdate = () => {
+    if (isDraggingProgress) return;
     const video = videoRef.current;
     if (!video || !video.duration) return;
-    const currentProgress = (video.currentTime / video.duration) * 100;
-    setProgress(currentProgress);
+    setProgress((video.currentTime / video.duration) * 100);
   };
 
-  // Toggle Play / Pause on Single Tap
-  const flashPlayIcon = (state: 'play' | 'pause' | 'sound' | 'mute') => {
-    setShowPlayStateIcon(state);
-    if (playStateTimeoutRef.current) clearTimeout(playStateTimeoutRef.current);
-    playStateTimeoutRef.current = setTimeout(() => {
-      setShowPlayStateIcon(null);
-    }, 600);
-  };
+  // Trigger Like with instant animation & state change
+  const triggerLike = useCallback(() => {
+    const result = toggleReelLike(reel.id, reel.likesCount || 0);
+    setIsLiked(result.liked);
+    setLikesCount(result.newCount);
+    setLikeAnimKey((k) => k + 1);
+  }, [reel.id, reel.likesCount]);
 
-  // Handle Double-Tap (Instagram-style Like) & Single-Tap (Toggle Sound)
-  const handleTap = (e: React.MouseEvent | React.TouchEvent) => {
+  // Double-tap for Instagram Heart Burst & Like; Single-tap for Play/Pause
+  const handleVideoTap = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
     const now = Date.now();
-    const DOUBLE_TAP_DELAY = 300;
+    const DOUBLE_TAP_DELAY = 280;
 
     if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-      // Double tap triggered!
-      triggerLike();
+      // Double tap detected: Instagram Heart Burst & Like
+      if (!isLiked) {
+        triggerLike();
+      }
       setShowHeartBurst(true);
-      setTimeout(() => setShowHeartBurst(false), 900);
+      setTimeout(() => setShowHeartBurst(false), 800);
       lastTapRef.current = 0;
+      if (playPauseTimeoutRef.current) clearTimeout(playPauseTimeoutRef.current);
     } else {
       lastTapRef.current = now;
-      // Single tap toggles sound with pop animation (Instagram Reels style)
-      setTimeout(() => {
+      playPauseTimeoutRef.current = setTimeout(() => {
         if (lastTapRef.current === now) {
+          // Single tap: toggle Play / Pause
           const video = videoRef.current;
-          if (video && video.paused) {
-            video.play().catch(() => {});
-            setIsPlaying(true);
+          if (video) {
+            if (video.paused) {
+              video.play().then(() => setIsPlaying(true)).catch(() => {});
+              setShowPlayPauseIcon('play');
+            } else {
+              video.pause();
+              setIsPlaying(false);
+              setShowPlayPauseIcon('pause');
+            }
+            setTimeout(() => setShowPlayPauseIcon(null), 600);
           }
-          onToggleMute();
-          flashPlayIcon(!isMuted ? 'mute' : 'sound');
         }
       }, DOUBLE_TAP_DELAY);
     }
   };
 
-  // Trigger Like
-  const triggerLike = () => {
-    const result = toggleReelLike(reel.id, reel.likesCount || 0);
-    setIsLiked(result.liked);
-    setLikesCount(result.newCount);
+  // Facebook-style Seek Bar Click & Drag handler
+  const seekToPosition = (clientX: number) => {
+    const track = progressTrackRef.current;
+    const video = videoRef.current;
+    if (!track || !video || !video.duration) return;
+
+    const rect = track.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    video.currentTime = pos * video.duration;
+    setProgress(pos * 100);
   };
 
-  // Handle Share
+  const handleTrackClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    seekToPosition(e.clientX);
+  };
+
+  const handleScrubStart = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    setIsDraggingProgress(true);
+
+    const getX = (ev: MouseEvent | TouchEvent) => {
+      if ('touches' in ev && ev.touches.length > 0) {
+        return ev.touches[0].clientX;
+      }
+      return (ev as MouseEvent).clientX;
+    };
+
+    const handleMove = (ev: MouseEvent | TouchEvent) => {
+      seekToPosition(getX(ev));
+    };
+
+    const handleEnd = () => {
+      setIsDraggingProgress(false);
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleEnd);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleMove);
+    window.addEventListener('touchend', handleEnd);
+  };
+
+  // Share handler
   const handleShareClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onShare) {
@@ -185,13 +241,12 @@ export const ReelCard: React.FC<ReelCardProps> = ({
       try {
         await navigator.share({
           title: `Suksharmi Reels: ${reel.title}`,
-          text: reel.description || 'Watch our sweet love reel!',
+          text: reel.description || 'Watch our love reel!',
           url: shareUrl,
         });
         return;
       } catch {}
     }
-
     try {
       await navigator.clipboard.writeText(shareUrl);
       setShowCopiedToast(true);
@@ -207,282 +262,291 @@ export const ReelCard: React.FC<ReelCardProps> = ({
       : 'Sukhen & Mili';
 
   return (
-    <div className="relative w-full h-[calc(100dvh-64px)] sm:h-[88vh] sm:max-h-[840px] max-w-[440px] sm:aspect-[9/16] mx-auto rounded-none sm:rounded-3xl overflow-hidden bg-black shadow-[0_12px_45px_rgba(0,0,0,0.85)] border-0 sm:border sm:border-white/15 select-none group flex flex-col justify-center">
-      {/* Background Ambient Blur using poster/thumbnail or CSS backdrop (Zero duplicate video decoders) */}
-      {reel.thumbnailUrl ? (
+    <div className="relative w-full h-full bg-black select-none overflow-hidden">
+      {/* Ambient background blur for vertical fill */}
+      {reel.thumbnailUrl && (
         <div
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full bg-cover bg-center blur-2xl opacity-35 scale-110 pointer-events-none"
-          style={{ backgroundImage: `url(${reel.thumbnailUrl})` }}
-        />
-      ) : (
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 w-full h-full bg-gradient-to-b from-purple-950/40 via-black to-roseGlow-950/40 blur-xl pointer-events-none"
+          className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 scale-110 pointer-events-none"
+          style={{ backgroundImage: `url(${optimizeCloudinaryUrl(reel.thumbnailUrl)})` }}
         />
       )}
 
-      {/* 1. Main HTML5 Video Player */}
-      <video
-        ref={videoRef}
-        src={reel.url}
-        poster={reel.thumbnailUrl}
-        preload="auto"
-        playsInline
-        autoPlay={isActive}
-        loop
-        muted={isMuted}
-        onTimeUpdate={handleTimeUpdate}
-        onWaiting={handleWaiting}
-        onPlaying={handleCanPlay}
-        onLoadedData={handleCanPlay}
-        onCanPlay={handleCanPlay}
-        onError={() => setIsLoading(false)}
-        onClick={handleTap}
-        style={{ willChange: 'transform', transform: 'translateZ(0)' }}
-        className="w-full h-full relative z-10 cursor-pointer transition-all duration-200 object-contain"
-      />
+      {/* Main Video element: lazy memory release for distant reels on low-RAM mobile */}
+      {(isActive || isNearby) ? (
+        <video
+          ref={videoRef}
+          src={reel.url}
+          poster={optimizeCloudinaryUrl(reel.thumbnailUrl)}
+          preload={isActive ? 'auto' : 'metadata'}
+          playsInline
+          loop
+          muted={isMuted}
+          onTimeUpdate={handleTimeUpdate}
+          onWaiting={handleWaiting}
+          onPlaying={handleCanPlay}
+          onLoadedData={handleCanPlay}
+          onCanPlay={handleCanPlay}
+          onError={() => setIsLoading(false)}
+          onClick={handleVideoTap}
+          style={{ willChange: 'transform', transform: 'translateZ(0)' }}
+          className="absolute inset-0 w-full h-full object-contain z-10 cursor-pointer"
+        />
+      ) : reel.thumbnailUrl ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={optimizeCloudinaryUrl(reel.thumbnailUrl)}
+          alt={reel.title || 'Reel Preview'}
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-contain z-10"
+        />
+      ) : null}
 
-      {/* 2. Top Header with Back Button and Facebook-Style Sound Toggle */}
-      <div className="absolute top-0 left-0 right-0 p-3 sm:p-3.5 flex items-center justify-between z-20 pointer-events-none">
+      {/* Loading spinner */}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+        </div>
+      )}
+
+      {/* Play / Pause tap indicator icon */}
+      <AnimatePresence>
+        {showPlayPauseIcon && (
+          <motion.div
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.9 }}
+            exit={{ scale: 1.2, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white pointer-events-none z-30"
+          >
+            {showPlayPauseIcon === 'play' ? (
+              <Play className="w-8 h-8 fill-white ml-1" />
+            ) : (
+              <div className="w-6 h-6 flex justify-between items-center px-1">
+                <span className="w-2 h-6 bg-white rounded-sm" />
+                <span className="w-2 h-6 bg-white rounded-sm" />
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Instagram Double-Tap Center Heart Burst */}
+      <AnimatePresence>
+        {showHeartBurst && (
+          <motion.div
+            key="heart-burst"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [0, 1.35, 1.05], opacity: [0, 1, 0.95] }}
+            exit={{ scale: 1.4, opacity: 0, y: -20 }}
+            transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
+            className="absolute inset-0 m-auto w-28 h-28 flex items-center justify-center pointer-events-none z-30"
+            style={{ filter: 'drop-shadow(0 0 24px rgba(255,255,255,0.85))' }}
+          >
+            <Heart className="w-24 h-24 fill-white text-white stroke-[1]" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── TOP HEADER BAR: Back + Counter + Mute ── */}
+      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-3 pt-3 pointer-events-none">
         {onBack ? (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onBack();
             }}
-            className="pointer-events-auto w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white border border-white/20 transition-transform active:scale-90 shadow-md flex items-center justify-center group"
-            title="Back to Home"
-            aria-label="Back to Home"
+            className="pointer-events-auto w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/15 active:scale-90 transition-transform"
+            aria-label="Back"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-white group-hover:-translate-x-0.5 transition-transform" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
         ) : (
           <div />
         )}
 
-        {/* Facebook-Style Small Sound Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleMute();
-          }}
-          className="pointer-events-auto w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white border border-white/20 transition-transform active:scale-90 shadow-md flex items-center justify-center"
-          title={isMuted ? 'Unmute' : 'Mute'}
-          aria-label={isMuted ? 'Unmute' : 'Mute'}
-        >
-          {isMuted ? (
-            <VolumeX className="w-3.5 h-3.5 text-slate-300" />
-          ) : (
-            <Volume2 className="w-3.5 h-3.5 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.7)]" />
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium text-white/80 bg-black/40 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/10">
+            {index + 1} / {total}
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleMute();
+            }}
+            className="pointer-events-auto w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/15 active:scale-90 transition-transform"
+            aria-label={isMuted ? 'Unmute' : 'Mute'}
+          >
+            {isMuted ? (
+              <VolumeX className="w-4 h-4 text-slate-300" />
+            ) : (
+              <Volume2 className="w-4 h-4 text-white" />
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* 3. Center Buffering / Loading Spinner */}
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <div className="w-10 h-10 rounded-full border-2 border-rose-500/20 border-t-roseGlow-500 animate-spin" />
-        </div>
-      )}
-
-      {/* 4. Center Play / Pause / Sound Pop Animation on Tap */}
-      <AnimatePresence>
-        {showPlayStateIcon && (
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1.1, opacity: 1 }}
-            exit={{ scale: 1.4, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white pointer-events-none z-30 shadow-2xl border border-white/20"
-          >
-            {showPlayStateIcon === 'sound' && (
-              <Volume2 className="w-7 h-7 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
-            )}
-            {showPlayStateIcon === 'mute' && (
-              <VolumeX className="w-7 h-7 text-rose-300" />
-            )}
-            {showPlayStateIcon === 'play' && (
-              <Play className="w-7 h-7 fill-white translate-x-0.5" />
-            )}
-            {showPlayStateIcon === 'pause' && (
-              <Pause className="w-7 h-7 fill-white" />
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 5. Center Instagram-Style Heart Burst on Double Tap */}
-      <AnimatePresence>
-        {showHeartBurst && (
-          <motion.div
-            initial={{ scale: 0.2, opacity: 0, rotate: -15 }}
-            animate={{ scale: [0.2, 1.4, 1.1], opacity: [0, 1, 0.9], rotate: 0 }}
-            exit={{ scale: 1.5, opacity: 0, y: -40 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
-            className="absolute inset-0 m-auto w-24 h-24 flex items-center justify-center pointer-events-none z-40 drop-shadow-[0_0_25px_rgba(244,63,94,0.9)]"
-          >
-            <Heart className="w-20 h-20 text-rose-500 fill-rose-500 stroke-[1.5]" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 6. Right Side Action Bar (Facebook / Instagram Style - Seamless Zero Box Shadows) */}
-      <div className="absolute right-2.5 bottom-12 sm:bottom-14 flex flex-col items-center gap-2.5 sm:gap-3 z-30">
+      {/* ── RIGHT-SIDE ACTION BAR: Instagram Style (Zero bulky UI/UX boxes) ── */}
+      <div className="absolute right-2.5 bottom-10 sm:bottom-12 flex flex-col items-center gap-4 z-30 pointer-events-auto select-none">
         {/* Like Button */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             triggerLike();
           }}
-          className="group flex flex-col items-center focus:outline-none"
-          title="Like Reel"
-          aria-label="Like Reel"
+          className="group flex flex-col items-center focus:outline-none cursor-pointer"
+          aria-label={isLiked ? 'Unlike' : 'Like'}
         >
-          <div
-            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center backdrop-blur-sm transition-all active:scale-80 ${
-              isLiked
-                ? 'bg-roseGlow-500/25 border border-rose-500/50 shadow-[0_0_12px_rgba(244,63,94,0.4)]'
-                : 'bg-black/25 hover:bg-black/40 border border-white/10'
-            }`}
+          <motion.div
+            key={likeAnimKey}
+            animate={
+              likeAnimKey > 0
+                ? isLiked
+                  ? { scale: [1, 1.45, 0.85, 1.15, 1], rotate: [0, -12, 10, -4, 0] }
+                  : { scale: [1, 0.75, 1] }
+                : {}
+            }
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="p-1"
           >
             <Heart
-              className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 transition-colors duration-150 ${
                 isLiked
-                  ? 'text-rose-500 fill-rose-500 animate-pulse scale-110'
-                  : 'text-white'
+                  ? 'fill-[#ff2752] text-[#ff2752] drop-shadow-[0_2px_8px_rgba(255,39,82,0.6)]'
+                  : 'fill-transparent text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] stroke-[2]'
               }`}
             />
-          </div>
-          <span className="text-[10px] font-mono text-white font-medium mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-            {likesCount}
-          </span>
+          </motion.div>
+          <AnimatePresence mode="popLayout">
+            <motion.span
+              key={likesCount}
+              initial={{ opacity: 0, y: -3 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 3 }}
+              transition={{ duration: 0.15 }}
+              className="text-[12px] sm:text-[13px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] leading-tight text-center min-w-[16px]"
+            >
+              {likesCount > 0 ? likesCount : ''}
+            </motion.span>
+          </AnimatePresence>
         </button>
 
         {/* Share Button */}
         <button
           onClick={handleShareClick}
-          className="group flex flex-col items-center focus:outline-none relative"
-          title="Share Reel"
-          aria-label="Share Reel"
+          className="group flex flex-col items-center focus:outline-none cursor-pointer relative"
+          aria-label="Share"
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/25 hover:bg-black/40 border border-white/10 backdrop-blur-sm flex items-center justify-center text-white transition-all active:scale-80">
-            <Share2 className="w-4 h-4 text-white group-hover:scale-110 transition-transform drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
+          <div className="p-1 active:scale-80 transition-transform">
+            <Share2
+              className="w-7 h-7 sm:w-8 sm:h-8 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] stroke-[2]"
+            />
           </div>
-          <span className="text-[9px] font-mono text-white/90 mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">Share</span>
+          <span className="text-[11px] sm:text-[12px] font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] leading-tight">
+            Share
+          </span>
 
-          {/* Copied link toast */}
+          {/* Copied toast indicator */}
           <AnimatePresence>
             {showCopiedToast && (
               <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                initial={{ opacity: 0, y: 5, scale: 0.8 }}
                 animate={{ opacity: 1, y: -45, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className="absolute right-0 px-2.5 py-1 rounded-lg bg-roseGlow-600 text-white text-[11px] font-sans font-medium whitespace-nowrap shadow-xl flex items-center gap-1 z-50 pointer-events-none"
+                className="absolute right-0 bottom-0 px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-medium whitespace-nowrap flex items-center gap-1 pointer-events-none shadow-2xl z-50"
               >
                 <Check className="w-3 h-3" />
-                <span>Copied! 💕</span>
+                Copied!
               </motion.div>
             )}
           </AnimatePresence>
         </button>
-
-        {/* Info Toggle Button */}
-        {reel.description && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsDescExpanded((prev) => !prev);
-            }}
-            className="group flex flex-col items-center focus:outline-none"
-            title="Toggle Details"
-            aria-label="Toggle Details"
-          >
-            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full border backdrop-blur-sm flex items-center justify-center transition-all active:scale-80 ${
-              isDescExpanded ? 'bg-purple-600/40 border-purple-400/50 text-white' : 'bg-black/25 border-white/10 text-slate-200 hover:bg-black/40'
-            }`}>
-              <Info className="w-3.5 h-3.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
-            </div>
-            <span className="text-[9px] font-mono text-white/90 mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">Info</span>
-          </button>
-        )}
       </div>
 
-      {/* 7. Bottom Overlay (Creator info, Caption, Music Ticker) - Seamless full width with pr-14 */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-3.5 bg-gradient-to-t from-black/85 via-black/40 to-transparent z-20 pointer-events-none">
-        <div className="pr-14 sm:pr-16">
-          {/* Creator Identity */}
-          <div className="flex items-center gap-1.5 mb-1 pointer-events-auto">
-            <div className="w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-full bg-gradient-to-tr from-roseGlow-600 via-pink-500 to-purple-600 p-0.5 shadow-glow">
-              <div className="w-full h-full rounded-full bg-obsidian-950 flex items-center justify-center text-white text-[9px] font-bold">
-                {uploaderLabel.charAt(0)}
-              </div>
+      {/* ── BOTTOM-LEFT OVERLAY: Creator info, caption, audio ── */}
+      <div className="absolute bottom-2 left-0 right-14 z-20 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pt-12 pb-2 pointer-events-none">
+        {/* Creator row */}
+        <div className="flex items-center gap-2 mb-1 pointer-events-auto">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-600 p-0.5 flex-shrink-0 shadow-sm">
+            <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-white text-[10px] font-bold">
+              {uploaderLabel.charAt(0)}
             </div>
-            <span className="text-xs sm:text-sm font-semibold text-white tracking-wide drop-shadow-md">
-              @{uploaderLabel}
-            </span>
-            <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-roseGlow-500 text-white text-[8px] shadow-sm">
-              ✓
-            </span>
-            {reel.isFavorite && (
-              <span className="px-1.5 py-0.5 rounded-full bg-roseGlow-500/30 border border-rose-400/40 text-[8px] font-mono text-rose-300">
-                Fav ❤️
-              </span>
-            )}
           </div>
-
-          {/* Title & Caption */}
-          <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-1 drop-shadow-md pointer-events-auto">
-            {reel.title}
-          </h3>
-
-          {/* Expandable Description */}
-          {reel.description && (
-            <div className="mt-0.5 pointer-events-auto">
-              <p
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsDescExpanded((prev) => !prev);
-                }}
-                className={`text-[11px] text-slate-200/90 leading-snug cursor-pointer ${
-                  isDescExpanded ? 'line-clamp-none max-h-28 overflow-y-auto' : 'line-clamp-2'
-                }`}
-              >
-                {reel.description}
-              </p>
-            </div>
+          <span className="text-[13px] sm:text-sm font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+            @{uploaderLabel}
+          </span>
+          <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-rose-500 text-white text-[8px] font-bold shadow-sm">
+            ✓
+          </span>
+          {reel.isFavorite && (
+            <span className="px-1.5 py-0.2 rounded-full bg-rose-500/30 border border-rose-400/40 text-[9px] font-mono text-rose-300">
+              Fav ❤️
+            </span>
           )}
+        </div>
 
-          {/* Location & Date */}
-          <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] font-mono text-slate-300">
-            {reel.location && (
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="w-2.5 h-2.5 text-roseGlow-400" />
-                <span>{reel.location}</span>
-              </span>
-            )}
-            {reel.date && (
-              <span className="inline-flex items-center gap-1 text-slate-400">
-                <Calendar className="w-2.5 h-2.5" />
-                <span>{reel.date}</span>
-              </span>
-            )}
-          </div>
+        {/* Title & Description */}
+        <div className="pointer-events-auto max-w-sm">
+          <p className="text-[13px] font-semibold text-white leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] line-clamp-2">
+            {reel.title}
+          </p>
 
-          {/* Audio Ticker Marquee */}
-          <div className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-[9px] font-mono text-roseGlow-200 max-w-full truncate">
-            <Music2 className="w-2.5 h-2.5 text-roseGlow-400 animate-pulse flex-shrink-0" />
-            <span className="truncate">Suksharmi Soundtrack • Original Audio</span>
-          </div>
+          {reel.description && (
+            <p
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDescExpanded((prev) => !prev);
+              }}
+              className={`text-[11px] text-slate-200/90 leading-snug mt-0.5 cursor-pointer drop-shadow-sm ${
+                isDescExpanded ? 'line-clamp-none max-h-24 overflow-y-auto' : 'line-clamp-1'
+              }`}
+            >
+              {reel.description}
+            </p>
+          )}
+        </div>
+
+        {/* Location & Date */}
+        <div className="flex items-center gap-3 mt-1 text-[10px] font-mono text-slate-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          {reel.location && (
+            <span className="flex items-center gap-1">
+              <MapPin className="w-2.5 h-2.5 text-rose-400" />
+              {reel.location}
+            </span>
+          )}
+          {reel.date && (
+            <span className="flex items-center gap-1 text-slate-400">
+              <Calendar className="w-2.5 h-2.5" />
+              {reel.date}
+            </span>
+          )}
+        </div>
+
+        {/* Audio ticker */}
+        <div className="inline-flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-mono text-rose-300">
+          <Music2 className="w-2.5 h-2.5 text-rose-400 animate-pulse" />
+          <span>Suksharmi Soundtrack • Original Audio</span>
         </div>
       </div>
 
-      {/* 8. Bottom Scrubber / Playback Progress Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-30">
-        <div
-          className="h-full bg-gradient-to-r from-roseGlow-500 via-pink-400 to-purple-500 transition-all duration-100 ease-linear shadow-[0_0_8px_rgba(244,63,94,0.8)]"
-          style={{ width: `${progress}%` }}
-        />
+      {/* ── FACEBOOK-STYLE SLEEK PROGRESS / SEEK BAR (Clean white, no neon glow) ── */}
+      <div
+        ref={progressTrackRef}
+        onClick={handleTrackClick}
+        onMouseDown={handleScrubStart}
+        onTouchStart={handleScrubStart}
+        className="absolute bottom-0 left-0 right-0 h-2 py-1 -my-1 z-40 cursor-pointer group flex items-end select-none"
+        title="Seek Video"
+      >
+        <div className="w-full h-[2px] group-hover:h-[4px] bg-white/25 transition-all duration-150 relative">
+          <div
+            className="h-full bg-white transition-[width] duration-75 ease-linear relative"
+            style={{ width: `${progress}%` }}
+          >
+            {/* Scrubber thumb handle shown on hover/scrub */}
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-2.5 h-2.5 rounded-full bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </div>
       </div>
     </div>
   );

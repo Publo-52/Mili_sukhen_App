@@ -53,10 +53,21 @@ body {
   transform: translateZ(0);
 }
 
-/* Prevent iOS Safari from auto-zooming on input focus */
+/* Prevent iOS Safari from auto-zooming on input focus & avoid virtual keyboard overlay */
 @media screen and (max-width: 768px) {
   input, select, textarea {
     font-size: 16px !important;
+    scroll-margin-bottom: 120px;
+  }
+}
+
+/* Modern Dynamic Viewport Height (prevents iOS address bar shrinking/expanding layout shifts) */
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh !important;
+  }
+  .h-screen {
+    height: 100dvh !important;
   }
 }
 

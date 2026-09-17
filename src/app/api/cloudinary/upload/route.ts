@@ -36,6 +36,52 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
+    // ── Security Hardening: File Size, Extension & MIME Validation ──────────────
+    const rawName = file.name || 'upload';
+    const cleanFileName = rawName.replace(/[^a-zA-Z0-9_\.\-]/g, '_').slice(0, 100);
+    const lowerName = cleanFileName.toLowerCase();
+
+    // Block dangerous executable, script, or active SVG payloads
+    const DANGEROUS_EXTENSIONS = ['.svg', '.html', '.htm', '.php', '.exe', '.bat', '.sh', '.js', '.jsx', '.ts', '.tsx', '.py'];
+    if (DANGEROUS_EXTENSIONS.some((ext) => lowerName.endsWith(ext))) {
+      return NextResponse.json(
+        { error: 'Disallowed file format. Only safe images (JPEG, PNG, WebP, AVIF) and videos (MP4, WebM, MOV) are permitted.' },
+        { status: 400 }
+      );
+    }
+
+    const mimeType = (file.type || '').toLowerCase();
+    const ALLOWED_MIMES = new Set([
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+      'image/avif',
+      'image/gif',
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',
+      'video/x-matroska',
+    ]);
+
+    if (mimeType && !ALLOWED_MIMES.has(mimeType)) {
+      return NextResponse.json(
+        { error: `Unsupported media type (${mimeType}). Please upload a standard photo or video.` },
+        { status: 400 }
+      );
+    }
+
+    // File Size Limits: Max 50MB for video, 15MB for photo
+    const isVideo = resourceType === 'video' || mimeType.startsWith('video/');
+    const maxSizeBytes = isVideo ? 50 * 1024 * 1024 : 15 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      const limitMb = isVideo ? '50MB' : '15MB';
+      return NextResponse.json(
+        { error: `File is too large. Maximum allowable size for this media type is ${limitMb}.` },
+        { status: 400 }
+      );
+    }
+
     if (!cloudName) {
       return NextResponse.json(
         {
@@ -48,11 +94,11 @@ export async function POST(request: NextRequest) {
 
     // Direct Binary Blob transfer (avoiding 33% Base64 size expansion)
     const arrayBuffer = await file.arrayBuffer();
-    const mimeType = file.type || (resourceType === 'video' ? 'video/mp4' : 'image/jpeg');
-    const blob = new Blob([arrayBuffer], { type: mimeType });
+    const finalMime = mimeType || (isVideo ? 'video/mp4' : 'image/jpeg');
+    const blob = new Blob([arrayBuffer], { type: finalMime });
 
     const uploadFormData = new FormData();
-    uploadFormData.append('file', blob, file.name || 'upload');
+    uploadFormData.append('file', blob, cleanFileName);
     uploadFormData.append('folder', folder);
 
     if (apiSecret && apiKey) {
@@ -109,7 +155,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Upload route error:', error);
     return NextResponse.json(
-      { error: error?.message || 'Internal Server Error during upload' },
+      { error: 'An error occurred during upload. Please verify file and try again.' },
       { status: 500 }
     );
   }

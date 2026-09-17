@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 /**
  * Constant-time string comparison to defend against timing attacks.
@@ -10,7 +9,7 @@ export function timingSafeCompare(a: string, b: string): boolean {
   const bufB = Buffer.from(b, 'utf-8');
 
   if (bufA.length !== bufB.length) {
-    // Perform dummy constant-time comparison to avoid leaking length differences via CPU cycle timing
+    // Dummy constant-time comparison to avoid leaking length differences via CPU timing
     crypto.timingSafeEqual(bufA, bufA);
     return false;
   }
@@ -19,23 +18,31 @@ export function timingSafeCompare(a: string, b: string): boolean {
 }
 
 /**
- * Sanitize plain text strings by stripping null bytes, control characters,
- * and dangerous script tags to prevent XSS / injection.
+ * Comprehensive sanitization of plain text strings to prevent XSS, HTML injection,
+ * and command injection attacks.
  */
 export function sanitizeText(input: unknown, maxLength: number = 5000): string {
   if (typeof input !== 'string') return '';
-  
-  // 1. Remove null bytes and non-printable control characters (except newline and tab)
+
+  // 1. Remove null bytes and dangerous non-printable control characters
   let clean = input.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
-  // 2. Strip explicit HTML tags (<script>, <iframe>, <object>, etc.)
+  // 2. Strip dangerous script, iframe, object, embed, form, link, meta, style tags
   clean = clean
     .replace(/<\s*script[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, '')
     .replace(/<\s*iframe[^>]*>[\s\S]*?<\s*\/\s*iframe\s*>/gi, '')
     .replace(/<\s*object[^>]*>[\s\S]*?<\s*\/\s*object\s*>/gi, '')
     .replace(/<\s*embed[^>]*>[\s\S]*?<\s*\/\s*embed\s*>/gi, '')
-    .replace(/on\w+\s*=\s*(['"]).*?\1/gi, '') // Remove inline event handlers (onerror=, onclick=)
-    .replace(/javascript\s*:/gi, 'blocked:');
+    .replace(/<\s*style[^>]*>[\s\S]*?<\s*\/\s*style\s*>/gi, '')
+    .replace(/<\s*meta[^>]*>/gi, '')
+    .replace(/<\s*link[^>]*>/gi, '')
+    .replace(/<\s*base[^>]*>/gi, '')
+    .replace(/<\s*form[^>]*>[\s\S]*?<\s*\/\s*form\s*>/gi, '')
+    .replace(/on\w+\s*=\s*(['"]).*?\1/gi, '') // inline event handlers (onload=, onerror=)
+    .replace(/on\w+\s*=\s*[^ >]+/gi, '')      // unquoted event handlers
+    .replace(/javascript\s*:/gi, 'blocked:')
+    .replace(/vbscript\s*:/gi, 'blocked:')
+    .replace(/data\s*:\s*text\/html/gi, 'blocked:');
 
   // 3. Truncate to maximum allowable length
   return clean.slice(0, maxLength).trim();
@@ -94,6 +101,54 @@ export function isSafeExternalUrl(urlString: string): boolean {
 }
 
 /**
+ * CSRF (Cross-Site Request Forgery) Defense:
+ * Validates that mutating requests (POST, PUT, PATCH, DELETE) come from
+ * the same origin or an authorized domain.
+ */
+export function verifyRequestOrigin(request: Request): boolean {
+  const method = request.method.toUpperCase();
+  // Safe idempotent methods do not need CSRF origin checks
+  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+    return true;
+  }
+
+  const origin = request.headers.get('origin');
+  const host = request.headers.get('host');
+
+  // If no Origin header (e.g. CLI curl, same-origin subresource, or mobile native)
+  if (!origin) {
+    const referer = request.headers.get('referer');
+    if (!referer) return true; // Direct non-browser invocation
+    try {
+      const refererHost = new URL(referer).host;
+      return !host || refererHost.toLowerCase() === host.toLowerCase();
+    } catch {
+      return false;
+    }
+  }
+
+  try {
+    const originHost = new URL(origin).host;
+    if (host && originHost.toLowerCase() === host.toLowerCase()) {
+      return true;
+    }
+
+    // Check configured site URL if available
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL;
+    if (siteUrl) {
+      const siteHost = new URL(siteUrl).host;
+      if (originHost.toLowerCase() === siteHost.toLowerCase()) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
+/**
  * In-memory distributed rate-limiter store with automatic garbage collection.
  */
 interface RateLimitRecord {
@@ -104,7 +159,7 @@ interface RateLimitRecord {
 const inMemoryLimits = new Map<string, RateLimitRecord>();
 
 /**
- * Generic rate limiter supporting both Supabase and in-memory fallbacks.
+ * Check if an operation is allowed under rate limiting rules.
  */
 export async function checkRateLimit(
   key: string,

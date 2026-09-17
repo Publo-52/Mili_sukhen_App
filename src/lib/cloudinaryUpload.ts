@@ -222,30 +222,48 @@ export async function uploadMediaWithProgress(
   } catch (directError: any) {
     console.warn('Direct upload failed or blocked, falling back to Next.js API route:', directError);
 
-    // 4. Server Route Fallback with Next.js API
-    onProgress?.({
-      stage: 'uploading',
-      percent: 50,
-      message: 'Switching to secure server gateway...',
-    });
+    // 4. Server Route Fallback with Next.js API (Only for files <= 4MB due to Vercel 4.5MB payload limit)
+    if (fileToUpload.size > 4 * 1024 * 1024) {
+      // For large media (>4MB), serverless gateway drops requests with 413. Retry direct upload once with unsigned preset
+      try {
+        onProgress?.({
+          stage: 'uploading',
+          percent: 50,
+          message: 'Retrying direct high-speed channel...',
+        });
+        // Clear signData to force unsigned direct upload attempt
+        signData = null;
+        cloudinaryData = await performDirectUpload();
+      } catch (retryErr: any) {
+        throw new Error(
+          `Direct Cloudinary upload failed: ${directError?.message || retryErr?.message || 'Network error'}. Please check your internet connection.`
+        );
+      }
+    } else {
+      onProgress?.({
+        stage: 'uploading',
+        percent: 50,
+        message: 'Switching to secure server gateway...',
+      });
 
-    const fallbackFormData = new FormData();
-    fallbackFormData.append('file', fileToUpload);
-    fallbackFormData.append('resourceType', resourceType);
-    fallbackFormData.append('folder', folder);
+      const fallbackFormData = new FormData();
+      fallbackFormData.append('file', fileToUpload);
+      fallbackFormData.append('resourceType', resourceType);
+      fallbackFormData.append('folder', folder);
 
-    const fallbackRes = await fetch('/api/cloudinary/upload', {
-      method: 'POST',
-      body: fallbackFormData,
-      signal,
-    });
+      const fallbackRes = await fetch('/api/cloudinary/upload', {
+        method: 'POST',
+        body: fallbackFormData,
+        signal,
+      });
 
-    if (!fallbackRes.ok) {
-      const errJson = await fallbackRes.json().catch(() => null);
-      throw new Error(errJson?.error || `Upload failed (Status ${fallbackRes.status})`);
+      if (!fallbackRes.ok) {
+        const errJson = await fallbackRes.json().catch(() => null);
+        throw new Error(errJson?.error || `Upload failed (Status ${fallbackRes.status})`);
+      }
+
+      cloudinaryData = await fallbackRes.json();
     }
-
-    cloudinaryData = await fallbackRes.json();
   }
 
   onProgress?.({

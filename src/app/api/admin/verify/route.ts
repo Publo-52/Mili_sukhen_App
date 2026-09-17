@@ -131,20 +131,17 @@ export async function POST(request: NextRequest) {
     // 4. Resolve configured passcodes for both Sukhen (Admin) and Mili (Co-Admin)
     const adminPasscode = (
       process.env.ADMIN_PASSCODE ||
-      process.env.NEXT_PUBLIC_ADMIN_PASSCODE ||
       (process.env.NODE_ENV === 'production' ? '' : 'das@123')
     ).trim();
 
     const sukhenPasscode = (
       process.env.SUKHEN_PASSWORD ||
-      process.env.NEXT_PUBLIC_SUKHEN_PASSWORD ||
       adminPasscode ||
       (process.env.NODE_ENV === 'production' ? '' : 'das@123')
     ).trim();
 
     const miliPasscode = (
       process.env.MILI_PASSWORD ||
-      process.env.NEXT_PUBLIC_MILI_PASSWORD ||
       (process.env.NODE_ENV === 'production' ? '' : 'mili@123')
     ).trim();
 

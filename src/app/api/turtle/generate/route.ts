@@ -261,8 +261,9 @@ export async function POST(request: NextRequest) {
       creation,
     });
   } catch (err: any) {
+    console.error('Turtle generate error:', err);
     return NextResponse.json(
-      { error: err?.message || 'Failed to generate Python Art' },
+      { error: 'Failed to generate Python Art. Please try again.' },
       { status: 500 }
     );
   }

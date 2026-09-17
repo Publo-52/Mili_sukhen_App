@@ -395,8 +395,15 @@ class RomanticAudioEngine {
               }
             }
           },
-          onError: (err: any) => {
-            console.warn('YouTube Player encountered an issue, falling back:', err);
+          onError: (event: any) => {
+            const errCode = event?.data;
+            console.warn(`[AudioEngine] YouTube playback issue (code: ${errCode}) on "${this.currentTrack.title}"`);
+            // Auto-advance to next song if copyright restricted (150/101) or video deleted (100)
+            if ((errCode === 150 || errCode === 101 || errCode === 100 || errCode === 2) && this.playlist.length > 1) {
+              console.info('[AudioEngine] Auto-advancing to next available romantic track...');
+              this.nextTrack();
+              return;
+            }
             this.fallbackToAudioStream();
           },
         },
@@ -407,10 +414,31 @@ class RomanticAudioEngine {
     }
   }
 
+  private setupMobileAudioAutoUnlock() {
+    if (typeof window === 'undefined') return;
+    const unlock = () => {
+      if (this.isPlaying) {
+        if (this.ytPlayer && this.isYtReady && typeof this.ytPlayer.playVideo === 'function') {
+          try {
+            this.ytPlayer.playVideo();
+          } catch {}
+        }
+        if (this.audioElement) {
+          this.audioElement.play().catch(() => {});
+        }
+      }
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+    window.addEventListener('click', unlock, { once: true });
+    window.addEventListener('touchstart', unlock, { once: true });
+  }
+
   public async play() {
     this.initYouTubeEngine();
     this.isPlaying = true;
     this.notify();
+    this.setupMobileAudioAutoUnlock();
 
     // If YouTube Player is ready, play video
     if (this.ytPlayer && this.isYtReady && typeof this.ytPlayer.playVideo === 'function') {

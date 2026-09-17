@@ -26,11 +26,12 @@ import {
   deleteMemory,
   getFavoriteMemoryIds,
   toggleFavoriteMemory,
+  safeSetLocalStorage,
 } from '@/lib/storage';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { APP_CONFIG } from '@/data/config';
-import { getOptimizedImageUrl, isMediaVideo } from '@/lib/utils';
+import { getOptimizedImageUrl, isMediaVideo, DEFAULT_FALLBACK_IMAGE } from '@/lib/utils';
 import { cachedFetch, invalidateApiCache } from '@/lib/api-cache';
 
 
@@ -46,7 +47,7 @@ import { useModalHistory } from '@/lib/modal-history';
 
 // Helper to guarantee high-res image poster for Cloudinary videos and images
 function getMediaThumbnail(memory?: MemoryItem | null): string {
-  if (!memory) return 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop';
+  if (!memory) return DEFAULT_FALLBACK_IMAGE;
   const isVideo = memory.type === 'video';
   if (!isVideo && memory.url) return memory.url;
 
@@ -64,7 +65,7 @@ function getMediaThumbnail(memory?: MemoryItem | null): string {
     }
   }
 
-  return memory.url || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop';
+  return memory.url || DEFAULT_FALLBACK_IMAGE;
 }
 
 type FilterType = 'all' | 'photo' | 'video' | 'favorites';
@@ -107,10 +108,8 @@ export const MemoriesTimeline: React.FC = () => {
       });
       if (data?.memories && Array.isArray(data.memories)) {
         setMemories(data.memories);
-        try {
-          localStorage.setItem('mili_universe_memories', JSON.stringify(data.memories));
-          localStorage.setItem('mili_fav_memories_all', JSON.stringify(data.memories));
-        } catch {}
+        safeSetLocalStorage('mili_universe_memories', data.memories);
+        safeSetLocalStorage('mili_fav_memories_all', data.memories);
         return;
       }
     } catch {}

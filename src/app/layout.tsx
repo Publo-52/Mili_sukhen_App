@@ -66,6 +66,8 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+import { NetworkStatusNotifier } from "@/components/common/NetworkStatusNotifier";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -81,6 +83,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen bg-[#06040a] text-slate-100 selection:bg-roseGlow-600 selection:text-white">
         <AuthProvider>
+          <NetworkStatusNotifier />
           {children}
         </AuthProvider>
       </body>

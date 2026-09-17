@@ -42,8 +42,14 @@ export async function GET() {
             themeTextAccent: p.theme_text_accent,
           }));
 
+        const existingIds = new Set(data.map((p) => p.id));
+        const missingBaseline = INITIAL_PROJECTS.filter(
+          (p) => !existingIds.has(p.id) && !isProjectDeletedOnServer(p.id)
+        );
+        const allCombined = [...filtered, ...missingBaseline];
+
         return NextResponse.json(
-          { projects: filtered },
+          { projects: allCombined },
           {
             headers: {
               'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59',
