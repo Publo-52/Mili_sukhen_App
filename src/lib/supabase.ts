@@ -21,22 +21,34 @@ const supabaseKey = isServer
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
   supabaseKey &&
+  supabaseKey.length > 20 &&
   (supabaseUrl.startsWith('http://') || supabaseUrl.startsWith('https://')) &&
-  !supabaseUrl.includes('your-project-id')
+  !supabaseUrl.includes('your-project-id') &&
+  !supabaseKey.includes('your-anon-key')
 );
 
 function initSupabase(): SupabaseClient | null {
   if (!isSupabaseConfigured) return null;
   try {
-    return createClient(supabaseUrl, supabaseKey, {
+    const client = createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
       },
     });
+    return client;
   } catch (err) {
-    console.warn('[Supabase Init Warning] Could not initialize client:', err);
+    // Never crash the app due to Supabase config issues
+    console.warn('[Supabase] Could not initialize client:', err);
     return null;
   }
 }
 
-export const supabase = initSupabase();
+let _supabase: SupabaseClient | null = null;
+try {
+  _supabase = initSupabase();
+} catch {
+  _supabase = null;
+}
+
+export const supabase = _supabase;
+
