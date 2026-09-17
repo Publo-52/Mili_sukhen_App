@@ -50,7 +50,10 @@ export async function cachedFetch<T = any>(
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Return null instead of throwing — prevents error boundary from triggering
+        // All callers must handle null/undefined responses gracefully
+        console.warn(`[api-cache] HTTP ${response.status} for ${url}`);
+        return null as T;
       }
 
       const data = await response.json();

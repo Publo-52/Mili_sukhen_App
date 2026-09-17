@@ -11,9 +11,23 @@ interface ErrorProps {
 
 export default function ErrorBoundary({ error, reset }: ErrorProps) {
   useEffect(() => {
-    // Log error safely without crashing or exposing sensitive internal details
-    console.error('Captured by Root Error Boundary:', error);
-  }, [error]);
+    // Log error safely without exposing sensitive internal details
+    console.error('Captured by Root Error Boundary:', error?.message || 'Unknown error');
+
+    // Auto-reset after 3 seconds so the user doesn't get stuck
+    const timer = setTimeout(() => {
+      try {
+        reset();
+      } catch {
+        // If reset fails, redirect to home
+        if (typeof window !== 'undefined') {
+          window.location.href = '/';
+        }
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [error, reset]);
 
   return (
     <main className="min-h-screen bg-[#06040a] flex flex-col items-center justify-center p-6 text-center select-none relative overflow-hidden">
@@ -34,13 +48,32 @@ export default function ErrorBoundary({ error, reset }: ErrorProps) {
             Something went momentarily quiet <span className="text-rose-500">✨</span>
           </h1>
           <p className="text-sm text-slate-400 font-light max-w-sm mx-auto">
-            Don&apos;t worry, your memories and love notes are completely safe. Let&apos;s gently reconnect.
+            Don&apos;t worry, your memories and love notes are completely safe. Reconnecting automatically...
           </p>
         </div>
 
-        <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+        {/* Auto-reset progress bar */}
+        <div className="w-full max-w-xs mx-auto h-1 bg-white/10 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-rose-500 to-purple-500 rounded-full animate-[shrink_3s_linear_forwards]"
+            style={{
+              animation: 'progress 3s linear forwards',
+            }}
+          />
+        </div>
+
+        <style>{`
+          @keyframes progress {
+            from { width: 0% }
+            to { width: 100% }
+          }
+        `}</style>
+
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
           <button
-            onClick={() => reset()}
+            onClick={() => {
+              try { reset(); } catch { window.location.href = '/'; }
+            }}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-medium text-xs sm:text-sm shadow-md transition-all hover:scale-105 cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
