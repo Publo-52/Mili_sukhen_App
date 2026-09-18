@@ -32,6 +32,7 @@ html {
   overflow-x: hidden;
   max-width: 100vw;
   width: 100%;
+  touch-action: pan-x pan-y;
 }
 
 body {
@@ -44,6 +45,7 @@ body {
   width: 100%;
   position: relative;
   overscroll-behavior-y: auto;
+  touch-action: pan-x pan-y;
 }
 
 /* Smooth Rendering & Visual Stability for Masonry / Long Lists */
