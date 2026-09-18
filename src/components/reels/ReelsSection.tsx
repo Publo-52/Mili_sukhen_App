@@ -284,7 +284,7 @@ export const ReelsSection: React.FC<ReelsSectionProps> = ({ isActive = true, onB
           <div
             ref={scrollRef}
             onWheel={handleWheel}
-            className="w-full h-full overflow-y-scroll"
+            className="w-full h-full overflow-y-scroll py-2"
             style={{
               scrollSnapType: 'y mandatory',
               scrollBehavior: 'smooth',
@@ -299,14 +299,14 @@ export const ReelsSection: React.FC<ReelsSectionProps> = ({ isActive = true, onB
                 ref={(el) => {
                   itemRefs.current[i] = el;
                 }}
-                className="w-full h-full flex-shrink-0 flex items-center justify-center"
+                className="w-full h-full flex-shrink-0 flex items-center justify-center p-2 sm:p-4"
                 style={{
-                  scrollSnapAlign: 'start',
+                  scrollSnapAlign: 'center',
                   scrollSnapStop: 'always',
                 }}
               >
-                {/* Facebook Reels Container: Full height, constrained width on desktop */}
-                <div className="w-full h-full sm:max-w-[420px] mx-auto relative sm:rounded-2xl sm:overflow-hidden sm:my-2 sm:h-[calc(100%-16px)] sm:border sm:border-white/10 sm:shadow-2xl">
+                {/* Facebook Reels Compact Floating Card with Rounded Corners & Shadows */}
+                <div className="w-[calc(100%-16px)] max-w-[350px] sm:max-w-[390px] md:max-w-[420px] h-[calc(100dvh-130px)] max-h-[600px] sm:max-h-[680px] my-auto mx-auto relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-[0_12px_45px_rgba(0,0,0,0.9)] bg-black/90">
                   <ReelCard
                     reel={reel}
                     isActive={isActive && activeIndex === i}
