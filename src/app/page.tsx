@@ -467,23 +467,6 @@ export default function HomePage() {
 
   const isHome = activeSection === 'home';
 
-  if (!isMounted) {
-    return (
-      <div className="min-h-screen bg-[#06040a] flex flex-col items-center justify-center p-6 text-center select-none relative overflow-hidden">
-        <div className="relative z-10 space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-700 via-rose-600 to-pink-500 p-0.5 shadow-[0_0_25px_rgba(244,63,94,0.4)] mx-auto animate-pulse flex items-center justify-center">
-            <div className="w-full h-full rounded-[14px] bg-[#0c0817] flex items-center justify-center">
-              <span className="text-2xl">❤️</span>
-            </div>
-          </div>
-          <div className="text-xl font-serif text-transparent bg-clip-text bg-gradient-to-r from-rose-100 via-pink-200 to-rose-300">
-            Suksharmi
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
