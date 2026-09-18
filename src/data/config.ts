@@ -8,14 +8,7 @@ export const APP_CONFIG: AppConfig = {
   contactVisibility: 'PRIVATE',
   adminPasscode: '',
   surprisePasscode: "forever",
-  socials: {
-    creatorPhone: "+91 98326 95291",
-    creatorEmail: "dassukhen@gmail.com",
-    creatorWhatsapp: "919832695291",
-    recipientPhone: "+91 97329 34032",
-    recipientEmail: "mandalsharmili06@gmail.com",
-    recipientWhatsapp: "919732934032",
-  },
+  socials: {},
 };
 
 // Public Session Configuration (Safe for client components)
