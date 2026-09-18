@@ -5,23 +5,10 @@ import dynamic from 'next/dynamic';
 import { SectionType } from '@/types';
 import { cachedFetch } from '@/lib/api-cache';
 
-// Dynamically import top-level navigation, hero, and footer to prevent SSR hydration errors
-const Navbar = dynamic(
-  () => import('@/components/navigation/Navbar').then((m) => m.Navbar),
-  { ssr: false }
-);
-const MobileBottomNav = dynamic(
-  () => import('@/components/navigation/MobileBottomNav').then((m) => m.MobileBottomNav),
-  { ssr: false }
-);
-const Hero = dynamic(
-  () => import('@/components/hero/Hero').then((m) => m.Hero),
-  { ssr: false }
-);
-const Footer = dynamic(
-  () => import('@/components/footer/Footer').then((m) => m.Footer),
-  { ssr: false }
-);
+import { Navbar } from '@/components/navigation/Navbar';
+import { MobileBottomNav } from '@/components/navigation/MobileBottomNav';
+import { Hero } from '@/components/hero/Hero';
+import { Footer } from '@/components/footer/Footer';
 
 // Code-split heavy views dynamically with zero initial bundle bloat
 const ProjectShowcase = dynamic(
@@ -468,12 +455,9 @@ export default function HomePage() {
   const isHome = activeSection === 'home';
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
+    <div
       suppressHydrationWarning
-      className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain"
+      className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain animate-fade-in"
     >
       {/* Dynamic Stardust & Ambient Particle Layer (Paused on non-home sections for 100% GPU/battery efficiency) */}
       <ParticleCanvas isActive={isHome} />
@@ -567,6 +551,6 @@ export default function HomePage() {
         isOpen={showSurprise}
         onClose={() => setShowSurprise(false)}
       />
-    </motion.div>
+    </div>
   );
 }
