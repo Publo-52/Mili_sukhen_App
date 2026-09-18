@@ -84,6 +84,9 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        <link rel="preconnect" href="https://commondatastorage.googleapis.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://commondatastorage.googleapis.com" />
+        <link rel="dns-prefetch" href="https://supabase.co" />
       </head>
       <body className="antialiased min-h-screen bg-[#06040a] text-slate-100 selection:bg-roseGlow-600 selection:text-white">
         <AuthProvider>
