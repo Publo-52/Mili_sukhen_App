@@ -299,14 +299,14 @@ export const ReelsSection: React.FC<ReelsSectionProps> = ({ isActive = true, onB
                 ref={(el) => {
                   itemRefs.current[i] = el;
                 }}
-                className="w-full h-full flex-shrink-0 flex items-center justify-center p-2 sm:p-4"
+                className="w-full h-full flex-shrink-0 flex items-center justify-center"
                 style={{
-                  scrollSnapAlign: 'center',
+                  scrollSnapAlign: 'start',
                   scrollSnapStop: 'always',
                 }}
               >
-                {/* Facebook Reels Compact Floating Card with Rounded Corners & Shadows */}
-                <div className="w-[calc(100%-16px)] max-w-[350px] sm:max-w-[390px] md:max-w-[420px] h-[calc(100dvh-130px)] max-h-[600px] sm:max-h-[680px] my-auto mx-auto relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-[0_12px_45px_rgba(0,0,0,0.9)] bg-black/90">
+                {/* Seamless Edge-to-Edge Reels Container (Zero box borders/margins) */}
+                <div className="w-full h-full sm:max-w-[440px] mx-auto relative overflow-hidden bg-black">
                   <ReelCard
                     reel={reel}
                     isActive={isActive && activeIndex === i}
