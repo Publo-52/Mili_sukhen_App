@@ -254,7 +254,7 @@ export const ReelsSection: React.FC<ReelsSectionProps> = ({ isActive = true, onB
   return (
     <section
       id="reels"
-      className="relative w-full h-[calc(100dvh-64px)] md:h-[100dvh] bg-black overflow-hidden flex items-center justify-center select-none"
+      className="relative w-full h-full bg-black overflow-hidden flex items-center justify-center select-none p-0 m-0"
     >
       {/* Desktop Home Back button */}
       {onBack && (
@@ -279,12 +279,12 @@ export const ReelsSection: React.FC<ReelsSectionProps> = ({ isActive = true, onB
           </div>
         </div>
       ) : (
-        <div className="relative w-full h-full flex items-center justify-center">
-          {/* Native CSS Scroll-Snap Container with smooth wheel snapping */}
+        <div className="relative w-full h-full flex items-center justify-center p-0 m-0 overflow-hidden">
+          {/* Native CSS Scroll-Snap Container with exact 100% height and zero padding */}
           <div
             ref={scrollRef}
             onWheel={handleWheel}
-            className="w-full h-full overflow-y-scroll py-2"
+            className="w-full h-full overflow-y-scroll p-0 m-0"
             style={{
               scrollSnapType: 'y mandatory',
               scrollBehavior: 'smooth',
@@ -299,14 +299,14 @@ export const ReelsSection: React.FC<ReelsSectionProps> = ({ isActive = true, onB
                 ref={(el) => {
                   itemRefs.current[i] = el;
                 }}
-                className="w-full h-full flex-shrink-0 flex items-center justify-center"
+                className="w-full h-full flex-shrink-0 flex items-center justify-center p-0 m-0 overflow-hidden"
                 style={{
                   scrollSnapAlign: 'start',
                   scrollSnapStop: 'always',
                 }}
               >
-                {/* Seamless Edge-to-Edge Reels Container (Zero box borders/margins) */}
-                <div className="w-full h-full sm:max-w-[440px] mx-auto relative overflow-hidden bg-black">
+                {/* Seamless Exact 100% Reels Container (Zero peeking, zero extra margins) */}
+                <div className="w-full h-full sm:max-w-[440px] mx-auto relative overflow-hidden bg-black p-0 m-0">
                   <ReelCard
                     reel={reel}
                     isActive={isActive && activeIndex === i}

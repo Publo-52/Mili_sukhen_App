@@ -436,9 +436,9 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* 4. Reels Section View (Immersive Mobile Reels with Bottom Nav) */}
+          {/* 4. Reels Section View (Immersive Full Height with Zero Peeking) */}
           {mountedSections['reels'] && (
-            <div className={activeSection === 'reels' ? 'pt-0 pb-16 sm:pb-0 block animate-fade-in instant-section' : 'hidden'}>
+            <div className={activeSection === 'reels' ? 'p-0 m-0 h-[calc(100dvh-60px)] md:h-[100dvh] block instant-section overflow-hidden' : 'hidden'}>
               <ReelsSection
                 isActive={activeSection === 'reels'}
                 onBack={() => handleSelectSection('home')}
