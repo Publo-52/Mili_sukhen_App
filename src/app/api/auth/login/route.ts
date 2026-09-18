@@ -31,8 +31,8 @@ async function checkIpRateLimit(ip: string): Promise<{ allowed: boolean; waitSec
 
     const now = new Date();
 
-    // Locked out?
-    if (data.locked_until && new Date(data.locked_until) > now) {
+    // Locked out only if attempt_count >= 50
+    if (data.attempt_count >= 50 && data.locked_until && new Date(data.locked_until) > now) {
       const waitSeconds = Math.ceil(
         (new Date(data.locked_until).getTime() - now.getTime()) / 1000
       );
@@ -70,7 +70,7 @@ async function recordIpFailedAttempt(ip: string, email: string): Promise<void> {
 
     const newCount = (existing?.attempt_count ?? 0) + 1;
     const lockedUntil =
-      newCount >= 5
+      newCount >= 50
         ? new Date(now.getTime() + 5 * 60 * 1000).toISOString()
         : null;
 
@@ -182,19 +182,29 @@ export async function POST(request: NextRequest) {
 
     let candidateUser: typeof AUTH_USERS['mili'] | typeof AUTH_USERS['sukhen'] | null = null;
 
-    // Check Sukhen email / phone
+    // Check Sukhen email / phone / username
     const isSukhenEmail =
-      AUTH_USERS.sukhen.emails.some((e) => cleanEmail === e.toLowerCase()) ||
+      cleanEmail === 'sukhen' ||
+      cleanEmail === 'sukhen das' ||
+      cleanEmail === 'das' ||
+      cleanEmail === 'dassukhen' ||
+      cleanEmail === 'dassukhen@gmail.com' ||
       cleanEmail === '9832695291' ||
       cleanEmail === '+919832695291' ||
-      cleanEmail === 'dassukhen@gmail.com';
+      cleanEmail === '+91 98326 95291' ||
+      AUTH_USERS.sukhen.emails.some((e) => cleanEmail === e.toLowerCase());
 
-    // Check Mili email / phone
+    // Check Mili email / phone / username
     const isMiliEmail =
-      AUTH_USERS.mili.emails.some((e) => cleanEmail === e.toLowerCase()) ||
+      cleanEmail === 'mili' ||
+      cleanEmail === 'sharmili' ||
+      cleanEmail === 'mili mandal' ||
+      cleanEmail === 'mandal sharmili' ||
+      cleanEmail === 'mandalsharmili06@gmail.com' ||
       cleanEmail === '9732934032' ||
       cleanEmail === '+919732934032' ||
-      cleanEmail === 'mandalsharmili06@gmail.com';
+      cleanEmail === '+91 97329 34032' ||
+      AUTH_USERS.mili.emails.some((e) => cleanEmail === e.toLowerCase());
 
     if (isSukhenEmail) {
       candidateUser = AUTH_USERS.sukhen;
@@ -204,20 +214,20 @@ export async function POST(request: NextRequest) {
       // Timing attack immunity: dummy constant-time comparison to prevent user enumeration via CPU timing
       timingSafeCompare(cleanPass, 'decoy_hash_padding_for_timing_safety_384920');
       await recordIpFailedAttempt(ip, cleanEmail);
-      recordFailedAttempt(accountRateKey, 5, 5 * 60 * 1000);
+      recordFailedAttempt(accountRateKey, 50, 5 * 60 * 1000);
       return NextResponse.json(
-        { error: 'Unrecognized email or phone number. Please enter your registered email or phone.' },
+        { error: 'Unrecognized email, phone number, or username. Please try again.' },
         { status: 401 }
       );
     }
 
-    // Verify password (constant-time cryptographic match to prevent timing attacks)
+    // Verify password (constant-time cryptographic match + fallback)
     const validPasswords = candidateUser.getPasswords();
-    const isPasswordValid = validPasswords.some((p) => p && timingSafeCompare(cleanPass, p));
+    const isPasswordValid = validPasswords.some((p) => p && (cleanPass === p || timingSafeCompare(cleanPass, p)));
 
     if (!isPasswordValid) {
       await recordIpFailedAttempt(ip, cleanEmail);
-      recordFailedAttempt(accountRateKey, 5, 5 * 60 * 1000);
+      recordFailedAttempt(accountRateKey, 50, 5 * 60 * 1000);
       return NextResponse.json(
         { error: 'Incorrect password. Please verify and try again.' },
         { status: 401 }
