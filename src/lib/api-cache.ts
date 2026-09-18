@@ -65,6 +65,9 @@ export async function cachedFetch<T = any>(
       });
 
       return data;
+    } catch (err) {
+      console.warn(`[api-cache] Network error for ${url}:`, err);
+      return null as T;
     } finally {
       // Clean up in-flight tracker
       inFlightRequests.delete(url);

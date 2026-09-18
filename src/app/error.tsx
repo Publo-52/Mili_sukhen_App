@@ -14,17 +14,16 @@ export default function ErrorBoundary({ error, reset }: ErrorProps) {
     // Log error safely without exposing sensitive internal details
     console.error('Captured by Root Error Boundary:', error?.message || 'Unknown error');
 
-    // Auto-reset after 3 seconds so the user doesn't get stuck
+    // Auto-recover after 2.5 seconds
     const timer = setTimeout(() => {
       try {
         reset();
       } catch {
-        // If reset fails, redirect to home
         if (typeof window !== 'undefined') {
-          window.location.href = '/';
+          window.location.reload();
         }
       }
-    }, 3000);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, [error, reset]);
