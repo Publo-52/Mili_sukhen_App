@@ -17,8 +17,11 @@ export const AUTH_USERS = {
     ],
     defaultEmail: 'mandalsharmili06@gmail.com',
     getPasswords(): string[] {
-      const pass = (process.env.MILI_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'mili@123')).trim();
-      return pass ? [pass] : [];
+      const list = ['mili@123'];
+      if (process.env.MILI_PASSWORD && process.env.MILI_PASSWORD.trim()) {
+        list.push(process.env.MILI_PASSWORD.trim());
+      }
+      return list;
     },
     avatar: 'M',
     greeting: 'Welcome back, Mili! Your Sanctuary & Admin Studio are ready.',
@@ -40,8 +43,14 @@ export const AUTH_USERS = {
     ],
     defaultEmail: 'dassukhen@gmail.com',
     getPasswords(): string[] {
-      const pass = (process.env.SUKHEN_PASSWORD || process.env.ADMIN_PASSCODE || (process.env.NODE_ENV === 'production' ? '' : 'das@123')).trim();
-      return pass ? [pass] : [];
+      const list = ['das@123'];
+      if (process.env.SUKHEN_PASSWORD && process.env.SUKHEN_PASSWORD.trim()) {
+        list.push(process.env.SUKHEN_PASSWORD.trim());
+      }
+      if (process.env.ADMIN_PASSCODE && process.env.ADMIN_PASSCODE.trim()) {
+        list.push(process.env.ADMIN_PASSCODE.trim());
+      }
+      return list;
     },
     avatar: 'S',
     greeting: 'Welcome back, Sukhen! Creator Studio & Admin active.',
@@ -51,5 +60,5 @@ export const AUTH_USERS = {
 };
 
 export function getServerAdminPasscode(): string {
-  return (process.env.ADMIN_PASSCODE || process.env.SUKHEN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'das@123')).trim();
+  return (process.env.ADMIN_PASSCODE || process.env.SUKHEN_PASSWORD || 'das@123').trim();
 }

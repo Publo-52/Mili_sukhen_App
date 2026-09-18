@@ -168,9 +168,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Account-level rate defense: prevents distributed botnet attacks targeting Sukhen or Mili
+    // Account-level rate defense: allows 20 attempts before temporary pause
     const accountRateKey = `login_acct_${cleanEmail}`;
-    const accountCheck = await checkRateLimit(accountRateKey, 5, 5 * 60 * 1000);
+    const accountCheck = await checkRateLimit(accountRateKey, 20, 5 * 60 * 1000);
     if (!accountCheck.allowed) {
       return NextResponse.json(
         {
