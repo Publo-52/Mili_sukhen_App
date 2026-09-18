@@ -46,14 +46,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: 99999,
+        zIndex: 999999,
         touchAction: 'none',
         WebkitUserSelect: 'none',
         userSelect: 'none',
         overscrollBehavior: 'none',
-        transform: 'translateZ(0)',
       }}
-      className={`fixed inset-x-0 bottom-0 z-[99999] bg-[#06040a]/98 backdrop-blur-2xl px-1 py-1.5 safe-area-pb shadow-[0_-4px_25px_rgba(0,0,0,0.8)] border-t border-white/10 select-none overflow-hidden max-w-[100vw] w-full ${
+      className={`fixed-bottom-nav bg-[#06040a]/98 backdrop-blur-2xl px-1 py-1.5 safe-area-pb shadow-[0_-4px_25px_rgba(0,0,0,0.9)] border-t border-white/15 select-none overflow-hidden ${
         activeSection === 'reels' ? 'block' : 'md:hidden'
       }`}
     >

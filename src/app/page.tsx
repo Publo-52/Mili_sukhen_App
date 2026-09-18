@@ -384,102 +384,103 @@ export default function HomePage() {
   const isHome = activeSection === 'home';
 
   return (
-    <div
-      suppressHydrationWarning
-      className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain pb-16 md:pb-0"
-    >
-      {/* Dynamic Stardust & Ambient Particle Layer (Paused on non-home sections for 100% GPU/battery efficiency) */}
-      <ParticleCanvas isActive={isHome} />
+    <>
+      <div
+        suppressHydrationWarning
+        className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain pb-16 md:pb-0"
+      >
+        {/* Dynamic Stardust & Ambient Particle Layer (Paused on non-home sections for 100% GPU/battery efficiency) */}
+        <ParticleCanvas isActive={isHome} />
 
-      {/* Cinematic Opening Sequence — Pre-rendered in background for true 0ms instant open */}
-      <CinematicIntro
-        forceShow={showIntro}
-        onClose={() => setShowIntro(false)}
-      />
-
-      {/* Global Interactive Easter Egg Listeners */}
-      <EasterEggListener onTriggerSurprise={() => setShowSurprise(true)} />
-
-      {/* Navbar with Replay Intro & Surprise Controls — Hidden when inside Reels */}
-      <div className={activeSection === 'reels' ? 'hidden' : 'contents'}>
-        <Navbar
-          onReplayIntro={() => setShowIntro(true)}
-          onOpenSurprise={() => setShowSurprise(true)}
-          activeSection={activeSection}
-          onSelectSection={handleSelectSection}
+        {/* Cinematic Opening Sequence — Pre-rendered in background for true 0ms instant open */}
+        <CinematicIntro
+          forceShow={showIntro}
+          onClose={() => setShowIntro(false)}
         />
-      </div>
 
-      {/* Main Content Container with Instant 0ms Smooth Viewport */}
-      <main className="relative z-10 min-h-[75vh]">
-        {/* 1. Home Sanctuary View */}
-        <div className={isHome ? 'pt-18 sm:pt-22 pb-8 block animate-fade-in instant-section' : 'hidden'}>
-          <Hero
+        {/* Global Interactive Easter Egg Listeners */}
+        <EasterEggListener onTriggerSurprise={() => setShowSurprise(true)} />
+
+        {/* Navbar with Replay Intro & Surprise Controls — Hidden when inside Reels */}
+        <div className={activeSection === 'reels' ? 'hidden' : 'contents'}>
+          <Navbar
+            onReplayIntro={() => setShowIntro(true)}
             onOpenSurprise={() => setShowSurprise(true)}
+            activeSection={activeSection}
             onSelectSection={handleSelectSection}
-            isActive={isHome}
           />
         </div>
 
-        {/* 2. Projects Showcase View */}
-        {mountedSections['projects'] && (
-          <div className={activeSection === 'projects' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
-            <ProjectShowcase />
-          </div>
-        )}
-
-        {/* 3. Python Turtle Art Gallery View */}
-        {mountedSections['turtle'] && (
-          <div className={activeSection === 'turtle' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
-            <TurtleGallery />
-          </div>
-        )}
-
-        {/* 4. Reels Section View (Immersive Mobile Reels with Bottom Nav) */}
-        {mountedSections['reels'] && (
-          <div className={activeSection === 'reels' ? 'pt-0 pb-16 sm:pb-0 block animate-fade-in instant-section' : 'hidden'}>
-            <ReelsSection
-              isActive={activeSection === 'reels'}
-              onBack={() => handleSelectSection('home')}
+        {/* Main Content Container with Instant 0ms Smooth Viewport */}
+        <main className="relative z-10 min-h-[75vh]">
+          {/* 1. Home Sanctuary View */}
+          <div className={isHome ? 'pt-18 sm:pt-22 pb-8 block animate-fade-in instant-section' : 'hidden'}>
+            <Hero
+              onOpenSurprise={() => setShowSurprise(true)}
+              onSelectSection={handleSelectSection}
+              isActive={isHome}
             />
           </div>
-        )}
 
-        {/* 5. Memories Timeline View */}
-        {mountedSections['memories'] && (
-          <div className={activeSection === 'memories' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
-            <MemoriesTimeline />
-          </div>
-        )}
+          {/* 2. Projects Showcase View */}
+          {mountedSections['projects'] && (
+            <div className={activeSection === 'projects' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
+              <ProjectShowcase />
+            </div>
+          )}
 
-        {/* 5. Love Notes Vault View */}
-        {mountedSections['love-notes'] && (
-          <div className={activeSection === 'love-notes' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
-            <LoveNotesVault isActive={activeSection === 'love-notes'} />
-          </div>
-        )}
-      </main>
+          {/* 3. Python Turtle Art Gallery View */}
+          {mountedSections['turtle'] && (
+            <div className={activeSection === 'turtle' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
+              <TurtleGallery />
+            </div>
+          )}
 
-      {/* Footer: Visible on Home Section */}
-      <div className={isHome ? 'block' : 'hidden'}>
-        <Footer
-          onReplayIntro={() => setShowIntro(true)}
-          onOpenSurprise={() => setShowSurprise(true)}
+          {/* 4. Reels Section View (Immersive Mobile Reels with Bottom Nav) */}
+          {mountedSections['reels'] && (
+            <div className={activeSection === 'reels' ? 'pt-0 pb-16 sm:pb-0 block animate-fade-in instant-section' : 'hidden'}>
+              <ReelsSection
+                isActive={activeSection === 'reels'}
+                onBack={() => handleSelectSection('home')}
+              />
+            </div>
+          )}
+
+          {/* 5. Memories Timeline View */}
+          {mountedSections['memories'] && (
+            <div className={activeSection === 'memories' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
+              <MemoriesTimeline />
+            </div>
+          )}
+
+          {/* 5. Love Notes Vault View */}
+          {mountedSections['love-notes'] && (
+            <div className={activeSection === 'love-notes' ? 'pt-24 sm:pt-28 pb-16 block animate-fade-in instant-section' : 'hidden'}>
+              <LoveNotesVault isActive={activeSection === 'love-notes'} />
+            </div>
+          )}
+        </main>
+
+        {/* Footer: Visible on Home Section */}
+        <div className={isHome ? 'block' : 'hidden'}>
+          <Footer
+            onReplayIntro={() => setShowIntro(true)}
+            onOpenSurprise={() => setShowSurprise(true)}
+          />
+        </div>
+
+        {/* Secret Special Surprise Modal */}
+        <SpecialSurpriseModal
+          isOpen={showSurprise}
+          onClose={() => setShowSurprise(false)}
         />
       </div>
 
-
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation — Rendered at root level outside all overflow/scrollable divs */}
       <MobileBottomNav
         activeSection={activeSection}
         onSelectSection={handleSelectSection}
       />
-
-      {/* Secret Special Surprise Modal */}
-      <SpecialSurpriseModal
-        isOpen={showSurprise}
-        onClose={() => setShowSurprise(false)}
-      />
-    </div>
+    </>
   );
 }
