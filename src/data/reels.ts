@@ -180,7 +180,7 @@ export async function syncGlobalReelLikes(): Promise<Record<string, number>> {
           safeSetLocalStorage(`mili_reel_count_${id}`, count.toString());
         }
       });
-      window.dispatchEvent(new CustomEvent('mili-reels-likes-updated'));
+      window.dispatchEvent(new CustomEvent('mili-reels-likes-updated', { detail: { likes: data.likes } }));
       return data.likes;
     }
   } catch {}

@@ -46,12 +46,12 @@ export const ReelsSection: React.FC<ReelsSectionProps> = ({ isActive = true, onB
       // Sync global likes from server immediately
       syncGlobalReelLikes();
 
-      // Poll periodically every 5s while watching reels so other users' likes appear live
+      // Poll periodically every 3s while watching reels so other users' likes appear live
       const interval = setInterval(() => {
         if (typeof document !== 'undefined' && !document.hidden) {
           syncGlobalReelLikes();
         }
-      }, 5000);
+      }, 3000);
 
       // Real-time Supabase Broadcast channel
       let channel: any = null;

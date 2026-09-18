@@ -68,8 +68,13 @@ export const ReelCard: React.FC<ReelCardProps> = ({
     setLikesCount(getReelLikeCount(reel.id, reel.likesCount || 0));
 
     const handleLikesUpdated = (e: Event) => {
-      const customEvent = e as CustomEvent<{ reelId?: string; count?: number; liked?: boolean }>;
-      if (!customEvent.detail || customEvent.detail.reelId === reel.id) {
+      const customEvent = e as CustomEvent<{ reelId?: string; count?: number; liked?: boolean; likes?: Record<string, number> }>;
+      if (
+        !customEvent.detail ||
+        !customEvent.detail.reelId ||
+        customEvent.detail.reelId === reel.id ||
+        Boolean(customEvent.detail.likes)
+      ) {
         setIsLiked(isReelLiked(reel.id));
         setLikesCount(getReelLikeCount(reel.id, reel.likesCount || 0));
       }

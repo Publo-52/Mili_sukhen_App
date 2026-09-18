@@ -67,6 +67,19 @@ const warmUpAllDatasetsAndAssets = () => {
 
     // 1. Keep Supabase active & warm (prevents 7-day free tier auto-pause)
     fetch('/api/health').catch(() => {});
+    fetch('/api/reels/likes')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.likes && typeof data.likes === 'object') {
+          Object.entries(data.likes).forEach(([id, count]) => {
+            if (typeof count === 'number') {
+              safeSet(`mili_reel_count_${id}`, count.toString());
+            }
+          });
+          window.dispatchEvent(new CustomEvent('mili-reels-likes-updated', { detail: { likes: data.likes } }));
+        }
+      })
+      .catch(() => {});
 
     // 2. Parallel API Cache Preload with deduplication
     const endpoints = ['/api/projects', '/api/turtle', '/api/love-notes', '/api/memories'];
