@@ -167,8 +167,10 @@ export const MemoriesTimeline: React.FC = () => {
 
   // Filtered Memories
   const filteredMemories = useMemo(() => {
+    if (!Array.isArray(memories)) return [];
     return memories.filter((m) => {
-      if (activeFilter === 'favorites') return favoriteIds.includes(m.id);
+      if (!m) return false;
+      if (activeFilter === 'favorites') return Array.isArray(favoriteIds) && favoriteIds.includes(m.id);
       if (activeFilter === 'photo') return m.type === 'photo';
       if (activeFilter === 'video') return m.type === 'video';
       return true;

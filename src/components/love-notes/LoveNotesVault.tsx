@@ -167,7 +167,9 @@ export const LoveNotesVault: React.FC<LoveNotesVaultProps> = ({ isActive = true 
 
   // Filter notes by mood & search query
   const filteredNotes = useMemo(() => {
+    if (!Array.isArray(allNotes)) return [];
     return allNotes.filter((n) => {
+      if (!n) return false;
       const matchesMood = selectedMood === 'all' || n.moodTag === selectedMood;
       const matchesSearch =
         !searchQuery.trim() ||

@@ -34,12 +34,20 @@ function getStorageItem<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
   try {
     const raw = localStorage.getItem(key);
-    if (raw === null) return fallback;
+    if (raw === null || raw === undefined || raw === 'undefined' || raw === 'null' || raw === '') {
+      return fallback;
+    }
     const cached = memoryCache.get(key);
     if (cached && cached.raw === raw) {
+      if (Array.isArray(fallback) && !Array.isArray(cached.data)) {
+        return fallback;
+      }
       return cached.data as T;
     }
     const parsed = JSON.parse(raw);
+    if (Array.isArray(fallback) && !Array.isArray(parsed)) {
+      return fallback;
+    }
     memoryCache.set(key, { data: parsed, raw });
     return parsed;
   } catch (error) {
@@ -111,7 +119,8 @@ function setStorageItem<T>(key: string, value: T): void {
 
 // ----------------- Deleted IDs Tracking (Prevents resurrecting deleted defaults) -----------------
 export function getDeletedProjectIds(): string[] {
-  return getStorageItem<string[]>(KEYS.DELETED_PROJECTS, []);
+  const list = getStorageItem<string[]>(KEYS.DELETED_PROJECTS, []);
+  return Array.isArray(list) ? list : [];
 }
 export function markProjectDeleted(id: string): void {
   const deleted = getDeletedProjectIds();
@@ -121,7 +130,8 @@ export function markProjectDeleted(id: string): void {
 }
 
 export function getDeletedTurtleIds(): string[] {
-  return getStorageItem<string[]>(KEYS.DELETED_TURTLE, []);
+  const list = getStorageItem<string[]>(KEYS.DELETED_TURTLE, []);
+  return Array.isArray(list) ? list : [];
 }
 export function markTurtleDeleted(id: string): void {
   const deleted = getDeletedTurtleIds();
@@ -131,7 +141,8 @@ export function markTurtleDeleted(id: string): void {
 }
 
 export function getDeletedNoteIds(): string[] {
-  return getStorageItem<string[]>(KEYS.DELETED_NOTES, []);
+  const list = getStorageItem<string[]>(KEYS.DELETED_NOTES, []);
+  return Array.isArray(list) ? list : [];
 }
 export function markNoteDeleted(id: string): void {
   const deleted = getDeletedNoteIds();
@@ -141,7 +152,8 @@ export function markNoteDeleted(id: string): void {
 }
 
 export function getDeletedMemoryIds(): string[] {
-  return getStorageItem<string[]>(KEYS.DELETED_MEMORIES, []);
+  const list = getStorageItem<string[]>(KEYS.DELETED_MEMORIES, []);
+  return Array.isArray(list) ? list : [];
 }
 export function markMemoryDeleted(id: string): void {
   const deleted = getDeletedMemoryIds();
@@ -153,7 +165,7 @@ export function markMemoryDeleted(id: string): void {
 // ----------------- Projects Storage -----------------
 export function getProjects(): Project[] {
   const saved = getStorageItem<Project[] | null>(KEYS.PROJECTS, null);
-  return saved === null || saved.length === 0 ? INITIAL_PROJECTS : saved;
+  return Array.isArray(saved) && saved.length > 0 ? saved : INITIAL_PROJECTS;
 }
 
 export function saveProject(project: Project): Project[] {
@@ -202,7 +214,7 @@ export function restoreAllDefaults(): void {
 // ----------------- Turtle Creations Storage -----------------
 export function getTurtleCreations(): TurtleCreation[] {
   const saved = getStorageItem<TurtleCreation[] | null>(KEYS.CUSTOM_TURTLE, null);
-  return saved === null || saved.length === 0 ? INITIAL_TURTLE_CREATIONS : saved;
+  return Array.isArray(saved) && saved.length > 0 ? saved : INITIAL_TURTLE_CREATIONS;
 }
 
 export function saveTurtleCreation(creation: TurtleCreation): TurtleCreation[] {
@@ -239,7 +251,7 @@ export function resetTurtleToDefault(): TurtleCreation[] {
 // ----------------- Love Notes Storage -----------------
 export function getLoveNotes(): LoveNote[] {
   const saved = getStorageItem<LoveNote[] | null>(KEYS.LOVE_NOTES, null);
-  return saved === null || saved.length === 0 ? INITIAL_LOVE_NOTES : saved;
+  return Array.isArray(saved) && saved.length > 0 ? saved : INITIAL_LOVE_NOTES;
 }
 
 export function saveLoveNote(note: LoveNote): LoveNote[] {
@@ -275,7 +287,8 @@ export function resetLoveNotesToDefault(): LoveNote[] {
 
 // ----------------- Favorites -----------------
 export function getFavoriteProjectIds(): string[] {
-  return getStorageItem<string[]>(KEYS.FAVORITE_PROJECTS, ['mili-special', 'mili-envelope', 'mili-universe']);
+  const list = getStorageItem<string[]>(KEYS.FAVORITE_PROJECTS, ['mili-special', 'mili-envelope', 'mili-universe']);
+  return Array.isArray(list) ? list : ['mili-special', 'mili-envelope', 'mili-universe'];
 }
 
 export function toggleFavoriteProject(id: string): string[] {
@@ -286,7 +299,8 @@ export function toggleFavoriteProject(id: string): string[] {
 }
 
 export function getFavoriteNoteIds(): string[] {
-  return getStorageItem<string[]>(KEYS.FAVORITE_NOTES, ['note-1', 'note-2', 'note-4']);
+  const list = getStorageItem<string[]>(KEYS.FAVORITE_NOTES, ['note-1', 'note-2', 'note-4']);
+  return Array.isArray(list) ? list : ['note-1', 'note-2', 'note-4'];
 }
 
 export function toggleFavoriteNote(id: string): string[] {
@@ -297,12 +311,13 @@ export function toggleFavoriteNote(id: string): string[] {
 }
 
 export function getMemories(): MemoryMilestone[] {
-  const deletedIds = new Set(getDeletedMemoryIds());
+  const deletedArr = getDeletedMemoryIds();
+  const deletedIds = new Set(Array.isArray(deletedArr) ? deletedArr : []);
 
   // 1. Check semantically correct new key
   const savedNew = getStorageItem<MemoryMilestone[] | null>(KEYS.MEMORIES, null);
   if (savedNew !== null && Array.isArray(savedNew) && savedNew.length > 0) {
-    const savedIds = new Set(savedNew.map((m) => m.id));
+    const savedIds = new Set(savedNew.map((m) => m?.id).filter(Boolean));
     const missingInitial = INITIAL_MEMORIES.filter((m) => !savedIds.has(m.id) && !deletedIds.has(m.id));
     if (missingInitial.length > 0) {
       const merged = [...savedNew, ...missingInitial];
@@ -316,7 +331,7 @@ export function getMemories(): MemoryMilestone[] {
   // 2. If missing or empty in new key, check legacy key (backward-compatibility)
   const savedLegacy = getStorageItem<MemoryMilestone[] | null>(LEGACY_MEMORIES_ALL_KEY, null);
   if (savedLegacy !== null && Array.isArray(savedLegacy) && savedLegacy.length > 0) {
-    const savedIds = new Set(savedLegacy.map((m) => m.id));
+    const savedIds = new Set(savedLegacy.map((m) => m?.id).filter(Boolean));
     const missingInitial = INITIAL_MEMORIES.filter((m) => !savedIds.has(m.id) && !deletedIds.has(m.id));
     const merged = missingInitial.length > 0 ? [...savedLegacy, ...missingInitial] : savedLegacy;
     setStorageItem(KEYS.MEMORIES, merged);

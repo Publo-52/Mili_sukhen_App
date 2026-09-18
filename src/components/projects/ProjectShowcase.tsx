@@ -179,10 +179,12 @@ export const ProjectShowcase: React.FC = () => {
   };
 
   const filteredProjects = useMemo(() => {
+    if (!Array.isArray(projects)) return [];
     return projects.filter((proj) => {
+      if (!proj) return false;
       // Category filter
       if (selectedCategory === 'Favorites') {
-        if (!favoriteIds.includes(proj.id)) return false;
+        if (!Array.isArray(favoriteIds) || !favoriteIds.includes(proj.id)) return false;
       } else if (selectedCategory !== 'All' && proj.category !== selectedCategory) {
         return false;
       }
