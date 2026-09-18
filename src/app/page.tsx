@@ -357,78 +357,7 @@ export default function HomePage() {
     return false;
   }, [activeSection, showSurprise, showIntro, handleSelectSection]);
 
-  // Full-Screen Horizontal Touch Swipe Listener (Effortlessly move between sections)
-  useEffect(() => {
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchStartTime = 0;
-    let isSwipeBlocked = false;
 
-    const handleTouchStart = (e: TouchEvent) => {
-      // Don't intercept multi-touch (e.g. pinch to zoom)
-      if (e.touches.length > 1) {
-        isSwipeBlocked = true;
-        return;
-      }
-
-      const target = e.target as HTMLElement | null;
-      if (target) {
-        // Exclude interactive elements where horizontal gestures are needed (e.g. drawing canvas, code editors, inputs)
-        if (
-          target.closest('input, textarea, select, canvas, pre, code, [data-no-swipe], .ace_editor, input[type="range"]')
-        ) {
-          isSwipeBlocked = true;
-          return;
-        }
-      }
-
-      isSwipeBlocked = false;
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-      touchStartTime = Date.now();
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (isSwipeBlocked) return;
-      if (!e.changedTouches || e.changedTouches.length === 0) return;
-
-      // Don't switch section if a full modal is open
-      if (showSurprise || showIntro) {
-        return;
-      }
-
-      const touchEndX = e.changedTouches[0].clientX;
-      const touchEndY = e.changedTouches[0].clientY;
-      const duration = Date.now() - touchStartTime;
-
-      const deltaX = touchEndX - touchStartX;
-      const deltaY = touchEndY - touchStartY;
-      const absX = Math.abs(deltaX);
-      const absY = Math.abs(deltaY);
-
-      // Must be predominantly horizontal gesture (avoids triggering while vertical scrolling)
-      if (absX > absY * 1.35) {
-        // Threshold: 45px normal swipe, or 25px fast flick under 280ms
-        if ((absX > 45 && duration < 500) || (absX > 25 && duration < 280)) {
-          if (deltaX < 0) {
-            // Swiped LEFT -> Advance to NEXT section
-            navigateToNextSection();
-          } else {
-            // Swiped RIGHT -> Go to PREVIOUS section
-            navigateToPrevSection();
-          }
-        }
-      }
-    };
-
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-    return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [navigateToNextSection, navigateToPrevSection, showSurprise, showIntro]);
 
   // Desktop Keyboard Arrow Navigation (Left/Right to switch sections when not typing)
   useEffect(() => {
