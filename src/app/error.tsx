@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Heart, RotateCcw, Home } from 'lucide-react';
+import { Heart, RotateCcw, Home, Sparkles, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -10,23 +10,26 @@ interface ErrorProps {
 }
 
 export default function ErrorBoundary({ error, reset }: ErrorProps) {
+  const [showDetails, setShowDetails] = useState(false);
+
   useEffect(() => {
-    // Log error safely without exposing sensitive internal details
-    console.error('Captured by Root Error Boundary:', error?.message || 'Unknown error');
+    console.error('Captured by Root Error Boundary:', error?.message, error?.stack, error?.digest);
+  }, [error]);
 
-    // Auto-recover after 2.5 seconds
-    const timer = setTimeout(() => {
-      try {
-        reset();
-      } catch {
-        if (typeof window !== 'undefined') {
-          window.location.reload();
-        }
+  const handleClearCacheAndReload = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        sessionStorage.clear();
+        // Clear transient caches without deleting protected user data
+        localStorage.removeItem('mili_admin_authenticated');
+        localStorage.removeItem('mili_admin_logged_in');
+        localStorage.removeItem('mili_active_tab');
+        window.location.href = '/';
       }
-    }, 2500);
-
-    return () => clearTimeout(timer);
-  }, [error, reset]);
+    } catch {
+      window.location.reload();
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#06040a] flex flex-col items-center justify-center p-6 text-center select-none relative overflow-hidden">
@@ -47,45 +50,40 @@ export default function ErrorBoundary({ error, reset }: ErrorProps) {
             Something went momentarily quiet <span className="text-rose-500">✨</span>
           </h1>
           <p className="text-sm text-slate-400 font-light max-w-sm mx-auto">
-            Don&apos;t worry, your memories and love notes are completely safe. Reconnecting automatically...
+            Don&apos;t worry, your memories and love notes are completely safe.
           </p>
         </div>
 
-        {/* Auto-reset progress bar */}
-        <div className="w-full max-w-xs mx-auto h-1 bg-white/10 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-rose-500 to-purple-500 rounded-full animate-[shrink_3s_linear_forwards]"
-            style={{
-              animation: 'progress 3s linear forwards',
-            }}
-          />
-        </div>
-
-        <style>{`
-          @keyframes progress {
-            from { width: 0% }
-            to { width: 100% }
-          }
-        `}</style>
+        {/* Diagnostic info (if available) */}
+        {error?.message && (
+          <div className="text-left bg-obsidian-900/80 border border-white/10 rounded-xl p-3 text-xs text-rose-300/80 font-mono break-words max-h-32 overflow-y-auto">
+            <div className="flex items-center gap-1.5 text-rose-400 font-semibold mb-1">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              <span>Diagnostic Details:</span>
+            </div>
+            <div>{error.message}</div>
+            {error.digest && <div className="text-slate-500 text-[10px] mt-1">Digest: {error.digest}</div>}
+          </div>
+        )}
 
         <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
           <button
-            onClick={() => {
-              try { reset(); } catch { window.location.href = '/'; }
-            }}
+            onClick={handleClearCacheAndReload}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-medium text-xs sm:text-sm shadow-md transition-all hover:scale-105 cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Reload Sanctuary</span>
+          </button>
+
+          <button
+            onClick={() => {
+              try { reset(); } catch { window.location.reload(); }
+            }}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/15 border border-white/10 text-white font-medium text-xs sm:text-sm transition-all hover:scale-105 cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
             <span>Try Again</span>
           </button>
-
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/15 border border-white/10 text-white font-medium text-xs sm:text-sm transition-all hover:scale-105"
-          >
-            <Home className="w-4 h-4" />
-            <span>Go to Sanctuary</span>
-          </Link>
         </div>
       </div>
     </main>
