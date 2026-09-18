@@ -272,7 +272,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
         />
       )}
 
-      {/* Main Video element: lazy memory release for distant reels on low-RAM mobile */}
+      {/* Main Video element: full-bleed vertical object-cover (zero black bars/boxes) */}
       {(isActive || isNearby) ? (
         <video
           ref={videoRef}
@@ -290,7 +290,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
           onError={() => setIsLoading(false)}
           onClick={handleVideoTap}
           style={{ willChange: 'transform', transform: 'translateZ(0)' }}
-          className="absolute inset-0 w-full h-full object-contain z-10 cursor-pointer"
+          className="absolute inset-0 w-full h-full object-cover z-10 cursor-pointer"
         />
       ) : reel.thumbnailUrl ? (
         /* eslint-disable-next-line @next/next/no-img-element */
@@ -298,7 +298,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
           src={optimizeCloudinaryUrl(reel.thumbnailUrl)}
           alt={reel.title || 'Reel Preview'}
           loading="lazy"
-          className="absolute inset-0 w-full h-full object-contain z-10"
+          className="absolute inset-0 w-full h-full object-cover z-10"
         />
       ) : null}
 
@@ -386,7 +386,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
         </div>
       </div>
 
-      {/* ── RIGHT-SIDE ACTION BAR: Instagram Style (Zero bulky UI/UX boxes) ── */}
+      {/* ── RIGHT-SIDE ACTION BAR: Clean floating icons (Zero background box, zero heavy shadow) ── */}
       <div className="absolute right-2.5 bottom-10 sm:bottom-12 flex flex-col items-center gap-4 z-30 pointer-events-auto select-none">
         {/* Like Button */}
         <button
@@ -394,7 +394,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
             e.stopPropagation();
             triggerLike();
           }}
-          className="group flex flex-col items-center focus:outline-none cursor-pointer"
+          className="group flex flex-col items-center focus:outline-none cursor-pointer bg-transparent border-0 p-0 shadow-none"
           aria-label={isLiked ? 'Unlike' : 'Like'}
         >
           <motion.div
@@ -407,13 +407,13 @@ export const ReelCard: React.FC<ReelCardProps> = ({
                 : {}
             }
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="p-1"
+            className="p-0 bg-transparent shadow-none"
           >
             <Heart
               className={`w-7 h-7 sm:w-8 sm:h-8 transition-colors duration-150 ${
                 isLiked
-                  ? 'fill-[#ff2752] text-[#ff2752] drop-shadow-[0_2px_8px_rgba(255,39,82,0.6)]'
-                  : 'fill-transparent text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] stroke-[2]'
+                  ? 'fill-[#ff2752] text-[#ff2752]'
+                  : 'fill-transparent text-white stroke-[2]'
               }`}
             />
           </motion.div>
@@ -424,7 +424,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 3 }}
               transition={{ duration: 0.15 }}
-              className="text-[12px] sm:text-[13px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] leading-tight text-center min-w-[16px]"
+              className="text-[12px] sm:text-[13px] font-bold text-white leading-tight text-center min-w-[16px] mt-0.5"
             >
               {likesCount > 0 ? likesCount : ''}
             </motion.span>
@@ -434,15 +434,15 @@ export const ReelCard: React.FC<ReelCardProps> = ({
         {/* Share Button */}
         <button
           onClick={handleShareClick}
-          className="group flex flex-col items-center focus:outline-none cursor-pointer relative"
+          className="group flex flex-col items-center focus:outline-none cursor-pointer relative bg-transparent border-0 p-0 shadow-none"
           aria-label="Share"
         >
-          <div className="p-1 active:scale-80 transition-transform">
+          <div className="p-0 active:scale-80 transition-transform bg-transparent shadow-none">
             <Share2
-              className="w-7 h-7 sm:w-8 sm:h-8 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] stroke-[2]"
+              className="w-7 h-7 sm:w-8 sm:h-8 text-white stroke-[2]"
             />
           </div>
-          <span className="text-[11px] sm:text-[12px] font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] leading-tight">
+          <span className="text-[11px] sm:text-[12px] font-semibold text-white leading-tight mt-0.5">
             Share
           </span>
 
@@ -464,7 +464,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
       </div>
 
       {/* ── BOTTOM-LEFT OVERLAY: Creator info, caption, audio ── */}
-      <div className="absolute bottom-2 left-0 right-14 z-20 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pt-12 pb-2 pointer-events-none">
+      <div className="absolute bottom-2 left-0 right-14 z-20 bg-gradient-to-t from-black/50 via-transparent to-transparent px-3 pt-8 pb-2 pointer-events-none">
         {/* Creator row */}
         <div className="flex items-center gap-2 mb-1 pointer-events-auto">
           <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-600 p-0.5 flex-shrink-0 shadow-sm">
