@@ -366,9 +366,6 @@ export const ReelCard: React.FC<ReelCardProps> = ({
         )}
 
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-medium text-white/80 bg-black/40 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/10">
-            {index + 1} / {total}
-          </span>
           <button
             onClick={(e) => {
               e.stopPropagation();
