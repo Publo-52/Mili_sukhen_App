@@ -137,6 +137,17 @@ export async function POST(request: NextRequest) {
     likes[cleanReelId] = newCount;
     await saveLikes(likes);
 
+    // Broadcast in real-time to all connected devices / users
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.channel('reels-live-likes-channel').send({
+          type: 'broadcast',
+          event: 'reel-like-updated',
+          payload: { reelId: cleanReelId, likesCount: newCount },
+        });
+      } catch {}
+    }
+
     return NextResponse.json({
       success: true,
       reelId: cleanReelId,

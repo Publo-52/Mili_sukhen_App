@@ -10,6 +10,8 @@ import { isMediaVideo } from '@/lib/utils';
 import { audioEngine } from '@/lib/audio';
 import { safeSetLocalStorage } from '@/lib/storage';
 
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+
 interface ReelsSectionProps {
   isActive?: boolean;
   onBack?: () => void;
@@ -35,14 +37,46 @@ export const ReelsSection: React.FC<ReelsSectionProps> = ({ isActive = true, onB
   const isWheelingRef = useRef(false);
   const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Pause ambient audio when reels section is active
+  // Pause ambient audio and start live global like sync when reels section is active
   useEffect(() => {
     if (isActive) {
       try {
         if (audioEngine.getIsPlaying()) audioEngine.pause();
       } catch {}
-      // Sync global likes from server on mount
+      // Sync global likes from server immediately
       syncGlobalReelLikes();
+
+      // Poll periodically every 5s while watching reels so other users' likes appear live
+      const interval = setInterval(() => {
+        if (typeof document !== 'undefined' && !document.hidden) {
+          syncGlobalReelLikes();
+        }
+      }, 5000);
+
+      // Real-time Supabase Broadcast channel
+      let channel: any = null;
+      if (isSupabaseConfigured && supabase) {
+        try {
+          channel = supabase
+            .channel('reels-live-likes-channel')
+            .on('broadcast', { event: 'reel-like-updated' }, (payload: any) => {
+              if (payload?.payload?.reelId && typeof payload?.payload?.likesCount === 'number') {
+                safeSetLocalStorage(`mili_reel_count_${payload.payload.reelId}`, payload.payload.likesCount.toString());
+                window.dispatchEvent(new CustomEvent('mili-reels-likes-updated', { detail: { reelId: payload.payload.reelId, count: payload.payload.likesCount } }));
+              }
+            })
+            .subscribe();
+        } catch {}
+      }
+
+      return () => {
+        clearInterval(interval);
+        if (channel && supabase) {
+          try {
+            supabase.removeChannel(channel);
+          } catch {}
+        }
+      };
     } else {
       setIsMuted(true);
     }

@@ -86,8 +86,11 @@ export function isReelLiked(reelId: string): boolean {
 /**
  * Toggle like status for a reel and return updated like state
  */
+/**
+ * Toggle like status for a reel and return updated like state
+ */
 export function toggleReelLike(reelId: string, baseCount = 0): { liked: boolean; newCount: number } {
-  const safeBase = typeof baseCount === 'number' && baseCount < 50 ? Math.max(0, baseCount) : 0;
+  const safeBase = Math.max(0, typeof baseCount === 'number' && !isNaN(baseCount) ? baseCount : 0);
   if (typeof window === 'undefined') return { liked: false, newCount: safeBase };
   try {
     const raw = localStorage.getItem(REEL_LIKES_KEY);
@@ -108,8 +111,8 @@ export function toggleReelLike(reelId: string, baseCount = 0): { liked: boolean;
     // Custom counts store
     const countKey = `mili_reel_count_${reelId}`;
     const storedCount = localStorage.getItem(countKey);
-    let count = storedCount ? parseInt(storedCount, 10) : safeBase;
-    if (isNaN(count) || count >= 50) {
+    let count = storedCount !== null ? parseInt(storedCount, 10) : safeBase;
+    if (isNaN(count)) {
       count = safeBase;
     }
     count = liked ? count + 1 : Math.max(0, count - 1);
@@ -142,20 +145,19 @@ export function toggleReelLike(reelId: string, baseCount = 0): { liked: boolean;
 }
 
 /**
- * Get current like count for a reel (defaults to 0, adds 1 if user liked)
+ * Get current like count for a reel (global server count or local)
  */
 export function getReelLikeCount(reelId: string, baseCount = 0): number {
-  const safeBase = typeof baseCount === 'number' && baseCount < 50 ? Math.max(0, baseCount) : 0;
+  const safeBase = Math.max(0, typeof baseCount === 'number' && !isNaN(baseCount) ? baseCount : 0);
   if (typeof window === 'undefined') return safeBase;
   try {
     const countKey = `mili_reel_count_${reelId}`;
     const storedCount = localStorage.getItem(countKey);
     if (storedCount !== null) {
       const parsed = parseInt(storedCount, 10);
-      if (!isNaN(parsed) && parsed < 50) {
+      if (!isNaN(parsed)) {
         return parsed;
       }
-      localStorage.removeItem(countKey);
     }
     const liked = isReelLiked(reelId);
     return liked ? Math.max(1, safeBase + 1) : safeBase;
@@ -170,7 +172,7 @@ export function getReelLikeCount(reelId: string, baseCount = 0): number {
 export async function syncGlobalReelLikes(): Promise<Record<string, number>> {
   if (typeof window === 'undefined') return {};
   try {
-    const res = await fetch('/api/reels/likes');
+    const res = await fetch('/api/reels/likes', { cache: 'no-store' });
     const data = await res.json();
     if (data?.likes && typeof data.likes === 'object') {
       Object.entries(data.likes).forEach(([id, count]) => {
