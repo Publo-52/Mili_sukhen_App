@@ -272,7 +272,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
         />
       )}
 
-      {/* Main Video element: full-bleed vertical object-cover (zero black bars/boxes) */}
+      {/* Main Video element: 100% full view object-contain without cropping */}
       {(isActive || isNearby) ? (
         <video
           ref={videoRef}
@@ -290,7 +290,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
           onError={() => setIsLoading(false)}
           onClick={handleVideoTap}
           style={{ willChange: 'transform', transform: 'translateZ(0)' }}
-          className="absolute inset-0 w-full h-full object-cover z-10 cursor-pointer"
+          className="absolute inset-0 w-full h-full object-contain z-10 cursor-pointer"
         />
       ) : reel.thumbnailUrl ? (
         /* eslint-disable-next-line @next/next/no-img-element */
@@ -298,7 +298,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
           src={optimizeCloudinaryUrl(reel.thumbnailUrl)}
           alt={reel.title || 'Reel Preview'}
           loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover z-10"
+          className="absolute inset-0 w-full h-full object-contain z-10"
         />
       ) : null}
 
