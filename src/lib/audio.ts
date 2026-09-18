@@ -241,12 +241,16 @@ class RomanticAudioEngine {
   private currentChordIndex = 0;
 
   constructor() {
-    if (typeof window !== 'undefined') {
-      // Delay initialization slightly to let the DOM settle
-      setTimeout(() => {
-        this.initYouTubeEngine();
-      }, 500);
-    }
+    try {
+      if (typeof window !== 'undefined') {
+        // Delay initialization slightly to let the DOM settle
+        setTimeout(() => {
+          try {
+            this.initYouTubeEngine();
+          } catch {}
+        }, 500);
+      }
+    } catch {}
   }
 
   public subscribe(cb: (playing: boolean, track: AudioTrack) => void) {

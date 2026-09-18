@@ -2,12 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Navbar } from '@/components/navigation/Navbar';
-import { MobileBottomNav } from '@/components/navigation/MobileBottomNav';
 import { SectionType } from '@/types';
-import { Hero } from '@/components/hero/Hero';
-import { Footer } from '@/components/footer/Footer';
 import { cachedFetch } from '@/lib/api-cache';
+
+// Dynamically import top-level navigation, hero, and footer to prevent SSR hydration errors
+const Navbar = dynamic(
+  () => import('@/components/navigation/Navbar').then((m) => m.Navbar),
+  { ssr: false }
+);
+const MobileBottomNav = dynamic(
+  () => import('@/components/navigation/MobileBottomNav').then((m) => m.MobileBottomNav),
+  { ssr: false }
+);
+const Hero = dynamic(
+  () => import('@/components/hero/Hero').then((m) => m.Hero),
+  { ssr: false }
+);
+const Footer = dynamic(
+  () => import('@/components/footer/Footer').then((m) => m.Footer),
+  { ssr: false }
+);
 
 // Code-split heavy views dynamically with zero initial bundle bloat
 const ProjectShowcase = dynamic(
