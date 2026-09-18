@@ -42,13 +42,18 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       suppressHydrationWarning
       data-no-swipe="true"
       style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 99999,
         touchAction: 'none',
         WebkitUserSelect: 'none',
         userSelect: 'none',
         overscrollBehavior: 'none',
         transform: 'translateZ(0)',
       }}
-      className={`fixed bottom-0 left-0 right-0 z-40 bg-obsidian-950/98 backdrop-blur-2xl px-1 py-1.5 safe-area-pb shadow-[0_-4px_20px_rgba(0,0,0,0.6)] border-t border-white/10 select-none overflow-hidden max-w-[100vw] w-full ${
+      className={`fixed inset-x-0 bottom-0 z-[99999] bg-[#06040a]/98 backdrop-blur-2xl px-1 py-1.5 safe-area-pb shadow-[0_-4px_25px_rgba(0,0,0,0.8)] border-t border-white/10 select-none overflow-hidden max-w-[100vw] w-full ${
         activeSection === 'reels' ? 'block' : 'md:hidden'
       }`}
     >

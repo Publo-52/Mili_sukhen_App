@@ -386,7 +386,7 @@ export default function HomePage() {
   return (
     <div
       suppressHydrationWarning
-      className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain animate-fade-in"
+      className="relative min-h-screen bg-obsidian-950 text-slate-100 overflow-x-hidden bg-grain pb-16 md:pb-0"
     >
       {/* Dynamic Stardust & Ambient Particle Layer (Paused on non-home sections for 100% GPU/battery efficiency) */}
       <ParticleCanvas isActive={isHome} />
