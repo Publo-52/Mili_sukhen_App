@@ -40,11 +40,19 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   return (
     <nav
       suppressHydrationWarning
-      className={`fixed bottom-0 left-0 right-0 z-30 bg-obsidian-950/95 backdrop-blur-2xl px-2 py-1.5 safe-area-pb shadow-2xl transition-all ${
+      data-no-swipe="true"
+      style={{
+        touchAction: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+        overscrollBehavior: 'none',
+        transform: 'translateZ(0)',
+      }}
+      className={`fixed bottom-0 left-0 right-0 z-40 bg-obsidian-950/98 backdrop-blur-2xl px-1 py-1.5 safe-area-pb shadow-[0_-4px_20px_rgba(0,0,0,0.6)] border-t border-white/10 select-none overflow-hidden max-w-[100vw] w-full ${
         activeSection === 'reels' ? 'block' : 'md:hidden'
       }`}
     >
-      <div className="flex items-center justify-around max-w-lg mx-auto">
+      <div className="flex items-center justify-between w-full max-w-lg mx-auto px-0.5">
         {BOTTOM_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = currentActive === item.sectionId;
@@ -53,22 +61,23 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <button
               key={item.sectionId}
               suppressHydrationWarning
+              data-no-swipe="true"
               onClick={(e) => handleClick(item.sectionId, e)}
-              className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all active:scale-90 ${
+              className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-150 active:scale-95 cursor-pointer select-none ${
                 isActive
                   ? 'text-roseGlow-400 font-bold'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Icon
-                className={`w-5 h-5 sm:w-[22px] sm:h-[22px] mb-1 transition-all duration-200 ${
+                className={`w-5 h-5 mb-0.5 transition-all duration-200 pointer-events-none ${
                   isActive
-                    ? 'text-roseGlow-400 stroke-[2.3] scale-110 drop-shadow-[0_0_10px_rgba(244,63,94,0.65)]'
-                    : 'stroke-[1.85]'
+                    ? 'text-roseGlow-400 stroke-[2.4] scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]'
+                    : 'stroke-[1.8]'
                 }`}
               />
-              <span className={`text-[10px] sm:text-[11px] font-sans tracking-tight leading-none transition-colors ${
-                isActive ? 'font-bold text-roseGlow-300' : 'font-medium'
+              <span className={`text-[10px] sm:text-[11px] font-sans tracking-tight leading-none truncate w-full text-center pointer-events-none ${
+                isActive ? 'font-bold text-roseGlow-300' : 'font-medium text-slate-400'
               }`}>
                 {item.label}
               </span>
